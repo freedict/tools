@@ -6,10 +6,11 @@ import enum
 import os
 import sys
 
-class Type(enum.Enum):
+class ChunkType(enum.Enum):
     Word = 0
     Paren = 1 # parenthesized expressions
     Semicolon = 2 # homonyms
+    Comma = 3 # word/definition boundary
 
 class WordType(enum.Enum):
     Full = '' # normal words
@@ -32,22 +33,38 @@ class Word:
     """This is either a head word or a translation."""
     def __init__(self, word, usage_info=None):
         self.word = word
-        self.usage_info = usage_info
+        # gramGrp is a list of ready-to-use xml strings, basically *one* node
+        self.gramGrp, self.usage_info = self.__get_gram_info(usage_info)
         self.word_type = type
 
     def __repr__(self):
         return ('%s (%s)' % (self.word, self.usage_info) if self.usage_info else
                 self.word)
 
+    def __get_gram_info(self, usage_info):
+        """Figure out, whether text is a collocating word or a usage hint.
+        Return tuple ready-to-use XML. """
+        # special cases: catch collocations
+        collocations = ['for', 'of', 'up', 'to', 'in', 'on', 'by', 'upon',
+            'ke', 'de', "do"] # esperanto
+        if not usage_info:
+            return (None, None)
+        elif usage_info in collocations:
+            return (['<colloc>%s</colloc>' % usage_info], None)
+        else:
+            return (None, '<usg type="hint">%s</usg>' % usage_info)
+
     def as_xml(self):
         xml = ['<cit type="trans">\n<quote>', self.word, '</quote>']
         if self.usage_info:
-            xml += ['\n<usg type="hint">', self.usage_info, '</usg>']
+            xml.append('\n' + self.usage_info)
+        if self.gramGrp:
+            xml.append('\n<gramGrp>\n%s\n</gramGrp>' % '\n'.join(self.gramGrp))
         return ''.join(xml + ['\n</cit>'])
 
 class HeadWord(Word):
+    #pylint: disable=too-few-public-methods
     def __init__(self, word, usg=None):
-        self.usage_info = usg
         if word.startswith('-') and word.endswith('-'):
             self.type = WordType.Part
         elif word.startswith('-'):
@@ -57,51 +74,57 @@ class HeadWord(Word):
         else:
             self.type = WordType.Full
         self.word = word.lstrip('-').rstrip('-')
-        super().__init__(self.word, self.usage_info)
+        super().__init__(self.word, usg)
 
     def as_xml(self):
         extent = ''
         if not self.type == WordType.Full:
             extent = ' extent="%s"' % self.type.value
         orth = '<orth%s>%s</orth>' % (extent, self.word, )
-        return (orth if not self.usage_info \
-                else '%s\n<usg type="hint">%s</usg>' % (orth, self.usage_info))
+        if self.gramGrp:
+            orth += '\n<gramGrp>\n%s</gramGrp>' % '\n'.join(self.gramGrp)
+        if self.usage_info:
+            orth += '\n' + ''.join(self.usage_info)
+        return '<form>\n%s\n</form>' % orth
 
 #pylint: disable=redefined-variable-type
 def parse_tokens(source):
-    """Tokenize translations into chunks, where each chunk is a tuple of (Type,
+    """Tokenize translations into chunks, where each chunk is a tuple of (ChunkType,
     content)."""
     chunks = []
     tmp_storage = '' # for unfinished chunks
     # state can be either default "word" or within parenthesis (paren)
-    state = Type.Word
+    state = ChunkType.Word
+    prevchar = ''
     for ch in source:
-        if state == Type.Paren:
+        if state == ChunkType.Paren:
             if ch == ')':
-                state = Type.Word
-                chunks.append((Type.Paren, tmp_storage.strip()))
+                state = ChunkType.Word
+                chunks.append((ChunkType.Paren, tmp_storage.strip()))
                 tmp_storage = ''
             else:
                 tmp_storage += ch
-        else: # Type.Word
-            if ch == '(':
-                state = Type.Paren
+        else: # ChunkType.Word
+            if ch == '(' and (prevchar == '' or prevchar.isspace()):
+                state = ChunkType.Paren
                 if tmp_storage.strip():
-                    chunks.append((Type.Word, tmp_storage.strip()))
+                    chunks.append((ChunkType.Word, tmp_storage.strip()))
                     tmp_storage = ''
-            elif ch == ',':
+            elif ch == ',': # comma outside of parens, new word
                 if tmp_storage.strip(): # not empty
-                    chunks.append((Type.Word, tmp_storage.strip()))
+                    chunks.append((ChunkType.Word, tmp_storage.strip()))
                 tmp_storage= ''
+                chunks.append((ChunkType.Comma, None))
             elif ch == ';':
                 if tmp_storage.strip(): # not empty
-                    chunks.append((Type.Word, tmp_storage.strip()))
-                chunks.append((Type.Semicolon, None))
+                    chunks.append((ChunkType.Word, tmp_storage.strip()))
+                chunks.append((ChunkType.Semicolon, None))
                 tmp_storage= ''
             else:
                 tmp_storage += ch
+        prevchar = ch
     if tmp_storage:
-        chunks.append((Type.Word, tmp_storage.strip()))
+        chunks.append((ChunkType.Word, tmp_storage.strip()))
     return chunks
 
 def structure_translations(unordered_list):
@@ -113,45 +136,68 @@ def structure_translations(unordered_list):
     while unordered_list:
         chunk = unordered_list.pop(0)
         # test for type of chunk
-        if chunk[0] == Type.Paren:
-            if unordered_list and unordered_list[0][0] == Type.Word:
+        if chunk[0] == ChunkType.Paren:
+            # is this an additional info for a word:
+            if unordered_list and unordered_list[0][0] == ChunkType.Word:
                 translations[-1].append(Word(unordered_list.pop(0)[1], chunk[1]))
             else: # no next chunk or no word
                 # this is either a parenthesized expression with no word before
                 # or after, then it's a definition; otherwise it's an unhandled
                 # case and a bug
-                if (len(translations) == 1 and not translations[0]) and not unordered_list: # definition
+                if (len(translations) == 1 and not translations[0]) and \
+                        (not unordered_list or unordered_list[0][0] == ChunkType.Comma): # definition
                     translations[-1].append(Definition(chunk[1]))
                 else:
                     raise ValueError(("Couldn't parse translations; tokens "
-                        "before: %s\nCurrent token: %s\nTokens left: %s") % \
+                        "parsed: %s\nCurrent token: %s\nTokens left: %s") % \
                                 (translations,chunk,unordered_list))
-        elif chunk[0] == Type.Word:
+        elif chunk[0] == ChunkType.Word:
             # word with usage info / colloc
-            if unordered_list and unordered_list[0][0] == Type.Paren:
-                translations[-1].append(Word(chunk[1], unordered_list.pop(0)[1]))
+            if unordered_list and unordered_list[0][0] == ChunkType.Paren:
+                # in some cases definitions are written as "to (be in) a
+                # position", this is poor markup. ignore those parenthesis and
+                # add it as a whole word:
+                if len(unordered_list) >= 2 and unordered_list[1][0] == ChunkType.Word:
+                    translations[-1].append(Word(chunk[1] +" " + \
+                            unordered_list.pop(0)[1] + " " + \
+                            unordered_list.pop(0)[1]))
+                else:
+                    translations[-1].append(Word(chunk[1],
+                        unordered_list.pop(0)[1]))
             else:
                 translations[-1].append(Word(chunk[1]))
-        elif chunk[0] == Type.Semicolon: # homonym, new sense
+        elif chunk[0] == ChunkType.Comma: # new word starts, ignore
+            pass
+        elif chunk[0] == ChunkType.Semicolon: # homonym, new sense
             translations.append([])
         else:
             raise BaseException("Unhandled case.")
     return translations
-
-class entry:
-    def __init__(self, headword, translations):
-        self.headword = headword
-        self.translations = translations
-
-    def __guess_grammar(self):
-        raise NotImplementedError('Guess from "to" and others, please')
 
 def guess_grammar_details(translations):
     """This function inspects the English translations to infer grammatical
     information. Definitions starting with "to " are verbs in the infinitive
     form, etc. The translations might get altered, for instance, to strip the
     "to " from the actual definition."""
-    return ('', translations)
+    gram = ''
+    firstword = translations[0][0]
+    if isinstance(firstword, Definition):
+        return (None, translations) # don't fiddle around with def's
+    if firstword.word.startswith('to '):
+        gram = '<pos>v</pos>'
+        for deflist in translations:
+            for word in deflist:
+                word.word = word.word.lstrip('to ')
+    # remove wrongly parsed colloc's
+    collocs = ['<colloc>%s</colloc>' % c for c in ['to', 'a', 'an']]
+    for deflist in translations:
+        for word in deflist:
+            if word.gramGrp: # it need to have a colloc, otherwise no checks
+                for colloc in collocs:
+                    if colloc in word.gramGrp:
+                        idx = collocs.index(colloc)
+                        del word.gramGrp[idx]
+    return (gram, translations)
 
 
 def translations_to_xml(translations):
@@ -194,7 +240,7 @@ def main(input_file):
         gram, trans = guess_grammar_details(trans)
         xml += ['<entry>', head.as_xml()]
         if gram:
-            xml.append(gram)
+            xml.append('<gramGrp>\n%s\n</gramGrp>' % gram)
         xml += translations_to_xml(trans) + ['</entry>']
     print('\n'.join(xml))
 
