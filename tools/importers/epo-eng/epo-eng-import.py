@@ -4,6 +4,7 @@ README for more information."""
 
 import enum
 import os
+import shutil
 import sys
 
 class ChunkType(enum.Enum):
@@ -213,7 +214,8 @@ def translations_to_xml(translations):
         xml.append('</sense>')
     return xml
 
-def main(input_file):
+def main(input_file, header_file):
+    print("Parsing dictionary…")
     with open(input_file, 'r', encoding='utf-8') as f:
         # gnerator with word pairs; ignore indented lines (only file header,
         # ATM)
@@ -242,18 +244,36 @@ def main(input_file):
         if gram:
             xml.append('<gramGrp>\n%s\n</gramGrp>' % gram)
         xml += translations_to_xml(trans) + ['</entry>']
-    print('\n'.join(xml))
+
+    print("Writing TEI dictionary…")
+    with open(header_file, 'r', encoding='utf-8') as f:
+        header = f.read()
+    with open('epo-eng.tei', 'w', encoding='utf-8') as f:
+        f.write(header.rstrip() + '\n')
+        f.write('\n'.join(xml))
+    if shutil.which('xmllint'):
+        print('Reindenting file…')
+        os.rename('epo-eng.tei', 'epo-eng-unfmt.tei')
+        os.system('xmllint --format epo-eng-unfmt.tei > epo-eng.tei')
+        os.remove('epo-eng-unfmt.tei')
+    else:
+        print("Xmllint is not installed. It is strongly advised to do so, "
+            "otherwise no validation and reindentation happens.")
 
 
 # command line parameter validation
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print("Error: invalid command line parameters.")
-        print("Usage: %s <INPUT_FILE>" % sys.argv[0])
+        print("Usage: %s <INPUT_FILE> <HEADER_FILE>" % sys.argv[0])
+        print("HEADER_FILE has to be a FreeDict TEI file, with the body tag "
+                "being empty. There has to be an opening and a closing body tag, "
+                "on separate lines.")
         sys.exit(1)
-    elif not os.path.exists(sys.argv[1]):
-        print('Sorry, but the file "%s" does not exist.' % sys.argv[1])
-        sys.exit(2)
     else:
-        main(sys.argv[1])
+        for file in sys.argv[1:3]:
+            if not os.path.exists(file):
+                print('Sorry, but the file "%s" does not exist.' % file)
+                sys.exit(2)
+        main(sys.argv[1], sys.argv[2])
 
