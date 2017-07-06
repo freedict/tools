@@ -1,0 +1,11 @@
+# keep that alphabetical please
+*~
+*.bak
+build
+*/build/*
+freedict-database.xml
+*.mo
+*__pycache__*
+*.pyc
+*.swo
+*.swp

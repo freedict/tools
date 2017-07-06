@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>   <!-- vim: set expandtab shiftwidth=2 tw=160 sts=2 ft=xml: -->
+<?xml-stylesheet type="text/css" href="freedict-dictionary.css"?>
+<?oxygen RNGSchema="freedict-P5.rng" type="xml"?>
+<!DOCTYPE TEI SYSTEM "freedict-P5.dtd">
+<TEI xmlns="http://www.tei-c.org/ns/1.0" version="5.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Esperanto-English FreeDict dictionary</title>
+        <title xml:lang="de">Lateinisch-Deutsch FreeDict-Wörterbuch</title>
+        <respStmt>
+          <resp>created by</resp>
+          <name>Paul Denisowski</name>
+        </respStmt>
+        <respStmt>
+          <!-- for the freedict database -->
+          <resp>Maintainer</resp>
+          <name xml:id="humenda">Sebastian Humenda &lt;shumenda at gmx dot de&gt;</name>
+        </respStmt>
+      </titleStmt>
+      <editionStmt>
+        <edition>1.0</edition>
+      </editionStmt>
+      <extent>63477 headwords</extent>
+      <publicationStmt>
+        <publisher>FreeDict</publisher>
+        <availability>
+          <p>Available under the terms of the the Creative Commons Attribution
+          3.0 Unported License.</p>
+        </availability>
+        <date when="2017-07-04">4th of July 2017</date>
+        <pubPlace>http://freedict.org/</pubPlace>
+      </publicationStmt>
+      <notesStmt>
+        <note type="status">big enough to be useful</note>
+        <note xml:lang="en"><p>Please note:</p>
+        <p>This dictionary has been parsed from a plain text file. Although the
+        parser attempts to be clever, it might well be that certain text
+        fragments are categorized as grammatical information, or vice versa.
+        Please report these issues to the maintainer or to the FreeDict project.</p>
+        <p>The original dictionary has been changed at a few places. These
+        changes are mostly to make the dictionary better parseable.</p>
+        </note>
+      </notesStmt>
+      <sourceDesc>
+        <p>The dictionary was downloaded from
+        http://www.denisowski.org/Esperanto/ESPDIC/espdic_readme.htm</p>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <projectDesc>
+        <p>This dictionary comes to you through nice people making it available for free and for good. It is part of the FreeDict project, http://www.freedict.org. This project aims to make many translating dictionaries available for free. Your contributions are welcome!</p>
+      </projectDesc>
+    </encodingDesc>
+    <revisionDesc>
+      <change n="1.0" who="#humenda" when="2017-02-27">
+      <p>Initial conversion of the dictionary. At the moment, the dictionary
+      needs a bit of patching to be transformed correctly.</p>
+      </change>
+    </revisionDesc>
+  </teiHeader>
+
+  <text xml:lang="de">
+    <body>
+    </body>
+  </text>
+</TEI>
+<!-- 
+This document is distributed under GPL 3 (or any later version published by 
+the FSF). See the header for copyright statements. 
+
+GPL statement: 
+This document is free software; you can redistribute it and/or modify it under the terms 
+of the GNU General Public License as published by the Free Software Foundation. This program is 
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;  without even the implied 
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details. You should have received a copy of the GNU General Public License
+along with this program; if not, write to the 
+
+Free Software Foundation, 
+Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA. 
+-->
