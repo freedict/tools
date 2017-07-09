@@ -128,7 +128,7 @@
        brackets, too the weird "(self::gramGrp or count(tei:pos/text())" means
        "you're either P4 or <pos> in P5 is non-empty" -->
     <xsl:variable name="bracket"
-      select="count(ancestor::tei:gramGrp)=0 and (count(tei:pos/text()) or count(tei:*[local-name() != 'pos']))"
+      select="count(ancestor::tei:gramGrp)=0 and (count(tei:pos/text()) or count(tei:*[local-name() != 'pos' and local-name() != 'colloc']))"
     />
     <xsl:if test="$bracket">
       <xsl:text> &lt;</xsl:text>
