@@ -4,8 +4,11 @@ README for more information."""
 
 import enum
 import os
+import shlex
 import shutil
 import sys
+import urllib.request
+import xml.sax.saxutils as saxutils
 
 class ChunkType(enum.Enum):
     Word = 0
@@ -27,7 +30,7 @@ class Definition:
         self.definition = definition
 
     def as_xml(self):
-        return '<cit>\n<def>%s</def>\n</cit>' % self.definition
+        return '<cit>\n<def>%s</def>\n</cit>' % saxutils.escape(self.definition)
 
 class Word:
     #pylint: disable=too-few-public-methods
@@ -51,14 +54,15 @@ class Word:
         if not usage_info:
             return (None, None)
         elif usage_info in collocations:
-            return (['<colloc>%s</colloc>' % usage_info], None)
+            return (['<colloc>%s</colloc>' % saxutils.escape(usage_info)], None)
         else:
             return (None, '<usg type="hint">%s</usg>' % usage_info)
 
     def as_xml(self):
-        xml = ['<cit type="trans">\n<quote>', self.word, '</quote>']
+        xml = ['<cit type="trans">\n<quote>', saxutils.escape(self.word),
+                '</quote>']
         if self.usage_info:
-            xml.append('\n' + self.usage_info)
+            xml.append('\n' + saxutils.escape(self.usage_info))
         if self.gramGrp:
             xml.append('\n<gramGrp>\n%s\n</gramGrp>' % '\n'.join(self.gramGrp))
         return ''.join(xml + ['\n</cit>'])
@@ -81,11 +85,11 @@ class HeadWord(Word):
         extent = ''
         if not self.type == WordType.Full:
             extent = ' extent="%s"' % self.type.value
-        orth = '<orth%s>%s</orth>' % (extent, self.word, )
+        orth = '<orth%s>%s</orth>' % (extent, saxutils.escape(self.word))
         if self.gramGrp:
             orth += '\n<gramGrp>\n%s</gramGrp>' % '\n'.join(self.gramGrp)
         if self.usage_info:
-            orth += '\n' + ''.join(self.usage_info)
+            orth += '\n' + self.usage_info
         return '<form>\n%s\n</form>' % orth
 
 #pylint: disable=redefined-variable-type
@@ -214,7 +218,59 @@ def translations_to_xml(translations):
         xml.append('</sense>')
     return xml
 
-def main(input_file, header_file):
+def write_output(base_dir, tei_skeleton, body_xml):
+    """This writes the dictionary import into the specified directory."""
+    print("Writing TEI dictionary…")
+    with open(tei_skeleton, 'r', encoding='utf-8') as f:
+        header = f.read()
+    body_start = header.find('<body>') + 6
+    tei_file = os.path.join(base_dir, 'epo-eng.tei')
+    os.mkdir(base_dir)
+    with open(tei_file, 'w', encoding='utf-8') as f:
+        f.write(header[:body_start] + '\n')
+        f.write(body_xml)
+        f.write(header[body_start+1:].lstrip().rstrip() + '\n')
+    if shutil.which('xmllint'):
+        print('Reindenting file…')
+        unfmt = os.path.join(base_dir, 'epo-eng-unfmt.tei')
+        os.rename(tei_file, unfmt)
+        ret = os.system('xmllint --format %s > %s' % (shlex.quote(unfmt),
+            shlex.quote(tei_file)))
+        if not ret:
+            os.remove(unfmt)
+        else:
+            print("Exiting due to previous error.")
+            sys.exit(ret)
+    else:
+        print("Xmllint is not installed. It is strongly advised to do so, "
+            "otherwise no validation and reindentation happens.")
+
+    # retrieve copyright information
+    print("Downloading CC unported 3.0 license")
+    with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:
+        req = req = urllib.request.Request(
+                'https://creativecommons.org/licenses/by-sa/3.0/legalcode',
+                data=None,
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0'
+                })
+        with urllib.request.urlopen(req) as u:
+            f.write(u.read())
+
+    # write Makefile
+    with open(os.path.join(base_dir, 'Makefile'), 'w', encoding='utf-8') as f:
+        f.write("""# The line below is really just a fallback and only works if you have got a copy of the tools directory at this location. It's better to set the environment variable in your shell.
+FREEDICT_TOOLS ?= ../../tools
+DISTFILES = COPYING epo-eng.tei freedict-P5.xml freedict-P5.rng \
+        freedict-P5.dtd freedict-dictionary.css INSTALL Makefile NEWS README
+# do not generate phonemes
+supported_phonetics =
+
+include $(FREEDICT_TOOLS)/mk/dicts.mk
+""")
+
+
+def main(input_file, tei_skeleton, output_directory):
     print("Parsing dictionary…")
     with open(input_file, 'r', encoding='utf-8') as f:
         # gnerator with word pairs; ignore indented lines (only file header,
@@ -245,35 +301,41 @@ def main(input_file, header_file):
             xml.append('<gramGrp>\n%s\n</gramGrp>' % gram)
         xml += translations_to_xml(trans) + ['</entry>']
 
-    print("Writing TEI dictionary…")
-    with open(header_file, 'r', encoding='utf-8') as f:
-        header = f.read()
-    with open('epo-eng.tei', 'w', encoding='utf-8') as f:
-        f.write(header.rstrip() + '\n')
-        f.write('\n'.join(xml))
-    if shutil.which('xmllint'):
-        print('Reindenting file…')
-        os.rename('epo-eng.tei', 'epo-eng-unfmt.tei')
-        os.system('xmllint --format epo-eng-unfmt.tei > epo-eng.tei')
-        os.remove('epo-eng-unfmt.tei')
-    else:
-        print("Xmllint is not installed. It is strongly advised to do so, "
-            "otherwise no validation and reindentation happens.")
+    write_output(output_directory, tei_skeleton, '\n'.join(xml))
+    print("Done. Now it's time to copy DTD, CSS and RNG and validate the dictionary.")
 
-
-# command line parameter validation
-if __name__ == '__main__':
-    if len(sys.argv) != 3:
+def check_args():
+    """command line parameter validation"""
+    if len(sys.argv) != 4:
         print("Error: invalid command line parameters.")
-        print("Usage: %s <INPUT_FILE> <HEADER_FILE>" % sys.argv[0])
-        print("HEADER_FILE has to be a FreeDict TEI file, with the body tag "
-                "being empty. There has to be an opening and a closing body tag, "
-                "on separate lines.")
+        import textwrap
+        print("Usage: %s <INPUT_FILE> <TEI SKELETON> <OUTPUT_DIRECTORY>\n    "\
+                % sys.argv[0], end="")
+        print('\n    '.join(textwrap.wrap(("TEI SKELETON has to be a FreeDict TEI file, with an empty "
+                "body tag. The opening and closing body tags have to be on "
+                "separate lines.\n"
+                "The output must not exist."), 78)))
         sys.exit(1)
-    else:
-        for file in sys.argv[1:3]:
-            if not os.path.exists(file):
-                print('Sorry, but the file "%s" does not exist.' % file)
-                sys.exit(2)
-        main(sys.argv[1], sys.argv[2])
+
+    if not os.environ['FREEDICT_TOOLS']:
+        print("The environment variable FREEDICT_TOOLS is not set.")
+        print("This is mandatory, so that the necessary scripts can be located.")
+        print("Have a look at the FreeDict wiki for more information:")
+        print("https://github.com/freedict/fd-dictionaries/wiki")
+        sys.exit(4)
+    for file in sys.argv[1:3]:
+        if not os.path.exists(file):
+            print('Sorry, but the file "%s" does not exist.' % file)
+            sys.exit(2)
+    if os.path.exists(sys.argv[3]):
+        print("The output directory may not exist.")
+        sys.exit(3)
+    dictdir = os.path.basename(os.path.abspath(sys.argv[3]))
+    if not len(dictdir) == 7 or '-' not in dictdir:
+        print("The output directory has to be named with the usual FreeDict naming scheme. Otherwise, the Make rules will fail.")
+        sys.exit(5)
+
+if __name__ == '__main__':
+    check_args()
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
 

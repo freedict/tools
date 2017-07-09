@@ -1,0 +1,128 @@
+--- epo-eng.orig	2017-07-09 11:40:36.611728286 +0200
++++ epo-eng	2017-07-03 15:58:11.599154598 +0200
+@@ -189,7 +189,7 @@
+ Abisenujo : Abyssinia, Ethiopia
+ abisma : abysmal
+ abisme : abysmally
+-abismejo : (the) abyss
++abismejo : abyss
+ abismo : abyss, chasm, gulf, precipice, oblivion
+ abiŝag : Abishag
+ abiturienta : baccalaureate; related to high school graduation
+@@ -1515,7 +1515,7 @@
+ agordiĝemo : manageability, tractability
+ agordiĝi : to be tuned (up)
+ agordilaro : control panel
+-agordilo : configurator, tuner (device), tuning fork, setup program, (software), wizard (software), assistant (installation)
++agordilo : configurator, tuner (device), tuning fork, setup program, wizard (software), assistant (installation)
+ agordindikoj al la fenestroadministrilo : window manager hints
+ agordinformoj : configuration information
+ agordisto : tuner (person)
+@@ -7751,7 +7751,7 @@
+ batraka : batrachian
+ batrako : batrachian
+ batrakoj : anura
+-batsono : (sound of) striking (of a clock)
++batsono : striking (sound of a clock)
+ batuo : battue, hunt, shoot
+ Batuo : Batu
+ baŭdo : baud
+@@ -11769,7 +11769,7 @@
+ ĉonmago : chonmage
+ ĉopsuo : chop suey
+ ĉoto : bullhead, sculpin
+-ĉu : either, if, is it, whether, (asks a question)
++ĉu : either, if, is it, whether
+ ĉu ... aŭ : whether ... or
+ ĉu ... ĉu : whether ... or, whether ... whether
+ ĉu aŭ ne danĝere : dangerous or not
+@@ -26216,7 +26216,7 @@
+ inviti : to invite
+ invitiĝi : to be invited
+ invitilo : invitation, prompt
+-invito : bidding, invitation, (command), prompt
++invito : bidding, invitation, prompt
+ involucia : involuntary
+ involucie : involuntarily
+ involucio : involution
+@@ -32568,7 +32568,7 @@
+ kutimiĝo : adjustment
+ kutimita : accustomed to, used to
+ kutimo : custom, habit, way, practice, routine
+-kutimulo : (a) regular (guest, customer, etc.)
++kutimulo : regular (guest, customer, etc.)
+ kutro : cutter
+ kuvajta : Kuwaiti
+ kuvajtano : Kuwaiti
+@@ -37771,7 +37771,7 @@
+ melopepo : spaghetti squash, summer squash, yellow squash
+ melopsitako : budgerigar
+ melotrono : mellotron
+-mem : self, (puts emphasis on the noun or pronoun it follows)
++mem : self (puts emphasis on the noun or pronoun it follows)
+ mem-malkompaktiga : self-extracting
+ mem-malkompaktiga arkivo : self-extracting archive
+ mem-malkompaktiga exe-dosiero : self-extracting EXE file
+@@ -38625,7 +38625,7 @@
+ minidisko : MD, MiniDisc
+ minikamerao : minicamera
+ minimuma : minimal, minimum
+-minimume : at (the) least
++minimume : at least
+ minimumejo : point of minimum
+ minimumiganto : point of minimum
+ minimumigi : to minimize
+@@ -38670,7 +38670,7 @@
+ minuso : minus (sign)
+ minussigno : minus sign
+ minuto : minuet (time)
+-mio : (the) self, one’s self
++mio : self, one’s self
+ Mioceno : Miocene
+ miogalo : desman, muskrat
+ miopa : myopic, near-sighted, short-sighted
+@@ -42407,7 +42407,7 @@
+ Okeano : Oceanus
+ okedro : octahedron
+ okej : agreed, okay
+-okera voko : (the) eightfold path (of Buddhism)
++okera voko : eightfold path (of Buddhism)
+ Okinavo : Okinawa
+ oklahoma : Oklahoman
+ oklahomano : Oklahoman
+@@ -44859,7 +44859,7 @@
+ pezoforto : gravitation, gravity
+ Pfalzo : Palatinate
+ pfenigo : pfennig
+-PGKD : (plej granda komuna divizoro) GCD (greatest common denominator)
++PGKD (plej granda komuna divizoro) : GCD (greatest common denominator)
+ pĝ : paĝo
+ pia : pious, righteous
+ piamatro : pia mater
+@@ -46314,7 +46314,7 @@
+ porko : hog, pig, swine
+ porkocervo : babirusa, deer-hog
+ porkograso : lard
+-porkomerca : (for) commercial (use, purposes)
++porkomerca : commercial (use, purposes)
+ porkostalo : sty
+ porkstalo : sty
+ porkviro : boar, hog
+@@ -47192,7 +47192,7 @@
+ pridiskuti : to discuss
+ pridisputi : to argue, dispute, query, question
+ pridubebla : doubtful
+-pridubi : to (cast) doubt (upon)
++pridubi : to doubt, to cast doubt (upon)
+ prienketi : to investigate
+ prierara : error, about errors
+ prierara raportilo : error report tool
+@@ -50975,7 +50975,7 @@
+ ronda hoketo : breve
+ ronda kanao : hiragana
+ ronda krampo : parenthesis, round bracket
+-rondaj krampoj : round parentheses, ()
++rondaj krampoj : round parentheses
+ rondbuŝuloj : cyclostomes
+ rondcifere : round numbers (in)
+ ronde : roundly
