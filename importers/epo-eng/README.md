@@ -9,9 +9,13 @@ Usage
 
 The usage of this script is extremely simple:
 
-    $ python3 epo-eng-import.py FILE
+    $ python3 epo-eng-import.py <UPSTREAM_DICT> <TEI_SKELETON> <OUT_DIR>
 
-`FILE` has to be replaced by the file name of the dictionary.
+-   `UPSTREAM_DICT`: path to the text dictionary, as distributed by the upstream
+    project
+-   `TEI_SKELETON`: header information; should be taken from the last release
+    and extended with the changes with the newer version.
+-   `OUT_DIR`: output directory, must not exist.
 
 Python3 is the name of the Python interpreter. It might be that your systems
 calls a Python version > 3.x just `python`, then you need to alter the command.
@@ -25,3 +29,4 @@ contacted upstream regarding a patch (Jul 2017), but haven't got a response.
 Therefore, the changes are recorded in [epo-eng.patch](epo-eng.patch) and can be
 applied to the epo-eng dictionary released in 2015.
 
+The file README.dict is copied as README to the output directory.

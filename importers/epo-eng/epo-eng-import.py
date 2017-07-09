@@ -56,13 +56,14 @@ class Word:
         elif usage_info in collocations:
             return (['<colloc>%s</colloc>' % saxutils.escape(usage_info)], None)
         else:
-            return (None, '<usg type="hint">%s</usg>' % usage_info)
+            return (None, '<usg type="hint">%s</usg>' %
+                    saxutils.escape(usage_info))
 
     def as_xml(self):
         xml = ['<cit type="trans">\n<quote>', saxutils.escape(self.word),
                 '</quote>']
         if self.usage_info:
-            xml.append('\n' + saxutils.escape(self.usage_info))
+            xml.append('\n' + self.usage_info) # already escaped
         if self.gramGrp:
             xml.append('\n<gramGrp>\n%s\n</gramGrp>' % '\n'.join(self.gramGrp))
         return ''.join(xml + ['\n</cit>'])
@@ -257,11 +258,13 @@ def write_output(base_dir, tei_skeleton, body_xml):
         with urllib.request.urlopen(req) as u:
             f.write(u.read())
 
+    # copy README
+    shutil.copy('README.dict', os.path.join(base_dir, 'README'))
     # write Makefile
     with open(os.path.join(base_dir, 'Makefile'), 'w', encoding='utf-8') as f:
         f.write("""# The line below is really just a fallback and only works if you have got a copy of the tools directory at this location. It's better to set the environment variable in your shell.
 FREEDICT_TOOLS ?= ../../tools
-DISTFILES = COPYING epo-eng.tei freedict-P5.xml freedict-P5.rng \
+DISTFILES = COPYING epo-eng.patch epo-eng.tei freedict-P5.xml freedict-P5.rng \
         freedict-P5.dtd freedict-dictionary.css INSTALL Makefile NEWS README
 # do not generate phonemes
 supported_phonetics =
