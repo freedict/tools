@@ -51,9 +51,9 @@ all: $(foreach platform,$(available_platforms),build-$(platform) )
 
 build: #! same as all, build all available output formats
 
+#
+# ToDo: replace through generated rule
 dirs: #! creates all directories for releasing files
-	@if [ ! -d "$(BUILD_DIR)/dict-tgz" ]; then \
-		mkdir -p "$(BUILD_DIR)/dict-tgz"; fi
 	@if [ ! -d "$(BUILD_DIR)/dictd" ]; then \
 		mkdir "$(BUILD_DIR)/dictd"; fi
 
