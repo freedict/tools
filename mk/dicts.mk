@@ -105,7 +105,7 @@ query-%: #! query platform support status; 0=dictd supported, 1=dictd unsupporte
 
 
 release: #! build releases for all available platforms
-release: release-src $(foreach platform,$(available_platforms),release-$(platform) )
+release: release-src $(foreach platform,$(available_platforms),release-$(platform))
 
 testresult-$(version).log: $(dictname).index $(dictname).dict
 	$(FREEDICT_TOOLS)/testing/test-database.pl -f $(dictname) -l $(DICTD_LOCALE) |tee $@ \
