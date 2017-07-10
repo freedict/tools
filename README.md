@@ -1,7 +1,7 @@
 FreeDict Tools
 ===============
 
-The FreeDict tools are used to import, export and mange FreeDict dictionaries.
+The FreeDict tools are used to import, export and manage FreeDict dictionaries.
 Most of the documentation can be found in the FreeDict HOWTO at
 
     https://github.com/freedict/fd-dictionaries/wiki/FreeDict-HOWTO
@@ -38,6 +38,13 @@ please have a look at a dictionary from
 <https://github.com/freedict/fd-dictionaries) and run make in one of the various
 dictionary directories.
 
+In any case, it is a good idea to set the `FREEDICT_TOOLS` variable to the path
+to this directory (of the README), so that the make build system can locate its
+On unixoid systems, open your shell in this directory and type:
+
+    echo "export FREEDICTDIR=`pwd`" >> ~/.$(basename $0)rc
+
+
 Debian/Ubuntu Dependencies
 --------------------------
 
@@ -45,11 +52,12 @@ If you use Debian/Ubuntu, you should install the following packages:
 
     sudo apt-get install make unzip xsltproc libxml-libxml-perl python3
 
-Also, teiaddphonetics requires XML::LibXML::Reader, which is not even
+Teiaddphonetics requires XML::LibXML::Reader, which is not even
 in libxml-libxml-perl in unstable, so you need to do as root:
 
 	cpan XML::LibXML
 
+Please note that Teiaddphonetics is broken at the moment and hence not relevant.
 
-Sebastian Humenda, March 2017
+Sebastian Humenda, July 2017
 
