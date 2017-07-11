@@ -10,11 +10,10 @@ import sys
 import urllib.request
 import xml.sax.saxutils as saxutils
 
-class ChunkType(enum.Enum):
-    Word = 0
-    Paren = 1 # parenthesized expressions
-    Semicolon = 2 # homonyms
-    Comma = 3 # word/definition boundary
+# allow tokenizer import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
+from tokenizer import ChunkType, tokenize
+
 
 class WordType(enum.Enum):
     Full = '' # normal words
@@ -93,46 +92,6 @@ class HeadWord(Word):
             orth += '\n' + self.usage_info
         return '<form>\n%s\n</form>' % orth
 
-#pylint: disable=redefined-variable-type
-def parse_tokens(source):
-    """Tokenize translations into chunks, where each chunk is a tuple of (ChunkType,
-    content)."""
-    chunks = []
-    tmp_storage = '' # for unfinished chunks
-    # state can be either default "word" or within parenthesis (paren)
-    state = ChunkType.Word
-    prevchar = ''
-    for ch in source:
-        if state == ChunkType.Paren:
-            if ch == ')':
-                state = ChunkType.Word
-                chunks.append((ChunkType.Paren, tmp_storage.strip()))
-                tmp_storage = ''
-            else:
-                tmp_storage += ch
-        else: # ChunkType.Word
-            if ch == '(' and (prevchar == '' or prevchar.isspace()):
-                state = ChunkType.Paren
-                if tmp_storage.strip():
-                    chunks.append((ChunkType.Word, tmp_storage.strip()))
-                    tmp_storage = ''
-            elif ch == ',': # comma outside of parens, new word
-                if tmp_storage.strip(): # not empty
-                    chunks.append((ChunkType.Word, tmp_storage.strip()))
-                tmp_storage= ''
-                chunks.append((ChunkType.Comma, None))
-            elif ch == ';':
-                if tmp_storage.strip(): # not empty
-                    chunks.append((ChunkType.Word, tmp_storage.strip()))
-                chunks.append((ChunkType.Semicolon, None))
-                tmp_storage= ''
-            else:
-                tmp_storage += ch
-        prevchar = ch
-    if tmp_storage:
-        chunks.append((ChunkType.Word, tmp_storage.strip()))
-    return chunks
-
 def structure_translations(unordered_list):
     """Take a list of chunks (see docs of parse_meanings) and return a list of
     list of words. The outer lists holds different meanings (homonyms) and has
@@ -176,6 +135,14 @@ def structure_translations(unordered_list):
             pass
         elif chunk[0] == ChunkType.Semicolon: # homonym, new sense
             translations.append([])
+        # add brackets and braces verbatim
+        elif chunk[0] in (ChunkType.Bracket, ChunkType.Brace):
+            chars = ('[]' if chunk[0] == ChunkType.Bracket else '{}')
+            # readd translation in bracket/brace, verbatim
+            if translations[-1]: # at least one word found
+                translations[-1][-1].word += ' ' + chars[0] + chunk[1] + chars[1]
+            else: # new word
+                translations[-1].append(Word(chars[0] + chunk[1] + chars[1]))
         else:
             raise BaseException("Unhandled case.")
     return translations
@@ -284,9 +251,9 @@ def main(input_file, tei_skeleton, output_directory):
     word_list = []
     for word_pair in words:
         head, trans = word_pair.split(' : ')
-        translations = parse_tokens(trans)
+        translations = tokenize(trans)
         translations = structure_translations(translations)
-        head = parse_tokens(head)
+        head = tokenize(head)
         if len(head) == 2: # headword with definition
             head = HeadWord(head[0][1], head[1][1])
         else:
