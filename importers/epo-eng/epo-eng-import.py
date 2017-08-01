@@ -144,7 +144,7 @@ def structure_translations(unordered_list):
             else: # new word
                 translations[-1].append(Word(chars[0] + chunk[1] + chars[1]))
         else:
-            raise BaseException("Unhandled case.")
+            raise NotImplementedError("Unhandled case: " + repr(chunk))
     return translations
 
 def guess_grammar_details(translations):

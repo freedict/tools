@@ -24,10 +24,12 @@ class ChunkType(enum.Enum):
     Paren = 1 # parenthesized expressions ()
     Bracket = 2 # brackets []
     Brace = 3 # "embraced" expressions: {}
-    Semicolon = 4 # homonyms
+    Semicolon = 4 # delimiter, e.g. homonyms
     Comma = 5 # word/definition boundary
+    VerticalBar = 6 # has to be surrounded by spaces, is a delimiter as e.g. comma
+    Slash = 7 # optional; example usage include abbreviations "/ETC/"
 
-def tokenize(source):
+def tokenize(source, parse_slash=False):
     #pylint: disable=redefined-variable-type,too-many-branches
     """Tokenize a line (of translations) into chunks, where each chunk is a tuple of (ChunkType,
 content). This only works with either the headword or the translation part,
@@ -66,8 +68,12 @@ will result in
         tmp_storage = []
     state = ChunkType.Word # current state of parser (ChunkType)
     prevchar = ''
+    framing = [ChunkType.Paren, ChunkType.Bracket, ChunkType.Brace]
+    if parse_slash:
+        framing.append(ChunkType.Slash)
+
     for ch in source:
-        if state in (ChunkType.Paren, ChunkType.Bracket, ChunkType.Brace):
+        if state in framing:
             if ch == ')' and state == state.Paren:
                 state = ChunkType.Word
                 save_parsed_chunk(ChunkType.Paren)
@@ -77,6 +83,9 @@ will result in
             elif ch == '}' and state == ChunkType.Brace:
                 state = ChunkType.Word
                 save_parsed_chunk(ChunkType.Brace)
+            elif ch == '/' and state.Slash and parse_slash:
+                state = ChunkType.Word
+                save_parsed_chunk(ChunkType.Slash)
             else: # within the brace/bracket/parethesis
                 tmp_storage.append(ch)
 
@@ -92,6 +101,11 @@ will result in
                     state = ChunkType.Brace
                 if tmp_storage: # add word before, if any
                     save_parsed_chunk(ChunkType.Word)
+            # only recognize /foo/ if parse_slash and if space in front
+            elif ch == '/' and (prevchar == '' or prevchar.isspace()):
+                state = ChunkType.Slash
+                if tmp_storage: # add word before, if any
+                    save_parsed_chunk(ChunkType.Word)
             elif ch == ',': # comma outside of parens, new word
                 if tmp_storage: # not empty
                     save_parsed_chunk(ChunkType.Word)
@@ -100,6 +114,11 @@ will result in
                 if tmp_storage: # not empty
                     save_parsed_chunk(ChunkType.Word)
                 chunks.append((ChunkType.Semicolon, None))
+            elif ch == '|' and (prevchar == '' or prevchar.isspace()): # space around?
+                if tmp_storage: # not empty
+                    save_parsed_chunk(ChunkType.Word)
+                chunks.append((ChunkType.VerticalBar, None))
+
             else:
                 tmp_storage.append(ch)
         prevchar = ch
