@@ -93,20 +93,18 @@ will result in
         else: # ChunkType.Word
             # only recognize parenthesized expressions, ifa separate word;
             # prevents "expression(s)" to be recognized as two words
-            if ch in ('(', '[', '{') and (prevchar == '' or prevchar.isspace()):
+            if ch in framing and (prevchar == '' or prevchar.isspace()):
                 if ch == '(':
                     state = ChunkType.Paren
                 elif ch == '[':
                     state = ChunkType.Bracket
                 elif ch == '{':
                     state = ChunkType.Brace
+                elif ch == '/' and parse_slash:
+                    state = ChunkType.Slash
                 if tmp_storage: # add word before, if any
                     save_parsed_chunk(ChunkType.Word)
             # only recognize /foo/ if parse_slash and if space in front
-            elif ch == '/' and (prevchar == '' or prevchar.isspace()):
-                state = ChunkType.Slash
-                if tmp_storage: # add word before, if any
-                    save_parsed_chunk(ChunkType.Word)
             elif ch == ',': # comma outside of parens, new word
                 if tmp_storage: # not empty
                     save_parsed_chunk(ChunkType.Word)
@@ -132,24 +130,25 @@ will result in
 def split_list(mylist, delim):
     """Split a list into chunks with the given delimiter. If a delimiter is a
     function, it will get the list item as function and has to return true if a
-    split should occur.
+    split should occur. Returned is an iterator, yielding a chunk at a time.
     Examples:
 
-    >>> split_list([1,2,3,2,4,5,2,2,10], 2)
+    >>> list(split_list([1,2,3,2,4,5,2,2,10], 2))
     [[1],[3],[4,5],[],10]]
-    >>> split_list([])
+    >>> list(split_list([]))
     []
-    >>> split_list([1,2,3,4], 20)
+    >>> list(split_list([1,2,3,4], 20))
     [[1,2,3,4]]"""
     if not mylist:
         return []
-    listoflists = [[]]
+    gathered = []
     is_splitpoint = (delim if inspect.isfunction(delim)
                 else lambda e: e == delim)
     for elem in mylist:
         if is_splitpoint(elem):
-            listoflists.append([])
+            yield gathered
+            gathered = []
         else:
-            listoflists[-1].append(elem)
-    return listoflists
+            gathered.append(elem)
+    yield gathered
 
