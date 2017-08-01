@@ -14,6 +14,7 @@ following snippet to your foo.py to use this module:
 For the usage, please see the functions and classes defined in this module."""
 
 import enum
+import inspect
 
 
 class ChunkType(enum.Enum):
@@ -51,7 +52,7 @@ will be tokenized as
 
 The prefix ChunkType has been omitted for readibility reasons.
 This precendence rule also means that nested structures are *not* recognized,
-the outer wins. This wont work:
+the outer wins. This won't work:
 
     ([(blah)])
 
@@ -129,7 +130,10 @@ will result in
 
 
 def split_list(mylist, delim):
-    """Split a list into chunks with the given delimiter. Examples:
+    """Split a list into chunks with the given delimiter. If a delimiter is a
+    function, it will get the list item as function and has to return true if a
+    split should occur.
+    Examples:
 
     >>> split_list([1,2,3,2,4,5,2,2,10], 2)
     [[1],[3],[4,5],[],10]]
@@ -140,8 +144,10 @@ def split_list(mylist, delim):
     if not mylist:
         return []
     listoflists = [[]]
+    is_splitpoint = (delim if inspect.isfunction(delim)
+                else lambda e: e == delim)
     for elem in mylist:
-        if elem == delim:
+        if is_splitpoint(elem):
             listoflists.append([])
         else:
             listoflists[-1].append(elem)
