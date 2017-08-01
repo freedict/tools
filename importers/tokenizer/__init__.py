@@ -4,7 +4,7 @@ To use this library, add your dictionary importer as a subdirectory to
 importers/. Assuming you have an immporter in importers/foo, you would add the
 following snippet to your foo.py to use this module:
 
-    from os import abspath, dirname
+    from os.path import abspath, dirname
     import sys
 
     sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
@@ -107,4 +107,24 @@ will result in
         save_parsed_chunk(ChunkType.Word)
     return chunks
 
+
+
+def split_list(mylist, delim):
+    """Split a list into chunks with the given delimiter. Examples:
+
+    >>> split_list([1,2,3,2,4,5,2,2,10], 2)
+    [[1],[3],[4,5],[],10]]
+    >>> split_list([])
+    []
+    >>> split_list([1,2,3,4], 20)
+    [[1,2,3,4]]"""
+    if not mylist:
+        return []
+    listoflists = [[]]
+    for elem in mylist:
+        if elem == delim:
+            listoflists.append([])
+        else:
+            listoflists[-1].append(elem)
+    return listoflists
 
