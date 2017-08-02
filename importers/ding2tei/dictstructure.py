@@ -3,6 +3,16 @@ entries. It can only support a subset of TEI and is intended to reflect the
 features of the Ding format."""
 
 import abc
+from os.path import abspath, dirname
+import sys
+
+sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
+import tokenizer
+from tokenizer import ChunkType
+
+class ParserError(Exception):
+    pass
+
 
 class SemNode(abc.ABC):
     """Semantic node, docs."""
@@ -26,19 +36,23 @@ class SemNode(abc.ABC):
                     raise TypeError("%s excepts only strings as 'text'"
                              % self.__class__.__name__)
         else:
-            self.__text = None
+            self.__text = []
         self.__children = []
         self.__attrs = {}
+
+    def get_text(self):
+        """Return a list of text (tokens) of a node."""
+        return self.__text
 
     def get_attributes(self):
         return self.__attrs
 
     def add_text(self, text):
-        if not isinstance(text, str):
-            raise TypeError("Text can be only of type str.")
-        if self.__text is None:
-            self.__text = [text]
-        else:
+        if not isinstance(text, (str, tuple, list)):
+            raise TypeError("Text can be only of type str, list or tuple.")
+        if isinstance(text, (tuple, list)):
+            self.__text.extend(text)
+        else: # string
             self.__text.append(text)
 
     def add_attr(self, key, val):
@@ -66,11 +80,15 @@ class SemNode(abc.ABC):
         return self.__children[idx]
 
     def __repr__(self):
-        text = ('' if not self.__text else " text: '%s';" % self.__text)
+        text = ('' if not self.__text else " text: '%s'" % self.__text)
         children = ('' if not self.__children else ' (%s)' % ', '.join(
                 repr(c) for c in self.__children))
         name = self.__class__.__name__.split('.')[-1]
-        return '<%s %s%s>' % (name, text, children)
+        return '<%s%s%s>' % (name, text, children)
+
+
+class Unprocessed(SemNode):
+    accept_multiple_text_entries = True
 
 class GramGrp(SemNode):
     def __init__(self):
@@ -88,13 +106,14 @@ class Definition(SemNode):
     pass
 
 class Translation(SemNode):
-    accept_multiple_text_entries = True
+    #accept_multiple_text_entries = True
+    pass
 
 class Usage(SemNode):
     accept_multiple_text_entries = True
 
 class Sense(SemNode):
-    allowed_children = (Translation, Definition, Usage, GramGrp) # try to avoid top-level gram
+    allowed_children = () # see end of module
 
 class Form(SemNode):
     """A form is one or more words, optionally containing grammar elements as
@@ -103,12 +122,56 @@ class Form(SemNode):
     the name is not defined during class creation. Therefore, the Form class is
     added to allowed_children at the end of this module."""
     allowed_children = (GramGrp)
-    accept_multiple_text_entries = False
+    accept_multiple_text_entries = True
     allowed_attributes = ['infl']
 
 
 class Entry(SemNode):
     allowed_children = (Sense, Form) # try to avoid top-level gram
 
+
+class AbstractParser:
+    def parse(self, entry):
+        is_bar = lambda x: x[0] == ChunkType.VerticalBar
+        # iterate over headword: is_headword (bool), translation: is_headword
+        info = ((tokenizer.split_list(entry[0], is_bar), True),
+                (tokenizer.split_list(entry[1], is_bar), False))
+        entry = Entry()
+        for sense_or_head, is_head in info:
+            for alternative in sense_or_head:
+                node = (Form() if is_head else Sense())
+                for a in self.handle_forms(alternative, is_head=is_head):
+                    node.add_child(a)
+                entry.add_child(node)
+        return entry
+
+
+    def handle_forms(self, events, is_head):
+        form_nodes = []
+        # for or sense
+        mk_node = lambda: (Form if is_head else Sense)
+
+        for synset in tokenizer.split_list(events,
+                lambda c: c[0] == ChunkType.Semicolon):
+            outer_form = mk_node()()
+            for synonym in tokenizer.split_list(synset,
+                    lambda c: c[0] == ChunkType.Comma):
+                outer_form.add_child(Unprocessed(synonym))
+            form_nodes.extend(self.handle_unprocessed(outer_form, events))
+        return form_nodes
+
+    @abc.abstractmethod
+    def handle_unprocessed(self, outer, events):
+        pass
+
+
+
+class EngDeuParser(AbstractParser):
+    def handle_unprocessed(self, outer, events):
+        print(outer)
+        return outer
+
+
 # Please see Form.__doc__ for an explanation of this line
-Form.allowed_children = (Form, GramGrp)
+Form.allowed_children = (Form, GramGrp, Unprocessed)
+Sense.allowed_children = (Sense, Translation, Unprocessed, Definition, Usage, GramGrp) # try to avoid top-level gram
