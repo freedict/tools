@@ -97,11 +97,29 @@ class tests(unittest.TestCase):
 
     def test_paren_or_slashes_in_words_ignored(self):
         tks = tk.tokenize('house(s), Häuser/innen', parse_slash=True)
-        print(tks)
         self.assertEqual(len(tks), 3)
         self.assertEqual(tks[0][0], ChunkType.Word)
         self.assertEqual(tks[2][0], ChunkType.Word)
+
+    def test_slash_within_paren_works(self):
+        tks = tk.tokenize('(my/example)')
+        self.assertEqual(len(tks), 1)
+        self.assertEqual(tks[0][0], ChunkType.Paren)
+        tks = tk.tokenize('(my/example)', parse_slash=True)
+        self.assertEqual(len(tks), 1, "expected one element, got: " + repr(tks))
+        self.assertEqual(tks[0][0], ChunkType.Paren)
+
+    def test_only_expressions_with_no_spaces_withing_slash_slash_parsed(self):
+        print("===")
+        tks = tk.tokenize('/AB/', parse_slash=True)
+        print("---")
+        self.assertEqual(len(tks), 1)
+        self.assertEqual(tks[0][0], ChunkType.Slash)
+        tks = tk.tokenize('A / B/', parse_slash=True)
+        self.assertEqual(len(tks), 1)
+        self.assertEqual(tks[0][0], ChunkType.Word)
         
+     
  
 
 if __name__ == '__main__':

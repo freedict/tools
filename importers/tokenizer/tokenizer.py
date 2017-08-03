@@ -30,6 +30,18 @@ class ChunkType(enum.Enum):
     VerticalBar = 6 # has to be surrounded by spaces, is a delimiter as e.g. comma
     Slash = 7 # optional; example usage include abbreviations "/ETC/"
 
+def space_before_slash(string, i):
+    """The tokenizer can recognize chunks enclosed by slashes. To avoid to many
+    false positives, only expressions with no space are supported, ATM. This
+    functions checks whether a space is found before the next slash."""
+    for ch in string[i+1:]: # skip first character, is the very slash
+        if ch.isspace():
+            return True
+        elif ch == '/':
+            return False
+    return True # end of string reached, is like a space
+
+
 FRAMING = {'(': ChunkType.Paren, '[': ChunkType.Bracket, '{': ChunkType.Brace}
 CLOSING = {')':'(', '}':'{', ']':'['}
 def tokenize(source, parse_slash=False):
@@ -73,12 +85,13 @@ will result in
     state = ChunkType.Word # current state of parser (ChunkType)
     prevchar = ''
 
-    for ch in source:
+    is_new_word = lambda: prevchar == '' or prevchar.isspace()
+    for idx, ch in enumerate(source):
         if state in FRAMING.values() or (parse_slash and state == ChunkType.Slash):
             if ch in CLOSING and state == FRAMING[CLOSING[ch]]:
                 save_parsed_chunk(FRAMING[CLOSING[ch]])
                 state = ChunkType.Word
-            elif ch == '/' and state.Slash and parse_slash:
+            elif ch == '/' and state == ChunkType.Slash and parse_slash:
                 save_parsed_chunk(ChunkType.Slash)
                 state = ChunkType.Word
             else: # within the brace/bracket/parethesis
@@ -87,8 +100,10 @@ will result in
         else: # ChunkType.Word
             # separate a enclosed expression if preceeded by whitespace /
             # beginning of string; handle slash separately
-            if (ch in FRAMING or (parse_slash and ch == '/')) and \
-                    (prevchar == '' or prevchar.isspace()):
+            if is_new_word() and (ch in FRAMING or (parse_slash and \
+                    ch == '/' and not space_before_slash(source, idx))):
+                # above tests that / is followed by characters only, no spaces
+                # and hence no straying slashes are detected
                 if ch == '/' and parse_slash:
                     state = ChunkType.Slash
                 else:
