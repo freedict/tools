@@ -28,7 +28,8 @@ class SemNode(abc.ABC):
                     self.__text = text
                 else:
                     raise TypeError("%s excepts only a tuple or a list" \
-                            " of strings as 'text'." % self.__class__.__name__)
+                            " of strings as 'text', got %s." % \
+                            (self.__class__.__name__, repr(text)))
             else:
                 if isinstance(text, str):
                     self.__text = [text] # always keep list
@@ -72,6 +73,9 @@ class SemNode(abc.ABC):
     def num_children(self):
         return len(self.__children)
 
+    def pop(self, idx):
+        return self.__children.pop(idx)
+
     def __len__(self):
         """Return the number of text entries."""
         return len(self.__text)
@@ -80,21 +84,28 @@ class SemNode(abc.ABC):
         return self.__children[idx]
 
     def __repr__(self):
-        text = ('' if not self.__text else " text: '%s'" % self.__text)
+        text = ('' if not self.__text else " text: %s" % repr(self.__text))
         children = ('' if not self.__children else ' (%s)' % ', '.join(
                 repr(c) for c in self.__children))
         name = self.__class__.__name__.split('.')[-1]
         return '<%s%s%s>' % (name, text, children)
 
+    def __bool__(self):
+        return True # False by default
+
 
 class Unprocessed(SemNode):
     accept_multiple_text_entries = True
+    def remove(self, index):
+        """Remove object from the internal list of text objects."""
+        del self.get_text()[index]
 
 class GramGrp(SemNode):
-    def __init__(self):
+    def __init__(self, pos=None, gender=None, number=None):
         super().__init__()
-        self.__pos = None
-        self.__gender = None
+        self.__pos = pos
+        self.__gender = gender
+        self.__number = number
 
     def set_gender(self, gen):
         self.__gender = gen
@@ -102,12 +113,22 @@ class GramGrp(SemNode):
     def set_pos(self, pos):
         self.__pos = pos
 
+    def set_number(self, n):
+        self.__number = n
+
+    def __repr__(self):
+        tks = list(filter(None,
+            ((self.__pos if self.__pos else ''),
+               (self.__gender if self.__gender else ''),
+               (self.__number if self.__number else ''))))
+        return '<%s (%s)>' % (self.__class__.__name__.split('.')[-1],
+                ', '.join(tks))
+
 class Definition(SemNode):
     pass
 
 class Translation(SemNode):
-    #accept_multiple_text_entries = True
-    pass
+    accept_multiple_text_entries = True
 
 class Usage(SemNode):
     accept_multiple_text_entries = True
@@ -123,7 +144,7 @@ class Form(SemNode):
     added to allowed_children at the end of this module."""
     allowed_children = (GramGrp)
     accept_multiple_text_entries = True
-    allowed_attributes = ['infl']
+    allowed_attributes = ['type']
 
 
 class Entry(SemNode):
@@ -157,21 +178,20 @@ class AbstractParser:
             for synonym in tokenizer.split_list(synset,
                     lambda c: c[0] == ChunkType.Comma):
                 outer_form.add_child(Unprocessed(synonym))
-            form_nodes.extend(self.handle_unprocessed(outer_form, events))
+            try:
+                form_nodes.extend(self.handle_unprocessed(outer_form))
+            except ParserError as p:
+                p.args = list(p.args) + ['list of events ' + repr(events)]
+                raise p
         return form_nodes
 
     @abc.abstractmethod
-    def handle_unprocessed(self, outer, events):
+    def handle_unprocessed(self, outer):
         pass
 
 
 
-class EngDeuParser(AbstractParser):
-    def handle_unprocessed(self, outer, events):
-        print(outer)
-        return outer
-
-
 # Please see Form.__doc__ for an explanation of this line
-Form.allowed_children = (Form, GramGrp, Unprocessed)
+Form.allowed_children = (Form, GramGrp, Unprocessed, Usage)
 Sense.allowed_children = (Sense, Translation, Unprocessed, Definition, Usage, GramGrp) # try to avoid top-level gram
+GramGrp.allowed_children = (GramGrp)

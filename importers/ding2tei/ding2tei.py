@@ -31,10 +31,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(
     sys.argv[0]))))
 import tokenizer
 
-import dictstructure
+import languages
 
 
-DICT_MODULES = {'deu-eng': dictstructure.EngDeuParser}
+DICT_MODULES = {'deu-eng': languages.EngDeuParser}
 
 
 def main(input_path):
@@ -45,10 +45,13 @@ def main(input_path):
             "module can be detected."))
     t = DICT_MODULES[fname.groups()[0]]()
     with open(input_path, encoding='utf-8') as f:
-        for line in (l.strip() for l in f if not l.startswith('#')):
-            tokens = [tokenizer.tokenize(part) for part in line.split(' :: ')]
+        for lnum, line in enumerate(l.strip() for l in f if not l.startswith('#')):
+            tokens = [tokenizer.tokenize(part, parse_slash=True) for part in line.split(' :: ')]
             entry = t.parse(tokens) # we pass [headwords, translations]
+            print(entry)
             # ToDo, use that stuff
+            if lnum > 99999:
+                break
 
 if __name__ == '__main__':
     main('deu-eng.txt')

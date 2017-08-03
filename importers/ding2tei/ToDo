@@ -1,4 +1,12 @@
--   First and foremost, check whether module tokenizer should be used
+-   3136: straying /
 -   [orig source]: 118917: are translations correctly parsed
--   tests, honestly, tests
+-   multiple pos:, currently:
+    <gramGrp>
+        <gramGrp>
+            <pos>vt</pos>
+        </gramGrp>
+        <gramGrp>
+            <pos>vi</pos>
+        </gramGrp>
+    </gramGrp>
 -   doc (more likely than tests)
