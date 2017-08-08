@@ -48,6 +48,9 @@ class SemNode(abc.ABC):
     def get_attributes(self):
         return self.__attrs
 
+    def clear_text(self):
+        self.__text.clear()
+
     def add_text(self, text):
         if not isinstance(text, (str, tuple, list)):
             raise TypeError("Text can be only of type str, list or tuple.")
@@ -103,24 +106,15 @@ class Unprocessed(SemNode):
 class GramGrp(SemNode):
     def __init__(self, pos=None, gender=None, number=None):
         super().__init__()
-        self.__pos = pos
-        self.__gender = gender
-        self.__number = number
-
-    def set_gender(self, gen):
-        self.__gender = gen
-
-    def set_pos(self, pos):
-        self.__pos = pos
-
-    def set_number(self, n):
-        self.__number = n
+        self.pos = pos
+        self.gender = gender
+        self.number = number
 
     def __repr__(self):
         tks = list(filter(None,
-            ((self.__pos if self.__pos else ''),
-               (self.__gender if self.__gender else ''),
-               (self.__number if self.__number else ''))))
+            ((self.pos if self.pos else ''),
+               (self.gender if self.gender else ''),
+               (self.number if self.number else ''))))
         return '<%s (%s)>' % (self.__class__.__name__.split('.')[-1],
                 ', '.join(tks))
 
@@ -179,7 +173,7 @@ class AbstractParser:
                     lambda c: c[0] == ChunkType.Comma):
                 outer_form.add_child(Unprocessed(synonym))
             try:
-                form_nodes.extend(self.handle_unprocessed(outer_form))
+                form_nodes.append(self.handle_unprocessed(outer_form))
             except ParserError as p:
                 p.args = list(p.args) + ['list of events ' + repr(events)]
                 raise p
@@ -195,3 +189,4 @@ class AbstractParser:
 Form.allowed_children = (Form, GramGrp, Unprocessed, Usage)
 Sense.allowed_children = (Sense, Translation, Unprocessed, Definition, Usage, GramGrp) # try to avoid top-level gram
 GramGrp.allowed_children = (GramGrp)
+Translation.allowed_children = (Usage, GramGrp)

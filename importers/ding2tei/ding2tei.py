@@ -32,6 +32,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(
 import tokenizer
 
 import languages
+import tei
 
 
 DICT_MODULES = {'deu-eng': languages.EngDeuParser}
@@ -48,9 +49,16 @@ def main(input_path):
         for lnum, line in enumerate(l.strip() for l in f if not l.startswith('#')):
             tokens = [tokenizer.tokenize(part, parse_slash=True) for part in line.split(' :: ')]
             entry = t.parse(tokens) # we pass [headwords, translations]
-            print(entry)
+            tree = tei.entry2xml(entry)
+            import io
+            with io.StringIO() as s:
+                tree.write(s, encoding="unicode")
+                s.seek(0)
+                import xml.dom.minidom
+                ret = xml.dom.minidom.parseString(s.read())
+                print(ret.toprettyxml())
             # ToDo, use that stuff
-            if lnum > 99999:
+            if lnum > 99:
                 break
 
 if __name__ == '__main__':

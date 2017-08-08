@@ -20,7 +20,7 @@ class EngDeuParser(AbstractParser):
             g = GramGrp(pos='n') # it's a noun
             for token in (t.strip() for t in text.split(',')):
                 if token in self.NUMBER:
-                    g.set_number(self.NUMBER[token])
+                    g.number = self.NUMBER[token]
                 elif token in self.GENDER:
                     g.add_child(GramGrp(gender=token))
                 else:
@@ -75,14 +75,14 @@ class EngDeuParser(AbstractParser):
             # "foo (bar) baz (explanation)"
             if enough_chunks_left(4) and isword(idx) and isparen(idx+1) and \
                     isword(idx+2) and isparen(idx+3):
-                print(chunks)
                 idx += 4
             else:
                 idx += 1
 
     def handle_unprocessed(self, outer):
         unprocessed = outer.get_children()[0].get_text()
-        outer.pop(0)
+        outer.clear_text()
+        outer.pop(0) # remove unprocessed chunks
         required_inner = (Form if outer.__class__ == Form else Translation)
         start = 0
         while start <= (len(unprocessed)-1):
@@ -92,13 +92,14 @@ class EngDeuParser(AbstractParser):
                 # ToDo: that if should be useless, but not all braces are parsed yet
                 if not isinstance(node, (tuple)):
                     outer.add_child(node)
+                else:
+                    print("ignoring",chunk)
             elif chunk[0] == ChunkType.Bracket:
                 outer.add_child(Usage((chunk[1],)))
             # these are really, really hard to parse, therefore no parsing is tone
             # at all
             elif chunk[0] == ChunkType.Paren or chunk[0]  == ChunkType.Word:
-                start, text = self.merge_text_and_paren(unprocessed, start)
-                outer.add_text(text)
+                start = self.attach_merged_text_and_paren(outer, unprocessed, start)
             elif chunk[0] == ChunkType.Slash: # abbreviation
                 f = required_inner([chunk[1]])
                 f.add_attr("type", "abbr")
@@ -108,7 +109,7 @@ class EngDeuParser(AbstractParser):
             start += 1
         return outer
 
-    def merge_text_and_paren(self, chunks, start):
+    def attach_merged_text_and_paren(self, outer, chunks, start):
         end = start
         reconstructed = []
         while end < len(chunks) and chunks[end][0] in (ChunkType.Word,
@@ -116,7 +117,11 @@ class EngDeuParser(AbstractParser):
             reconstructed.append(chunks[end][1] if chunks[end][0] == ChunkType.Word
                     else '(%s)' % chunks[end][1])
             end += 1
-        return (end - 1, ' '.join(reconstructed))
+        if isinstance(outer, (Form,)):
+            outer.add_text(' '.join(reconstructed))
+        else:
+            outer.add_child(Translation([' '.join(reconstructed)]))
+        return end - 1
 
 
 
