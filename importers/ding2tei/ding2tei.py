@@ -27,12 +27,13 @@ import os
 import re
 import sys
 
+import languages
+import tei
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(
     sys.argv[0]))))
 import tokenizer
 
-import languages
-import tei
 
 
 DICT_MODULES = {'deu-eng': languages.EngDeuParser}
@@ -46,20 +47,23 @@ def main(input_path):
             "module can be detected."))
     t = DICT_MODULES[fname.groups()[0]]()
     with open(input_path, encoding='utf-8') as f:
-        for lnum, line in enumerate(l.strip() for l in f if not l.startswith('#')):
-            tokens = [tokenizer.tokenize(part, parse_slash=True) for part in line.split(' :: ')]
-            entry = t.parse(tokens) # we pass [headwords, translations]
-            tree = tei.entry2xml(entry)
-            import io
-            with io.StringIO() as s:
-                tree.write(s, encoding="unicode")
-                s.seek(0)
-                import xml.dom.minidom
-                ret = xml.dom.minidom.parseString(s.read())
-                print(ret.toprettyxml())
-            # ToDo, use that stuff
-            if lnum > 99:
-                break
+        lnum = None
+        with open(os.path.splitext(input_path)[0] + '.tei', 'wb') as output:
+            for lnum, line in enumerate(l.strip() for l in f if not l.startswith('#')):
+                tokens = [tokenizer.tokenize(part, parse_slash=True) for part in line.split(' :: ')]
+                entry = t.parse(tokens) # we pass [headwords, translations]
+                xml = tei.entry2xml(entry)
+                xml.write(output, encoding="utf-8", xml_declaration=None)
+                output.write(b'\n')
+        print(lnum, "entries written.")
 
 if __name__ == '__main__':
-    main('deu-eng.txt')
+    if len(sys.argv) != 2:
+        print("Usage: %s <INPUT_FILE>" % sys.argv[0])
+        print("\nThe input file must be in the ding format.")
+        sys.exit(1)
+    if not os.path.exists(sys.argv[1]):
+        sys.stderr.write("Error: %s doesn't exist." % sys.argv[1])
+        sys.exit(2)
+
+    main(sys.argv[1])

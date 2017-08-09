@@ -1,7 +1,8 @@
 """This module contains the language-specific pre- and postprocessors."""
 
 # forgive me, ubt I actually really need all of them
-from dictstructure import AbstractParser, ChunkType, Form, GramGrp, ParserError, Translation, Usage
+from dictstructure import AbstractParser, ChunkType, Form, GramGrp, \
+        ParserError, Translation, Unprocessed, Usage
 
 class EngDeuParser(AbstractParser):
     GENDER = ['n', 'm', 'f'] # ontology?
@@ -16,13 +17,20 @@ class EngDeuParser(AbstractParser):
             return GramGrp(pos='n', gender=text)
         elif text in self.NUMBER:
             return GramGrp(pos='n', number=self.NUMBER[text])
-        elif ',' in text: # multiple genders
+        # comma is either for multiple genders, for a gender and a "pl"
+        # declaration or rarely for different verb forms
+        elif ',' in text:
             g = GramGrp(pos='n') # it's a noun
             for token in (t.strip() for t in text.split(',')):
                 if token in self.NUMBER:
                     g.number = self.NUMBER[token]
                 elif token in self.GENDER:
                     g.add_child(GramGrp(gender=token))
+                elif token in self.POS:
+                    g.pos = None
+                    g.add_child(GramGrp(pos=token))
+                elif len(token) > 3 and ' ' in token: # usage hint
+                        g.usg = token
                 else:
                     raise ParserError("Unknown token in {%s}" % text)
             return g
@@ -44,7 +52,9 @@ class EngDeuParser(AbstractParser):
                 f.add_attr("type", "infl")
                 return f
             else:
-                raise ParserError("Couldn't recognize expression: {%s}" % text)
+                # ToDo: raise
+                print(ParserError("Couldn't recognize expression: {%s}" % text))
+                return GramGrp() # ToDo, remove, dummy
 
         gram = self.recognize_gender_or_number(text)
         if gram:
@@ -80,33 +90,33 @@ class EngDeuParser(AbstractParser):
                 idx += 1
 
     def handle_unprocessed(self, outer):
-        unprocessed = outer.get_children()[0].get_text()
-        outer.clear_text()
-        outer.pop(0) # remove unprocessed chunks
-        required_inner = (Form if outer.__class__ == Form else Translation)
-        start = 0
-        while start <= (len(unprocessed)-1):
-            chunk = unprocessed[start]
-            if chunk[0] == ChunkType.Brace:
-                node = self.handle_brace(required_inner, chunk)
-                # ToDo: that if should be useless, but not all braces are parsed yet
-                if not isinstance(node, (tuple)):
-                    outer.add_child(node)
+        while outer.get_children() and isinstance(outer.get_children()[0],
+                Unprocessed):
+            unprocessed = outer.get_children().pop(0).get_text()
+            required_inner = (Form if outer.__class__ == Form else Translation)
+            start = 0
+            while start <= (len(unprocessed)-1):
+                chunk = unprocessed[start]
+                if chunk[0] == ChunkType.Brace:
+                    node = self.handle_brace(required_inner, chunk)
+                    # ToDo: that if should be useless, but not all braces are parsed yet
+                    if not isinstance(node, (tuple)):
+                        outer.add_child(node)
+                    else:
+                        print("ignoring",chunk)
+                elif chunk[0] == ChunkType.Bracket:
+                    outer.add_child(Usage((chunk[1],)))
+                # these are really, really hard to parse, therefore no parsing is tone
+                # at all
+                elif chunk[0] == ChunkType.Paren or chunk[0]  == ChunkType.Word:
+                    start = self.attach_merged_text_and_paren(outer, unprocessed, start)
+                elif chunk[0] == ChunkType.Slash: # abbreviation
+                    f = required_inner([chunk[1]])
+                    f.add_attr("type", "abbr")
+                    outer.add_child(f)
                 else:
-                    print("ignoring",chunk)
-            elif chunk[0] == ChunkType.Bracket:
-                outer.add_child(Usage((chunk[1],)))
-            # these are really, really hard to parse, therefore no parsing is tone
-            # at all
-            elif chunk[0] == ChunkType.Paren or chunk[0]  == ChunkType.Word:
-                start = self.attach_merged_text_and_paren(outer, unprocessed, start)
-            elif chunk[0] == ChunkType.Slash: # abbreviation
-                f = required_inner([chunk[1]])
-                f.add_attr("type", "abbr")
-                outer.add_child(f)
-            else:
-                raise ParserError("Unhandled chunk: " + repr(chunk))
-            start += 1
+                    raise ParserError("Unhandled chunk: " + repr(chunk))
+                start += 1
         return outer
 
     def attach_merged_text_and_paren(self, outer, chunks, start):

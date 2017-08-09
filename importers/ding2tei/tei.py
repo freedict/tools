@@ -28,13 +28,15 @@ def attach_translation(sense, trans):
     return cit
 
 def attach_gramgrp(parent, gramgrp):
-    gram = mknode(parent, 'GramGrp')
+    gram = mknode(parent, 'gramGrp')
     if gramgrp.pos:
         mknode(gram, 'pos', text=gramgrp.pos)
     if gramgrp.gender:
         mknode(gram, 'gen', text=gramgrp.gender)
     if gramgrp.number:
         mknode(gram, 'number', text=gramgrp.number)
+    if gramgrp.usg:
+        mknode(gram, 'usg', text=gramgrp.usg)
     return gram
 
 def attach_form(parent, form):
@@ -59,7 +61,6 @@ def recurse_nodes(parent, structure):
             cls.__name__.split('.')[-1].lower()](parent, what)
     node = attach(structure.__class__, parent, structure)
     for child in structure.get_children():
-        #attach(child.__class__, node, child)
         recurse_nodes(node, child)
 
 def entry2xml(entry):

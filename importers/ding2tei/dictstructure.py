@@ -6,6 +6,9 @@ import abc
 from os.path import abspath, dirname
 import sys
 
+import dictstructure
+
+
 sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
 import tokenizer
 from tokenizer import ChunkType
@@ -109,12 +112,14 @@ class GramGrp(SemNode):
         self.pos = pos
         self.gender = gender
         self.number = number
+        self.usg = None
 
     def __repr__(self):
         tks = list(filter(None,
             ((self.pos if self.pos else ''),
-               (self.gender if self.gender else ''),
-               (self.number if self.number else ''))))
+                (self.gender if self.gender else ''),
+                (self.number if self.number else ''),
+                (self.usg if self.usg else ''))))
         return '<%s (%s)>' % (self.__class__.__name__.split('.')[-1],
                 ', '.join(tks))
 
