@@ -4,13 +4,13 @@
 from dictstructure import AbstractParser, ChunkType, Form, GramGrp, \
         ParserError, Translation, Unprocessed, Usage
 
-class EngDeuParser(AbstractParser):
+class DeuEngParser(AbstractParser):
     GENDER = ['n', 'm', 'f'] # ontology?
     NUMBER = {'pl': 'pl', 'sing': 'sg', 'no pl': 'no pl'}
     POS = {'adj':'adj', 'adv': 'adv', 'art': 'art', 'conj': 'conj',
             'idiom': 'phrase', 'interj': 'int',
-            'n': 'n', 'num': 'num',
-            'prp': 'prep', 'prep': 'prep', 'ppron': 'pron', 'pron': 'pron',
+            'n': 'n', 'num': 'num', 'prp': 'prep', 'prep': 'prep',
+            'prn': 'pron', 'ppron': 'pron', 'pron': 'pron',
             'v': 'v', 'vi': 'vi', 'vr': 'vr', 'vt': 'vt', 'vti': 'vti'}
     def recognize_gender_or_number(self, text):
         if text in self.GENDER:
@@ -30,7 +30,7 @@ class EngDeuParser(AbstractParser):
                     g.pos = None
                     g.add_child(GramGrp(pos=token))
                 elif len(token) > 3 and ' ' in token: # usage hint
-                        g.usg = token
+                    g.usg = token
                 else:
                     raise ParserError("Unknown token in {%s}" % text)
             return g
@@ -135,4 +135,21 @@ class EngDeuParser(AbstractParser):
 
 
 
+
+class SpaDeuParser(DeuEngParser):
+    def __init__(self):
+        self.POS['Demonstrativpronomen'] = 'pron'
+
+    # handle a few grammatical things differently
+    def handle_brace(self, node_class, chunk):
+        text = chunk[1].rstrip().rstrip('.')
+        if text == 'mf' or text == 'fm':
+            g = GramGrp(pos='n')
+            for c in text:
+                g.add_child(GramGrp(gender=c))
+            return g
+        elif text == 's': # 'that's gender n
+            return super().handle_brace(node_class, (chunk[0], 'n'))
+        else:
+            return super().handle_brace(node_class, chunk)
 

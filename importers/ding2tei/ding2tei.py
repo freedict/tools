@@ -36,7 +36,9 @@ import tokenizer
 
 
 
-DICT_MODULES = {'deu-eng': languages.EngDeuParser}
+# ToDo: fancy auto-discovery?
+DICT_MODULES = {'deu-eng': languages.DeuEngParser,
+        'spa-deu': languages.SpaDeuParser}
 
 
 def main(input_path):
@@ -45,7 +47,11 @@ def main(input_path):
         raise OSError(("The input file should be renamed to follow the FreeDict "
             "naming convention (xxx-yyy.extension, so that the correct parser "
             "module can be detected."))
-    t = DICT_MODULES[fname.groups()[0]]()
+    try:
+        t = DICT_MODULES[fname.groups()[0]]()
+    except KeyError:
+        print("Sorry, but there is no parser for %s." % fname.groups()[0])
+        sys.exit(5)
     with open(input_path, encoding='utf-8') as f:
         lnum = None
         with open(os.path.splitext(input_path)[0] + '.tei', 'wb') as output:
