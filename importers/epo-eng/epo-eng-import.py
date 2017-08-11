@@ -12,7 +12,7 @@ import xml.sax.saxutils as saxutils
 
 # allow tokenizer import
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
-from tokenizer import ChunkType, tokenize
+from util.tokenizer import ChunkType, tokenize
 
 
 class WordType(enum.Enum):

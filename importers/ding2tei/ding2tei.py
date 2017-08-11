@@ -32,7 +32,7 @@ import tei
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(
     sys.argv[0]))))
-import tokenizer
+from util import tokenizer
 
 
 
