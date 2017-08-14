@@ -67,6 +67,24 @@ def entry2xml(entry):
     entry_node = mknode(None, 'entry')
     for child in entry:
         recurse_nodes(entry_node, child)
-    tree = ET.ElementTree(element=entry_node)
-    return tree
+    return entry_node
+
+def attach_xml_body(tei_file, xml_entries):
+    """Read given TEI XML file until the body tag. From there, insert the given
+    entries. The result is a full TEI XML structure."""
+    events = ET.iterparse(tei_file, events=["start"])
+    root = next(events)[1]
+    for _, elem in events:
+        if elem.tag == 'body':
+            break
+
+    text = next(n for n in root if n.tag.endswith('text'))
+    text.clear() # throw away all potential content
+    body = ET.SubElement(text, 'body')
+    for entry in xml_entries:
+        body.append(entry)
+    ET.register_namespace('', 'http://www.tei-c.org/ns/1.0')
+    return ET.ElementTree(root)
+
+
 

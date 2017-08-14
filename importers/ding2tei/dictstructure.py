@@ -10,8 +10,8 @@ import dictstructure
 
 
 sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
-import tokenizer
-from tokenizer import ChunkType
+import util.tokenizer as tokenizer
+from util.tokenizer import ChunkType
 
 class ParserError(Exception):
     pass

@@ -41,35 +41,50 @@ DICT_MODULES = {'deu-eng': languages.DeuEngParser,
         'spa-deu': languages.SpaDeuParser}
 
 
-def main(input_path):
-    fname = re.search("^([a-z]{3}-[a-z]{3})(?:\..+)?", os.path.basename(input_path))
+def main(input_path, tei_file, output_directory):
+    fname = re.search("^([a-z]{3}-[a-z]{3})(?:\\..+)?", os.path.basename(input_path))
     if not fname:
         raise OSError(("The input file should be renamed to follow the FreeDict "
             "naming convention (xxx-yyy.extension, so that the correct parser "
             "module can be detected."))
+    dict_name = fname.groups()[0]
     try:
-        t = DICT_MODULES[fname.groups()[0]]()
+        t = DICT_MODULES[dict_name]()
     except KeyError:
         print("Sorry, but there is no parser for %s." % fname.groups()[0])
         sys.exit(5)
+
+
+    entries = []
+    lnum = None
     with open(input_path, encoding='utf-8') as f:
-        lnum = None
-        with open(os.path.splitext(input_path)[0] + '.tei', 'wb') as output:
-            for lnum, line in enumerate(l.strip() for l in f if not l.startswith('#')):
-                tokens = [tokenizer.tokenize(part, parse_slash=True) for part in line.split(' :: ')]
-                entry = t.parse(tokens) # we pass [headwords, translations]
-                xml = tei.entry2xml(entry)
-                xml.write(output, encoding="utf-8", xml_declaration=None)
-                output.write(b'\n')
-        print(lnum, "entries written.")
+        for lnum, line in enumerate(l.strip() for l in f if not l.startswith('#')):
+            tokens = [tokenizer.tokenize(part, parse_slash=True) for part in line.split(' :: ')]
+            node = tei.entry2xml(t.parse(tokens)) # both headwords + translations
+            entries.append(node)
+    root = tei.attach_xml_body(tei_file, entries)
+
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    with open(os.path.join(output_directory, dict_name + '.tei'), 'wb') as output:
+        root.write(output, encoding="utf-8", xml_declaration=None)
+        output.write(b'\n')
+    print(lnum, "entries written.")
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: %s <INPUT_FILE>" % sys.argv[0])
-        print("\nThe input file must be in the ding format.")
+    if len(sys.argv) != 4:
+        print("Usage: %s <INPUT_FILE> <TEI_FILE> <OUTPUT_DIRECTORY>" % sys.argv[0])
+        print("\nINPUT_FILE has to be in the ding format.")
+        print(("TEI_FILE can be either a skeleton with an empty body tag or a "
+                "full dictionary\n  (where the body will be ignored)."))
+        print("  The head of this file will become the new header of the generated dictionary.")
+        print(("OUTPUT_DIRECTORY is the directory where files will be written "
+            "too. This script\n  will overwrite existing files."))
         sys.exit(1)
-    if not os.path.exists(sys.argv[1]):
-        sys.stderr.write("Error: %s doesn't exist." % sys.argv[1])
-        sys.exit(2)
+    for file in sys.argv[1:3]:
+        if not os.path.exists(file):
+            sys.stderr.write("Error: %s doesn't exist.\n" % file)
+            sys.exit(2)
 
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
+
