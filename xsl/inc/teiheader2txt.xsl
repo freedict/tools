@@ -78,17 +78,15 @@
 
 
   <xsl:template match="tei:availability">
-    <xsl:variable name="spaced_ps">
-      <xsl:for-each select="tei:p">
-        <xsl:value-of select="concat(.,' ')"/>
-      </xsl:for-each>
-    </xsl:variable>
-    <xsl:text>&#xa;&#xa;Availability:&#xa;&#xa;  </xsl:text>
-    <xsl:call-template name="format">
-      <xsl:with-param name="txt" select="normalize-space($spaced_ps)"/>
-      <xsl:with-param name="width" select="$width"/>
-      <xsl:with-param name="start" select="2"/>
-    </xsl:call-template>
+    <xsl:text>&#xa;&#xa;Availability:&#xa;&#xa;</xsl:text>
+    <xsl:for-each select="tei:p">
+      <xsl:text>    </xsl:text> <!-- indentation of first line is deeper -->
+      <xsl:call-template name="format">
+        <xsl:with-param name="txt" select="normalize-space(.)"/>
+        <xsl:with-param name="width" select="$width"/>
+        <xsl:with-param name="start" select="2"/>
+      </xsl:call-template>
+    </xsl:for-each>
     <xsl:text>&#xa;</xsl:text>
   </xsl:template>
 
