@@ -33,6 +33,7 @@ import tei
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(
     sys.argv[0]))))
 from util import tokenizer
+import util.output
 
 
 
@@ -66,10 +67,15 @@ def main(input_path, tei_file, output_directory):
 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-    with open(os.path.join(output_directory, dict_name + '.tei'), 'wb') as output:
+    tei_fn = os.path.join(output_directory, dict_name + '.tei')
+    with open(tei_fn, 'wb') as output:
         root.write(output, encoding="utf-8", xml_declaration=None)
         output.write(b'\n')
+    print("Reindenting file")
+    util.output.reindent_xml(tei_fn)
     print(lnum, "entries written.")
+    util.output.copy_readme(input_path, output_directory)
+    util.output.mk_makefile(output_directory, [tei_fn])
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:

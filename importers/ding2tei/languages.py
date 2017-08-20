@@ -2,7 +2,7 @@
 
 # forgive me, ubt I actually really need all of them
 from dictstructure import AbstractParser, ChunkType, Form, GramGrp, \
-        ParserError, Translation, Unprocessed, Usage
+        ParserError, Sense, Translation, Unprocessed, Usage
 
 class DeuEngParser(AbstractParser):
     GENDER = ['n', 'm', 'f'] # ontology?
@@ -133,7 +133,8 @@ class DeuEngParser(AbstractParser):
             outer.add_child(Translation([' '.join(reconstructed)]))
         return end - 1
 
-
+    def simplify_markup(self, node):
+        return node
 
 
 class SpaDeuParser(DeuEngParser):
@@ -152,4 +153,52 @@ class SpaDeuParser(DeuEngParser):
             return super().handle_brace(node_class, (chunk[0], 'n'))
         else:
             return super().handle_brace(node_class, chunk)
+
+    def simplify_markup(self, entry):
+        getall = lambda x, y: [c for c in enumerate(x.get_children()) if
+                isinstance(c[1], y)]
+        for elem in [Form, Sense]:
+            children = getall(entry, elem)
+            if len(children) == 1:
+                inner = getall(children[0][1], elem)
+                if len(inner) > 0:
+                    entry.pop(0)
+                for child in inner:
+                    entry.add_child(child[1])
+
+        if any_pos(entry, 'adj'):
+            forms = getall(entry, Form)
+            if len(forms) == 2: # adjective, both male and female form
+                # first only has word, second has GramGrp
+                if forms[0][1].num_children() == 0 and forms[1][1].num_children() == 1:
+                    second_form = entry.pop(forms[1][0])
+                    for text in second_form.get_text():
+                        forms[0][1].add_text(text)
+                    # re-add gramgrp element, only child of second form
+                    forms[0][1].add_child(second_form.get_children()[0])
+        for elem in [Form, Sense]:
+            children = [c[1] for c in getall(entry, elem)]
+            for child in children:
+                children.extend(c[1] for c in getall(child, elem)) # grandchildren
+                gramgrps = getall(child, GramGrp)
+                if len(gramgrps) > 1:
+                    newgram = GramGrp(pos=gramgrps[0][1].pos)
+                    deleted = 0
+                    for idx, grp in gramgrps:
+                        child.pop(idx - deleted)
+                        deleted += 1
+                        for attr in ['gender', 'number', 'usg']:
+                            data = getattr(grp, attr)
+                            if data: # gram. info present
+                                setattr(newgram, attr, data)
+                    child.add_child(newgram)
+        return entry
+
+def any_pos(node, pos):
+    node_pos = False
+    if isinstance(node, (GramGrp)):
+        node_pos = node.pos == pos
+    for child in node.get_children():
+        node_pos = node_pos or any_pos(child, pos)
+    return node_pos
 

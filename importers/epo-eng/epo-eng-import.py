@@ -200,7 +200,7 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
         f.write(body_xml)
         f.write(header[body_start+1:].lstrip().rstrip() + '\n')
 
-    util.output.reindent_xml(tei_file, file=True)
+    util.output.reindent_xml(tei_file)
     # retrieve copyright information
     print("Downloading CC unported 3.0 license")
     with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:

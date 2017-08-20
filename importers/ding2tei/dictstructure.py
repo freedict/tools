@@ -6,7 +6,6 @@ import abc
 from os.path import abspath, dirname
 import sys
 
-import dictstructure
 
 
 sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
@@ -17,7 +16,7 @@ class ParserError(Exception):
     pass
 
 
-class SemNode(abc.ABC):
+class SemNode:
     """Semantic node, docs."""
     allowed_children = () # no children allowed by default
     accept_multiple_text_entries = False
@@ -64,6 +63,19 @@ class SemNode(abc.ABC):
 
     def add_attr(self, key, val):
         self.__attrs[key] = val
+
+    def get_all(self, childtype):
+        """Return a generator object, returning all direct children with the
+        requested type."""
+        if not isinstance(childtype, (SemNode)):
+            raise TypeError("Only objects of type SemNode can be searched for.")
+        return (c for c in self.__children if isinstance(c, childtype))
+
+    def get_all_with_idx(self, childtype):
+        """Return a generator object, returning all direct children with the
+        requested type."""
+        return (c for c in enumerate(self.__children) if isinstance(c,
+            childtype))
 
     def get_children(self):
         return self.__children
@@ -163,6 +175,7 @@ class AbstractParser:
                 for a in self.handle_forms(alternative, is_head=is_head):
                     node.add_child(a)
                 entry.add_child(node)
+        entry = self.simplify_markup(entry)
         return entry
 
 
@@ -183,6 +196,10 @@ class AbstractParser:
                 p.args = list(p.args) + ['list of events ' + repr(events)]
                 raise p
         return form_nodes
+
+    @abc.abstractmethod
+    def simplify_markup(self, node):
+        return node
 
     @abc.abstractmethod
     def handle_unprocessed(self, outer):
