@@ -198,7 +198,8 @@ def get_meta_from_xml(path):
         if not os.path.exists(full_path):
             full_path += '.header'
         if not os.path.exists(full_path):
-            raise FileNotFoundError("For dictionary %s no dictionary file was found." % item)
+            raise FileNotFoundError("For dictionary %s no dictionary file was found, assumed path: %s" \
+                            % (item, os.path.abspath(full_path)))
         with open(full_path, 'rb') as f:
             dparser = LocalMetaDataParser(item, f)
             dparser.parse()
