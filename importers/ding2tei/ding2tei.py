@@ -75,7 +75,7 @@ def main(input_path, tei_file, output_directory):
     util.output.reindent_xml(tei_fn)
     print(lnum, "entries written.")
     util.output.copy_readme(input_path, output_directory)
-    util.output.mk_makefile(output_directory, [tei_fn])
+    util.output.mk_makefile(output_directory, [os.path.basename(tei_fn)])
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
