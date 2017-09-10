@@ -10,11 +10,11 @@ import sys
 import urllib.request
 import xml.sax.saxutils as saxutils
 
-class ChunkType(enum.Enum):
-    Word = 0
-    Paren = 1 # parenthesized expressions
-    Semicolon = 2 # homonyms
-    Comma = 3 # word/definition boundary
+# allow tokenizer import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
+from util.tokenizer import ChunkType, tokenize
+import util
+
 
 class WordType(enum.Enum):
     Full = '' # normal words
@@ -93,46 +93,6 @@ class HeadWord(Word):
             orth += '\n' + self.usage_info
         return '<form>\n%s\n</form>' % orth
 
-#pylint: disable=redefined-variable-type
-def parse_tokens(source):
-    """Tokenize translations into chunks, where each chunk is a tuple of (ChunkType,
-    content)."""
-    chunks = []
-    tmp_storage = '' # for unfinished chunks
-    # state can be either default "word" or within parenthesis (paren)
-    state = ChunkType.Word
-    prevchar = ''
-    for ch in source:
-        if state == ChunkType.Paren:
-            if ch == ')':
-                state = ChunkType.Word
-                chunks.append((ChunkType.Paren, tmp_storage.strip()))
-                tmp_storage = ''
-            else:
-                tmp_storage += ch
-        else: # ChunkType.Word
-            if ch == '(' and (prevchar == '' or prevchar.isspace()):
-                state = ChunkType.Paren
-                if tmp_storage.strip():
-                    chunks.append((ChunkType.Word, tmp_storage.strip()))
-                    tmp_storage = ''
-            elif ch == ',': # comma outside of parens, new word
-                if tmp_storage.strip(): # not empty
-                    chunks.append((ChunkType.Word, tmp_storage.strip()))
-                tmp_storage= ''
-                chunks.append((ChunkType.Comma, None))
-            elif ch == ';':
-                if tmp_storage.strip(): # not empty
-                    chunks.append((ChunkType.Word, tmp_storage.strip()))
-                chunks.append((ChunkType.Semicolon, None))
-                tmp_storage= ''
-            else:
-                tmp_storage += ch
-        prevchar = ch
-    if tmp_storage:
-        chunks.append((ChunkType.Word, tmp_storage.strip()))
-    return chunks
-
 def structure_translations(unordered_list):
     """Take a list of chunks (see docs of parse_meanings) and return a list of
     list of words. The outer lists holds different meanings (homonyms) and has
@@ -176,8 +136,16 @@ def structure_translations(unordered_list):
             pass
         elif chunk[0] == ChunkType.Semicolon: # homonym, new sense
             translations.append([])
+        # add brackets and braces verbatim
+        elif chunk[0] in (ChunkType.Bracket, ChunkType.Brace):
+            chars = ('[]' if chunk[0] == ChunkType.Bracket else '{}')
+            # readd translation in bracket/brace, verbatim
+            if translations[-1]: # at least one word found
+                translations[-1][-1].word += ' ' + chars[0] + chunk[1] + chars[1]
+            else: # new word
+                translations[-1].append(Word(chars[0] + chunk[1] + chars[1]))
         else:
-            raise BaseException("Unhandled case.")
+            raise NotImplementedError("Unhandled case: " + repr(chunk))
     return translations
 
 def guess_grammar_details(translations):
@@ -193,7 +161,8 @@ def guess_grammar_details(translations):
         gram = '<pos>v</pos>'
         for deflist in translations:
             for word in deflist:
-                word.word = word.word.lstrip('to ')
+                if word.word.startswith('to '):
+                    word.word = word.word[3:]
     # remove wrongly parsed colloc's
     collocs = ['<colloc>%s</colloc>' % c for c in ['to', 'a', 'an']]
     for deflist in translations:
@@ -219,7 +188,7 @@ def translations_to_xml(translations):
         xml.append('</sense>')
     return xml
 
-def write_output(base_dir, tei_skeleton, body_xml):
+def write_output(input_file, base_dir, tei_skeleton, body_xml):
     """This writes the dictionary import into the specified directory."""
     print("Writing TEI dictionary…")
     with open(tei_skeleton, 'r', encoding='utf-8') as f:
@@ -231,21 +200,8 @@ def write_output(base_dir, tei_skeleton, body_xml):
         f.write(header[:body_start] + '\n')
         f.write(body_xml)
         f.write(header[body_start+1:].lstrip().rstrip() + '\n')
-    if shutil.which('xmllint'):
-        print('Reindenting file…')
-        unfmt = os.path.join(base_dir, 'epo-eng-unfmt.tei')
-        os.rename(tei_file, unfmt)
-        ret = os.system('xmllint --format %s > %s' % (shlex.quote(unfmt),
-            shlex.quote(tei_file)))
-        if not ret:
-            os.remove(unfmt)
-        else:
-            print("Exiting due to previous error.")
-            sys.exit(ret)
-    else:
-        print("Xmllint is not installed. It is strongly advised to do so, "
-            "otherwise no validation and reindentation happens.")
 
+    util.output.reindent_xml(tei_file)
     # retrieve copyright information
     print("Downloading CC unported 3.0 license")
     with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:
@@ -259,18 +215,9 @@ def write_output(base_dir, tei_skeleton, body_xml):
             f.write(u.read())
 
     # copy README
-    shutil.copy('README.dict', os.path.join(base_dir, 'README'))
+    util.output.copy_readme(input_file, base_dir)
     # write Makefile
-    with open(os.path.join(base_dir, 'Makefile'), 'w', encoding='utf-8') as f:
-        f.write("""# The line below is really just a fallback and only works if you have got a copy of the tools directory at this location. It's better to set the environment variable in your shell.
-FREEDICT_TOOLS ?= ../../tools
-DISTFILES = COPYING epo-eng.patch epo-eng.tei freedict-P5.xml freedict-P5.rng \
-        freedict-P5.dtd freedict-dictionary.css INSTALL Makefile NEWS README
-# do not generate phonemes
-supported_phonetics =
-
-include $(FREEDICT_TOOLS)/mk/dicts.mk
-""")
+    util.output.mk_makefile(base_dir, ['epo-eng.tei', 'epo-eng.patch'])
 
 
 def main(input_file, tei_skeleton, output_directory):
@@ -284,9 +231,9 @@ def main(input_file, tei_skeleton, output_directory):
     word_list = []
     for word_pair in words:
         head, trans = word_pair.split(' : ')
-        translations = parse_tokens(trans)
+        translations = tokenize(trans)
         translations = structure_translations(translations)
-        head = parse_tokens(head)
+        head = tokenize(head)
         if len(head) == 2: # headword with definition
             head = HeadWord(head[0][1], head[1][1])
         else:
@@ -304,7 +251,7 @@ def main(input_file, tei_skeleton, output_directory):
             xml.append('<gramGrp>\n%s\n</gramGrp>' % gram)
         xml += translations_to_xml(trans) + ['</entry>']
 
-    write_output(output_directory, tei_skeleton, '\n'.join(xml))
+    write_output(input_file, output_directory, tei_skeleton, '\n'.join(xml))
     print("Done. Now it's time to copy DTD, CSS and RNG and validate the dictionary.")
 
 def check_args():
