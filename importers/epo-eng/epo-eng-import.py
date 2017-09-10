@@ -4,8 +4,6 @@ README for more information."""
 
 import enum
 import os
-import shlex
-import shutil
 import sys
 import urllib.request
 import xml.sax.saxutils as saxutils
@@ -68,6 +66,7 @@ class Word:
             xml.append('\n<gramGrp>\n%s\n</gramGrp>' % '\n'.join(self.gramGrp))
         return ''.join(xml + ['\n</cit>'])
 
+#pylint: disable=redefined-variable-type
 class HeadWord(Word):
     #pylint: disable=too-few-public-methods
     def __init__(self, word, usg=None):
@@ -195,27 +194,27 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
         header = f.read()
     body_start = header.find('<body>') + 6
     tei_file = os.path.join(base_dir, 'epo-eng.tei')
-    os.mkdir(base_dir)
+    if not os.path.exists(base_dir):
+        os.mkdir(base_dir)
     with open(tei_file, 'w', encoding='utf-8') as f:
         f.write(header[:body_start] + '\n')
         f.write(body_xml)
         f.write(header[body_start+1:].lstrip().rstrip() + '\n')
 
     util.output.reindent_xml(tei_file)
-    # retrieve copyright information
-    print("Downloading CC unported 3.0 license")
-    with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:
-        req = req = urllib.request.Request(
+    if not os.path.exists(os.path.join(base_dir, 'COPYING')):
+        # retrieve copyright information
+        print("Downloading CC unported 3.0 license")
+        with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:
+            req = req = urllib.request.Request(
                 'https://creativecommons.org/licenses/by-sa/3.0/legalcode',
                 data=None,
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0'
                 })
-        with urllib.request.urlopen(req) as u:
-            f.write(u.read())
+            with urllib.request.urlopen(req) as u:
+                f.write(u.read())
 
-    # copy README
-    util.output.copy_readme(input_file, base_dir)
     # write Makefile
     util.output.mk_makefile(base_dir, ['epo-eng.tei', 'epo-eng.patch'])
 
@@ -264,7 +263,8 @@ def check_args():
         print('\n    '.join(textwrap.wrap(("TEI SKELETON has to be a FreeDict TEI file, with an empty "
                 "body tag. The opening and closing body tags have to be on "
                 "separate lines.\n"
-                "The output must not exist."), 78)))
+                "The output directory may exist and files will be overwritten, "
+                "as necessary."), 78)))
         sys.exit(1)
 
     if not os.environ['FREEDICT_TOOLS']:
@@ -277,9 +277,6 @@ def check_args():
         if not os.path.exists(file):
             print('Sorry, but the file "%s" does not exist.' % file)
             sys.exit(2)
-    if os.path.exists(sys.argv[3]):
-        print("The output directory may not exist.")
-        sys.exit(3)
     dictdir = os.path.basename(os.path.abspath(sys.argv[3]))
     if not len(dictdir) == 7 or '-' not in dictdir:
         print("The output directory has to be named with the usual FreeDict naming scheme. Otherwise, the Make rules will fail.")

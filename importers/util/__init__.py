@@ -3,3 +3,4 @@ actual magic should *always* happen in tokenizer.py. Tests.py is a stand-alone
 test suite and does, really, tests."""
 
 from . import output, tokenizer
+from . import output, output
