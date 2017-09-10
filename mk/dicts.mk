@@ -55,7 +55,7 @@ build: #! same as all, build all available output formats
 # ToDo: replace through generated rule
 dirs: #! creates all directories for releasing files
 	@if [ ! -d "$(BUILD_DIR)/dictd" ]; then \
-		mkdir "$(BUILD_DIR)/dictd"; fi
+		mkdir -p "$(BUILD_DIR)/dictd"; fi
 
 
 # this is a "double colon rule"
