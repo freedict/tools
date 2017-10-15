@@ -12,7 +12,7 @@ import os
 import sys
 import time
 
-from apigen import dictionary, metadata, releases, xmlhandlers
+from apigen import dictionary, jsonhandlers, metadata, releases, xmlhandlers
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
 from config import get_path
@@ -107,10 +107,14 @@ def main(args):
         dictionaries = sorted((d for d in dictionaries if d.get_downloads() != []),
             key=lambda entry: entry.get_name())
         api_path = config.get_path(conf['DEFAULT'], key='api_output_path')
-        if not api_path == 'freedict-database.xml' and not os.path.exists(os.path.dirname(api_path)):
+        xml_path = os.path.join(api_path, 'freedict-database.xml')
+        json_path = os.path.join(api_path, 'freedict-database.json')
+        if not os.path.exists(api_path):
             os.makedirs(os.path.dirname(api_path))
-        print("Writing API file to",api_path)
-        xmlhandlers.write_freedict_database(api_path, dictionaries)
+        print("Writing XML API file to",xml_path)
+        xmlhandlers.write_freedict_database(xml_path, dictionaries)
+        print("Writing JSON API file to",json_path)
+        jsonhandlers.write_freedict_database(json_path, dictionaries)
 
     # if the files had been mounted with sshfs, it's a good idea to give it some
     # time to synchronize its state, otherwise umounting fails

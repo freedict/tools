@@ -80,7 +80,9 @@ def setup():
     # parse command line options
     parser = argparse.ArgumentParser(description='FreeDict build setup utility')
     parser.add_argument('-a', dest="print_api_path", action='store_true',
-            help="print output path for generated API file, read from local configuration")
+            help=("print output directory where the freedict-database.xml and "
+                "json are stored;  the value is read from the local "
+                "configuration"))
     parser.add_argument('-m', dest="make_available", action='store_true',
             help='make files in generated/ and release/ available; this will use internally either sshfs or rsync, depending on the configuration')
     parser.add_argument('-u', dest='umount', action='store_true',
@@ -107,7 +109,10 @@ def main():
         sys.exit(42)
 
     if args.print_api_path:
-        print(config.get_path(conf['DEFAULT'], key='api_output_path'))
+        # print traditionally the path to the XML API file; configuration stores
+        # a directory
+        print(config.get_path(conf['DEFAULT'],
+            key='api_output_path'))
         sys.exit(0)
     access_method = RsyncFileAccess()
     if conf['DEFAULT']['file_access_via'] == 'sshfs':

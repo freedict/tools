@@ -29,11 +29,11 @@ api:
 api-cleanup: #! runs umount / clean up actions if make api failed and cannot be executed in a subsequent run
 	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
 
-api-path: #! print the output path to the generated API file (read from configuration) (trailing newline is removed)
+api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
 	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -a | tr -d '\n'
 
 api-validation: #! validate the freedict-database.xml against its RNG schema
-	xmllint --noout --relaxng freedict-database.rng $(shell $(MAKE) api-path)
+	xmllint --noout --relaxng freedict-database.rng $(shell $(MAKE) api-path)/freedict-database.xml
 
 
 

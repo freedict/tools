@@ -1,4 +1,4 @@
-"""This file offers common configuration parsing facilities requires for the
+"""This file offers common configuration parsing facilities required for the
 Freedict build system."""
 
 import configparser
@@ -27,7 +27,7 @@ def load_configuration(conffile):
     config = configparser.ConfigParser()
     config['DEFAULT'] = {
             'file_access_via': 'sshfs', # rsync or sshfs possible
-            'api_output_path': 'freedict-database.xml'}
+            'api_output_path': '.'}
     config['crafted'] = {}
     config['crafted']['local_path'] = ''
     config['generated'] = {}
@@ -51,6 +51,9 @@ def load_configuration(conffile):
         raise ConfigurationError(('section=DEFAULT, file_access_via="%s": '
             'invalid value, possible values are sshfs and rsync') \
                 % config['DEFAULT']['file_access_via'], conffile)
+    api_path = config['DEFAULT']['api_output_path']
+    if api_path and os.path.exists(api_path) and os.path.isfile(api_path):
+        raise ConfigurationError("expected directory, found file", path=api_path)
 
     for section in ('generated', 'crafted', 'release'):
         if not config[section]['local_path']:
