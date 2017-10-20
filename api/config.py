@@ -23,7 +23,7 @@ class ConfigurationError(Exception):
 
 def load_configuration(conffile):
     """Load given `config` from given path. Default values are provided and
-    missing mandatory options will raise an ConfigurationError."""
+    missing mandatory options will raise a ConfigurationError."""
     config = configparser.ConfigParser()
     config['DEFAULT'] = {
             'file_access_via': 'sshfs', # rsync or sshfs possible
@@ -74,7 +74,7 @@ def discover_and_load():
         paths.append(os.path.join(os.environ['LOCALAPPDATA'], 'freedict/freedict.ini'))
     conffile = [path for path in paths if os.path.exists(path)]
     if not conffile:
-        phrase = ('one of the following directories' if len(paths) > 1 else 'in the following directory')
+        phrase = ('one of the following directories' if len(paths) > 1 else 'the following directory')
         raise ConfigurationError(("no configuration found. Please initialize "
             "one in " + phrase + ' ' + ', '.join(paths)))
     return load_configuration(conffile[0])
