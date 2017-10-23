@@ -164,7 +164,7 @@ build-dictd: $(dictname).dict.dz $(dictname).index
 
 $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2: \
 	$(dictname).dict.dz $(dictname).index
-	tar -C .. -cvzf $@ $(addprefix $(notdir $(realpath .))/, $^)
+	tar -C .. -cvjf $@ $(addprefix $(notdir $(realpath .))/, $^)
 
 release-dictd: dirs $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
 
@@ -205,6 +205,7 @@ $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2: $(DISTFILES)
 		mkdir -p $(BUILD_DIR)/src; fi
 	tar -C .. -cvjhf $@ \
 		--exclude=.svn --exclude=freedict-*.tar.bz2 --exclude=freedict-*.zip --exclude=.* \
+		--exclude='*.swp' \
 		$(addprefix $(notdir $(realpath .))/, $(DISTFILES))
 
 $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip: $(DISTFILES)
