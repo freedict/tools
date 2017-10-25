@@ -25,8 +25,11 @@ api:
 # the last line above makes sure that sshfs volumes are umounted, if something
 # goes wrong
 
-# provide a clean up rule, which can be run, if sshfs was not umounted cleanly
-api-cleanup: #! runs umount / clean up actions if make api failed and cannot be executed in a subsequent run
+mount: #! mount or synchronize FreeDict releases / generated dictionaries
+	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -m
+
+# provide a clean up rule which can be run, if sshfs was not umounted cleanly
+umount: #! runs umount / clean up actions if make api failed and cannot be executed in a subsequent run
 	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
 
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
