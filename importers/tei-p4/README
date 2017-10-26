@@ -1,0 +1,4 @@
+This directory contains importer scripts which are not used anymore. These
+convert into the old TEI p4 format. If you feel they could be useful again,
+please update the output bits in those scripts and give them a directory above
+this one.
