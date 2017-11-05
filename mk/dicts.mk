@@ -1,5 +1,6 @@
-# This file contains all targets defined for a dictionary. Each dictionary
-# makefile should include it. It defines targets to convert (build) the TEI
+# This file contains all targets defined for a dictionary, it is sourced by its
+# Makefile.
+# It defines targets to convert (build) the TEI
 # files to the supported output formats. It also features some release targets
 # used for making a release in FreeDict. "install" and "uninstall" targets are
 # provided, too.
@@ -26,7 +27,7 @@ UNSUPPORTED_PLATFORMS = bedic evolutionary
 endif
 
 
-available_platforms := dictd
+available_platforms := src dictd
 
 xsldir ?= $(FREEDICT_TOOLS)/xsl
 xmllint := /usr/bin/xmllint
@@ -47,11 +48,11 @@ DESTDIR ?=
 
 
 all: #! convert the TEI XML source into all supported output formats (see list-platforms)
-all: $(foreach platform,$(available_platforms),build-$(platform) )
+all: build
 
 build: #! same as all, build all available output formats
+build: $(foreach platform,$(available_platforms),build-$(platform) )
 
-#
 # ToDo: replace through generated rule
 dirs: #! creates all directories for releasing files
 	@if [ ! -d "$(BUILD_DIR)/dictd" ]; then \
@@ -105,7 +106,10 @@ query-%: #! query platform support status; 0=dictd supported, 1=dictd unsupporte
 
 
 release: #! build releases for all available platforms
-release: release-src $(foreach platform,$(available_platforms),release-$(platform))
+release: $(foreach platform,$(available_platforms),release-$(platform))
+
+version: #! output current (source) version number
+	@echo $(version)
 
 testresult-$(version).log: $(dictname).index $(dictname).dict
 	$(FREEDICT_TOOLS)/testing/test-database.pl -f $(dictname) -l $(DICTD_LOCALE) |tee $@ \
@@ -212,40 +216,9 @@ $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip: $(DISTFILES)
 	cd .. && zip -r9 $(subst ../,,$@) $(addprefix $(dictname)/, $(DISTFILES)) \
       -x \*/.svn/\* $(dictname)/freedict-*.tar.bz2 $(dictname)/freedict-*.zip $(dictname)/.* 
 
-release-src:
-release-src: $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2 $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
-
-# the following two targets work like "dist", but include the .tei file
-# unconditionally
-$(BUILD_DIR)/tei/$(dictname)-$(version)-tei.tar.bz2: $(DISTFILES) $(dictname).tei
-	@if [ ! -d $(BUILD_DIR)/tei ]; then \
-		mkdir -p $(BUILD_DIR)/tei; fi
-	if (echo "$(DISTFILES)" | grep "$(dictname).tei " > /dev/null); then \
-		tar -C .. -cvjhf $@ \
-			--exclude=.svn --exclude=freedict-*.tar.bz2 --exclude=.* \
-			$(addprefix $(notdir $(realpath .))/, $(DISTFILES)); \
-	else \
-		tar -C .. -cvjhf $@ \
-			--exclude=.svn --exclude=freedict-*.tar.bz2 --exclude=.* \
-			$(addprefix $(notdir $(realpath .))/, $(DISTFILES) $(dictname).tei); \
-	fi
-
-release-tei-tbz2: $(BUILD_DIR)/tei/$(dictname)-$(version)-tei.tar.bz2
-
-#############################
-#### targets for rpm packages
-#############################
-
-release-rpm: freedict-$(dictname).spec dist
-	@if [ ! -d $(BUILD_DIR)/rpm ]; then \
-		ln -s /usr/src/packages/RPMS/noarch \
-		$(BUILD_DIR)/rpm; fi
-	@if [! -x /usr/src/packages/SOURCES/freedict-$(dictname)-$(version).src.tar.bz2 ]; then \
-		ln -s $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2 \
-			/usr/src/packages/SOURCES; fi
-	rpmbuild --target=noarch -ba freedict-$(dictname).spec
-
-release-rpm-reverse:
+# empty rule to fit into build system (build-<PLATFORM>)
+build-src: $(dictname).tei
+release-src: build-src $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2 $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
 
 
 ############################################
