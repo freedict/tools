@@ -6,7 +6,7 @@ FREEDICT_TOOLS ?= .
 include $(FREEDICT_TOOLS)/mk/config.mk
 
 VERSION = 0.4
-PREFIX ?= usr/local
+PREFIX ?= usr
 DESTDIR ?= 
 INSTALLDIR ?= $(abspath $(DESTDIR)/$(PREFIX)/share/freedict)
 

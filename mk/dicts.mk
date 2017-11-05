@@ -38,8 +38,8 @@ version1 := $(shell sed -e '100q;/<edition>/!d;s/.*<edition>\(.*\)<\/edition>.*/
 version := $(subst $(space),,$(version1))
 
 
-PREFIX ?= usr
-DESTDIR ?= /
+PREFIX ?= /usr
+DESTDIR ?= 
 
 ################
 # General targets (default target, maintainance targets)
