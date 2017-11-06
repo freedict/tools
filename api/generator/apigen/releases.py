@@ -48,9 +48,8 @@ def get_all_downloads(root):
     """Get all paths to a downloadable file from a given root.
     This function walks the given path and returns all paths to files with the
     relative to the given root."""
-    # if no directories aavailable which look like a e.g. "Spanish - English"
-    # only consider directories matching e.g. "Spanish - English" or "Scottish Gaelic - ..."
-    dirpattern = re.compile(r'\w+\s*?\w*?\s+-\s+\w+\s*\w*')
+    # only match directories with two iso 639-3 codes, separated by "-"
+    dirpattern = re.compile(r'[a-z]{3}-[a-z]{3}')
     release_directories = tuple(os.path.join(root, e) for e in os.listdir(root)
             if os.path.isdir(os.path.join(root, e)) and dirpattern.search(e) \
                     and not 'tools' in e.lower())
