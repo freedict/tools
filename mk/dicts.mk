@@ -27,7 +27,7 @@ UNSUPPORTED_PLATFORMS = bedic evolutionary
 endif
 
 
-available_platforms := src dictd
+available_platforms := src dictd slob
 
 xsldir ?= $(FREEDICT_TOOLS)/xsl
 xmllint := /usr/bin/xmllint
@@ -57,6 +57,8 @@ build: $(foreach platform,$(available_platforms),build-$(platform) )
 dirs: #! creates all directories for releasing files
 	@if [ ! -d "$(BUILD_DIR)/dictd" ]; then \
 		mkdir -p "$(BUILD_DIR)/dictd"; fi
+	@if [ ! -d "$(BUILD_DIR)/slob" ]; then \
+		mkdir -p "$(BUILD_DIR)/slob"; fi
 
 
 # this is a "double colon rule"
@@ -74,6 +76,7 @@ clean:: #! clean build files
 	rm -f $(dictname)-reverse.index
 	rm -f valid.stamp
 	rm -f $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
+	rm -f $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).tar.bz2
 	rm -f $(BUILD_DIR)/dict-tgz/$(dictname)-$(version).tar.gz
 	rm -f $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2
 	rm -f $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
@@ -158,6 +161,7 @@ $(dictname)-reverse.c5: $(dictname).tei $(xsldir)/tei2c5-reverse.xsl
 	  $(XSLTPROCESSOR) $(xsldir)/tei2c5-reverse.xsl $< \$$current-date=$(date) >$@; fi
 
 build-dictd: $(dictname).dict.dz $(dictname).index
+build-slob: dirs $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
 
 %.dict %.index: %.c5 query-dictd
 	dictfmt --without-time -t --headword-separator %%% $(DICTFMTFLAGS) $* <$<
@@ -170,7 +174,11 @@ $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2: \
 	$(dictname).dict.dz $(dictname).index
 	tar -C .. -cvjf $@ $(addprefix $(notdir $(realpath .))/, $^)
 
+$(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname).tei
+	tei2slob $< -o $@
+
 release-dictd: dirs $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
+release-slob: build-slob
 
 # ToDo: doesn't work
 reverse: $(dictname)-reverse.c5
@@ -419,7 +427,7 @@ endif
 # should be default, but is not for make-historic reasons
 .DELETE_ON_ERROR:
 
-.PHONY: all build-dictd clean dirs dist find-homographs install maintainer \
+.PHONY: all build-dictd build-slob clean dirs dist find-homographs install maintainer \
 	pos-statistics print-unsupported query-% releaase-src release release-dictd
 	release-dictd-reverse release-rpm release-rpm-reverse release-zaurus
 	status test test-reverse tests uninstall validation version
