@@ -190,11 +190,26 @@ release-dictd-reverse: dirs \
 
 date=$(shell date +%G-%m-%d)
 
-
-install: #! install the dictionary
-install: $(dictname).dict.dz $(dictname).index
+install-base: $(dictname).dict.dz $(dictname).index
 	install -d $(DESTDIR)/$(PREFIX)/share/dictd
 	install -m 644 $^ $(DESTDIR)/$(PREFIX)/share/dictd
+
+
+install: #! install the dictionary
+install: install-base
+	@echo -n 'Sucessfully installed the dictionary. Use `sudo dictdconfig -w` and '
+	@if command -v systemctl 2>&1 > /dev/null; then \
+		echo -n '`systemctl restart dictd`'; \
+	elif command -v service 2>&1 > /dev/null; then \
+		echo -n '`service dictd restart`'; \
+	else \
+		echo -n 'restart your dictd server'; \
+	fi
+	@echo ' to make use of the new dictionary.'
+
+install-restart: #! same as install, but also restart the dict daemon
+install-restart: install-base
+	sh $(FREEDICT_TOOLS)/buildhelpers/dict_restart_helper.sh
 
 uninstall: #! uninstall this dictionary
 	-rm $(DESTDIR)/$(PREFIX)/share/dictd/$(dictname).dict.dz $(DESTDIR)/$(DESTDIR)/$(dictname).index
