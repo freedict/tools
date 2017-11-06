@@ -59,6 +59,22 @@ release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
 define install_relative 
 endef
 
+install-deps: #! probe current operating system to install build prerequisites for dictionary development
+	echo -n "Do you want to use rsync or sshfs? Enter one of them or nothing: "; \
+	read ACCESS_METHOD; \
+	if command -v apt-get; then \
+		sudo apt-get install unzip tar xsltproc libxml-libxml-perl python3 $$ACCESS_METHOD; \
+	elif command -v pacman;  then \
+		if [ `uname -o` = 'GNU/Linux' ]; then \
+			sudo pacman -S unzip tar libxslt libxml-perl python $$ACCESS_METHOD; \
+		else \
+			echo "Sorry, but it seems you're not running pacman on GNU/Linux. There's currently no installation rule for this platform."; \
+		fi; \
+	else \
+		echo "Unknown platform. Feel free to report the corresponding packages to us."; \
+	fi
+
+
 # NOTE: the directories below HAVE to be on one line
 DIRS := api api/generator api/file_manager api/generator/apigen mk xquery xsl/inc
 PATHS := $(wildcard api/*.py api/*.md api/generator/*.py api/generator/apigen/*.py \ api/file_manager/*.py \
@@ -79,22 +95,6 @@ install:
 	done
 
 
-# ToDo: should be only re-enabled when providing an up-to-date RPM .spec file
-#release-rpm-freedict-tools: freedict-tools.spec \
-#	$(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
-#	@if [ ! -d /usr/src/rpm/RPMS/noarch ]; then \
-#	  mkdir -p /usr/src/rpm/RPMS/noarch; fi
-#	@if [ ! -d $(BUILD_DIR)/rpm ]; then \
-#	  ln -s /usr/src/rpm/RPMS/noarch \
-#	  $(BUILD_DIR)/rpm; fi
-#	@if [ ! -d /usr/src/rpm/SOURCES ]; then \
-#	  mkdir -p /usr/src/rpm/SOURCES; fi
-#	if [ ! -r /usr/src/rpm/SOURCES/freedict-tools-$(VERSION).tar.bz2 ]; then \
-#	  ln -s $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2 \
-#	    /usr/src/rpm/SOURCES/freedict-tools-$(VERSION).tar.bz2; fi
-#	rpmbuild --target=noarch -ba freedict-tools.spec
-
-.PHONY: release install release-rpm-freedict-tools api all
 
 
 need-update: #! queries for unreleased dictionaries or for those with newer source changes
@@ -103,3 +103,4 @@ need-update: #! queries for unreleased dictionaries or for those with newer sour
 		-o "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u" \
 		|| sleep 1; $(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
 
+.PHONY: release install api all mount umount api-validation
