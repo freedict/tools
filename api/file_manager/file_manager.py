@@ -48,7 +48,7 @@ class RsyncFileAccess:
 
     def make_avalailable(self, user, server, remote_path, path):
         """Synchronize files to have them available locally."""
-        execute("rsync -avrltD -e ssh {}@{}:/{}/ {}".format(
+        execute("rsync --archives --verbose -e ssh {}@{}:/{}/ {}".format(
                 user, server, remote_path, path))
 
     #pylint: disable=unused-argument
