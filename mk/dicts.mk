@@ -175,7 +175,8 @@ $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2: \
 	tar -C .. -cvjf $@ $(addprefix $(notdir $(realpath .))/, $^)
 
 $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname).tei
-	tei2slob $< -o $@
+	# tei2slob adds the version number to the filename by itself
+	tei2slob $< -o $(BUILD_DIR)/slob/freedict-$(dictname).slob
 
 release-dictd: dirs $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
 release-slob: build-slob
