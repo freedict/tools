@@ -76,7 +76,7 @@ clean:: #! clean build files
 	rm -f $(dictname)-reverse.index
 	rm -f valid.stamp
 	rm -f $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
-	rm -f $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).tar.bz2
+	rm -f $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
 	rm -f $(BUILD_DIR)/dict-tgz/$(dictname)-$(version).tar.gz
 	rm -f $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2
 	rm -f $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
@@ -161,7 +161,7 @@ $(dictname)-reverse.c5: $(dictname).tei $(xsldir)/tei2c5-reverse.xsl
 	  $(XSLTPROCESSOR) $(xsldir)/tei2c5-reverse.xsl $< \$$current-date=$(date) >$@; fi
 
 build-dictd: $(dictname).dict.dz $(dictname).index
-build-slob: dirs $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
+build-slob: $(dictname)-$(version).slob
 
 %.dict %.index: %.c5 query-dictd
 	dictfmt --without-time -t --headword-separator %%% $(DICTFMTFLAGS) $* <$<
@@ -169,17 +169,19 @@ build-slob: dirs $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
 %.dict.dz: %.dict
 	dictzip -k $<
 
+$(dictname)-$(version).slob: $(dictname).tei
+	# tei2slob adds the version number to the filename by itself
+	tei2slob $<
 
 $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2: \
 	$(dictname).dict.dz $(dictname).index
 	tar -C .. -cvjf $@ $(addprefix $(notdir $(realpath .))/, $^)
 
-$(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname).tei
-	# tei2slob adds the version number to the filename by itself
-	tei2slob $< -o $(BUILD_DIR)/slob/freedict-$(dictname).slob
+$(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname)-$(version).slob
+	cp $< $@
 
 release-dictd: dirs $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
-release-slob: build-slob
+release-slob: dirs $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
 
 # ToDo: doesn't work
 reverse: $(dictname)-reverse.c5
