@@ -109,21 +109,6 @@ release: $(foreach platform,$(available_platforms),release-$(platform))
 version: #! output current (source) version number
 	@echo $(version)
 
-testresult-$(version).log: $(dictname).index $(dictname).dict
-	$(FREEDICT_TOOLS)/testing/test-database.pl -f $(dictname) -l $(DICTD_LOCALE) |tee $@ \
-	&& exit $${PIPESTATUS[0]}
-
-test: testresult-$(version).log
-
-testresult-$(version)-reverse.log: $(rdictname).index $(rdictname).dict
-	$(FREEDICT_TOOLS)/testing/test-database.pl -f $(rdictname) -l $(DICTD_LOCALE) |tee $@ \
-	&& exit $${PIPESTATUS[0]}
-
-test-reverse: testresult-$(version)-reverse.log
-	
-tests: valid.stamp testresult-$(version).log
-
-
 validation: #! validate dictionary with FreeDict's TEI XML subset
 validation: $(dictname).tei
 	$(XMLLINT) --noout --relaxng freedict-P5.rng $<
