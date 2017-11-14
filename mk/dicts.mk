@@ -162,8 +162,8 @@ $(BUILD_DICTD)/%.dict.dz: $(BUILD_DICTD)/%.dict
 
 $(RELEASE_DIR)/freedict-$(dictname)-$(version).tar.bz2: \
 		$(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
-	tar --transform='s/build.dictd.//'   -C .. -cvjf $@ \
-		$(addprefix $(notdir $(realpath .))/, $^) \
+	tar --dereference --transform='s/build.dictd.//'   -C .. -cvjf $@ \
+		$(addprefix $(notdir $(realpath .))/, $<) \
 		$(addprefix $(notdir $(realpath .))/, $(DIST_FILES_BINARY))
 
 # Please note: for historical reasons, the dictd platform is the only one
@@ -211,7 +211,7 @@ uninstall: #! uninstall this dictionary
 # generated from other sources
 $(RELEASE_DIR)/freedict-$(dictname)-$(version).src.zip: $(RELEASE_DIR) $(DISTFILES)
 	cd .. && zip -r9 $(dictname)/$(subst ../,,$@) $(addprefix $(dictname)/, $(DISTFILES)) \
-      -x \*/.svn/\* $(dictname)/freedict-*.tar.bz2 $(dictname)/freedict-*.zip $(dictname)/.* 
+      -x build -x \*/.git/\* $(dictname)/freedict-*.tar.bz2 $(dictname)/freedict-*.zip $(dictname)/.* 
 
 # empty rule to fit into build system (build-<PLATFORM>)
 build-src: $(dictname).tei
@@ -324,15 +324,18 @@ endif
 
 build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
-$(BUILD_DIR)/$(dictname)-$(version).slob: $(dictname).tei
+$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei $(BUILD_DIR)/slob
 	# tei2slob adds the version number to the filename by itself
-	tei2slob $<
+	tei2slob -w $(BUILD_DIR)/slob -o $@ $<
 
-$(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname)-$(version).slob
-	cp $< $@
+$(RELEASE_DIR)/freedict-$(dictname)-$(version).slob.tar.xz: \
+		$(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR)
+	tar --dereference --transform='s/build.slob.//'   -C .. -cvJf $@ \
+		$(addprefix $(notdir $(realpath .))/, $<) \
+		$(addprefix $(notdir $(realpath .))/, $(DIST_FILES_BINARY))
 
 
-release-slob: $(RELEASE_DIR) $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
+release-slob: $(RELEASE_DIR) $(RELEASE_DIR)/freedict-$(dictname)-$(version).slob.tar.xz
 
 #######################
 #### Makefile-technical
