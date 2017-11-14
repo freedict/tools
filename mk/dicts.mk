@@ -30,7 +30,7 @@ endif
 available_platforms := src dictd slob
 
 xsldir ?= $(FREEDICT_TOOLS)/xsl
-xmllint := /usr/bin/xmllint
+XMLLINT := /usr/bin/xmllint
 
 dictname ?= $(shell basename "$(shell pwd)")
 rdictname := $(shell export V=$(dictname); echo $${V:4:3}-$${V:0:3})
@@ -131,7 +131,7 @@ tests: valid.stamp testresult-$(version).log
 
 validation: #! validate dictionary with FreeDict's TEI XML subset
 validation: $(dictname).tei
-	xmllint --noout --relaxng freedict-P5.rng $<
+	$(XMLLINT) --noout --relaxng freedict-P5.rng $<
 
 
 
@@ -245,98 +245,6 @@ $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip: $(DISTFILES)
 # empty rule to fit into build system (build-<PLATFORM>)
 build-src: $(dictname).tei
 release-src: build-src $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2 $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
-
-
-############################################
-#### targets for (z)bedic on zaurus platform
-############################################
-# For a broader view, read the FreeDict HOWTO. It takes these steps:
-#  1a. apply `sort.xsl'
-#  1b. apply `group-homographs-sorted.xsl'
-#  1c. link to `tei-wrapper.xml'
-#  2a. apply `tei2dic.xsl' to create a bedic format file with newlines
-#  2b. convert to Unicode NFC using charlint.pl
-#  2c. replace double newlines by NUL bytes and replace \\e by \e using perl
-#  3. apply `xerox' that comes with libbedic to generate missing properties
-#  4. apply `dictzip' to compress it
-#  5. optionally execute dic2ipk.sh to create a Zaurus installation package
-
-sorted.tei: $(dictname).tei $(xsldir)/sort.xsl
-	$(XSLTPROCESSOR) $(xsldir)/sort.xsl $< >$@
-
-grouped.tei: sorted.tei $(xsldir)/group-homographs-sorted.xsl
-	$(XSLTPROCESSOR) $(xsldir)/group-homographs-sorted.xsl $< >$@
-
-tei-wrapper.xml: $(xsldir)/tei-wrapper.xml
-	ln -s $(xsldir)/tei-wrapper.xml
-
-# optional
-unwrapped.tei: grouped.tei tei-wrapper.xml
-	xmllint --noent tei-wrapper.xml >unwrapped.tei
-
-bedic-precedence: $(dictname).unxeroxed.dic
-	@if [ -z "$(LA1locale)" ]; \
-	then echo 'Please set LA1locale to the locale of the source language!'; \
-	else echo "The output of this should be incorporated appropriately \
-into \`tei2dic.xsl':"; \
-	$(XEROX) --generate-char-precedence $(LA1locale) $<; fi
-
-$(dictname).escaped.dic: tei-wrapper.xml grouped.tei $(xsldir)/tei2dic.xsl
-	$(XSLTPROCESSOR) $(xsldir)/tei2dic.xsl $< >$@
-
-# Charlint - A Character Normalization Tool
-# http://www.w3.org/International/charlint/
-#
-# You may want to adapt this:
-unicodedata = $(FREEDICT_TOOLS)/UnicodeData.txt
-#unicodedata = /usr/lib/perl5/5.8.1/unicore/UnicodeData.txt
-#unicodedata = /usr/share/perl/5.8.8/unicore/UnicodeData.txt
-#
-$(FREEDICT_TOOLS)/UnicodeData.txt:
-	cd $(FREEDICT_TOOLS) && wget ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
-#
-charlint_url = http://dev.w3.org/cvsweb/~checkout~/charlint/charlint.pl?rev=1.27&content-type=text/plain&only_with_tag=HEAD
-$(FREEDICT_TOOLS)/charlint.pl::
-	@if [ ! -x $@ ]; then \
-	cd $(FREEDICT_TOOLS) && wget -O $@ '$(charlint_url)' && chmod a+x $@; fi
-#
-$(CHARLINT_DATA): $(unicodedata)
-	$(CHARLINT) -f $< -S $@ -d -D
-#
-$(CHARLINT):: $(CHARLINT_DATA)
-
-# generate NFC (Canonical Decomposition followed by Canonical Composition)
-$(dictname).normalized.dic: $(dictname).escaped.dic $(CHARLINT)
-	$(CHARLINT) -s $(CHARLINT_DATA) <$< >$@
-
-$(dictname).unxeroxed.dic: $(dictname).normalized.dic
-	perl -pi -e 's/\\0/\x00/gm; s/\\e/\e/gm;' <$< >$@
-
-# old style:
-#%.unxeroxed.dic: %.tei
-#	tei2dic.py $< $*.unxeroxed.dic
-
-$(BUILD_DIR)/dic/freedict-%-$(version).dic: %.unxeroxed.dic
-	@if [ ! -d $(BUILD_DIR)/dic ]; then \
-		mkdir $(BUILD_DIR)/dic; fi
-	$(XEROX) $*.unxeroxed.dic $@
-
-release-bedic: $(BUILD_DIR)/dic/freedict-$(dictname)-$(version).dic.dz
-
-# optional
-$(BUILD_DIR)/ipk/%.ipk: $(BUILD_DIR)/dic/%.dic.dz
-	@if [ ! -d $(BUILD_DIR)/ipk ]; then \
-		mkdir $(BUILD_DIR)/ipk; fi
-	cd $(BUILD_DIR)/ipk && ln -s `dic2ipk.sh $<` $@
-
-# optional
-release-zaurus: $(BUILD_DIR)/ipk/freedict-$(dictname)-$(version).ipk
-
-clean::
-	rm -f sorted.tei grouped.tei tei-wrapper.xml unwrapped.tei \
-	$(dictname).escaped.dic $(dictname).normalized.dic $(dictname).unxeroxed.dic \
-	$(BUILD_DIR)/dic/freedict-$(dictname)-$(version).dic \
-	$(BUILD_DIR)/dic/freedict-$(dictname)-$(version).dic.dz
 
 ##################################
 #### targets for StarDict platform
