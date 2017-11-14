@@ -65,12 +65,11 @@ CHARLINT_DATA := $(dir $(CHARLINT))charlint-unicodedata
 MBRDICO_PATH = /
 
 BUILDHELPERS_DIR=$(FREEDICT_TOOLS)/buildhelpers/
-# the directory, in which releases are built (usually one directory above the
-# current dictionary
-BUILD_DIR=../build/
+# Directory containing all build files, usually a tree like build/<platform>
+# within the current working directory.
+BUILD_DIR=build
+RELEASE_DIR=$(BUILD_DIR)/release
 
-# to find dictd2dic from stardict-tools in Debian
-PATH := $(PATH):/usr/lib/stardict-tools
 
 # find python
 PYTHON := $(shell command -v python3 2> /dev/null)

@@ -1,4 +1,4 @@
-# This file contains all targets defined for a dictionary, it is sourced by its
+# This file contains all targets defined for a dictionary. It is sourced by its
 # Makefile.
 # It defines targets to convert (build) the TEI
 # files to the supported output formats. It also features some release targets
@@ -38,6 +38,13 @@ version1 := $(shell sed -e '100q;/<edition>/!d;s/.*<edition>\(.*\)<\/edition>.*/
 	   $(wildcard $(dictname).tei*) $(dictname)-nophon.tei)
 version := $(subst $(space),,$(version1))
 
+# these files are included in each of the  platform releases which are *not* a
+# source release.
+DIST_FILES_BINARY = $(foreach f, README README.md README.txt README.rst \
+					COPYING COPYING.txt COPYING.md COPYING.rst LICENSE \
+					LICENSE.txt LICENSE.md LICENSE.rst \
+					INSTALL INSTALL.md INSTALL.rst INSTALL.txt, \
+		$(wildcard $(f))) # only consider these files if they do exist
 
 PREFIX ?= /usr
 DESTDIR ?= 
@@ -53,36 +60,24 @@ all: build
 build: #! same as all, build all available output formats
 build: $(foreach platform,$(available_platforms),build-$(platform) )
 
-# ToDo: replace through generated rule
-dirs: #! creates all directories for releasing files
-	@if [ ! -d "$(BUILD_DIR)/dictd" ]; then \
-		mkdir -p "$(BUILD_DIR)/dictd"; fi
-	@if [ ! -d "$(BUILD_DIR)/slob" ]; then \
-		mkdir -p "$(BUILD_DIR)/slob"; fi
+$(foreach p, $(available_platforms), $(BUILD_DIR)/$(p)):
+	mkdir -p $@
 
+$(RELEASE_DIR):
+	mkdir -p $@
 
-# this is a "double colon rule"
-# adding another "clean::" rule in your Makefile
-# allows to extend this with additional commands
-#
-# for example:
+# This is a "double colon rule", allowing you to extend this rule in your own
+# makefile.
+# For example:
 #
 # clean::
 #	-rm -f delete_this_file.too
 clean:: #! clean build files
-	rm -f $(dictname).index $(dictname).dict
-	rm -f $(dictname).c5 $(dictname).dict.dz testresult-*.log
-	rm -f $(dictname)-reverse.c5 $(dictname)-reverse.dict.dz
-	rm -f $(dictname)-reverse.index
+	rm -rf build
 	rm -f valid.stamp
-	rm -f $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
-	rm -f $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
-	rm -f $(BUILD_DIR)/dict-tgz/$(dictname)-$(version).tar.gz
-	rm -f $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2
-	rm -f $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
-	rm -f $(BUILD_DIR)/tei/$(dictname)-$(version)-tei.tar.bz2
 
 
+find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
 	@cat $< | grep orth | \
 	sed -e s:'          <orth>':'':g -e s:'<\/orth>':'':g | sort -f | \
@@ -136,64 +131,45 @@ validation: $(dictname).tei
 
 
 
-# prints what was used as Part-Of-Speech <pos> element content
-# with a number stating how often it was used
+pos-statistics: #! print statistics about the number of the different part-of-speech tags used
 pos-statistics: $(dictname).tei
-	grep -o "<pos>.*</pos>" $< | perl -pi -e 's/<pos>(.*)<\/pos>/$$1/;' | sort | uniq -c
+	@grep -o "<pos>.*</pos>" $< | perl -p -e 's/<pos>(.*)<\/pos>/$$1/;' | sort | uniq -c |sort -b -g
 
 ######################################################################
-#### targets for c5/dictfmt conversion style into dict database format
+#### Dict(d) format as used by the Dictd server and other programs
 ######################################################################
 
-$(dictname).c5: $(dictname).tei $(xsldir)/tei2c5.xsl \
-	$(xsldir)/inc/teientry2txt.xsl \
-	$(xsldir)/inc/teiheader2txt.xsl \
-	$(xsldir)/inc/indent.xsl
-	if [ "$(firstword $(XSLTPROCESSOR))" == "xsltproc" ]; then \
-	  $(XSLTPROCESSOR) --xinclude --stringparam current-date $(date) $(xsldir)/tei2c5.xsl $< >$@; \
-	  else \
-	  $(XSLTPROCESSOR) $(xsldir)/tei2c5.xsl $< \$$current-date=$(date) >$@; fi
+BUILD_DICTD=$(BUILD_DIR)/dictd
 
-$(dictname)-reverse.c5: $(dictname).tei $(xsldir)/tei2c5-reverse.xsl
-	@if [ "$(firstword $(XSLTPROCESSOR))" == "xsltproc" ]; then \
-	  $(XSLTPROCESSOR) --stringparam current-date $(date) $(xsldir)/tei2c5-reverse.xsl $< >$@; \
-	  else \
-	  $(XSLTPROCESSOR) $(xsldir)/tei2c5-reverse.xsl $< \$$current-date=$(date) >$@; fi
+$(BUILD_DICTD)/$(dictname).c5: $(dictname).tei $(BUILD_DICTD) \
+		$(xsldir)/tei2c5.xsl $(xsldir)/inc/teientry2txt.xsl \
+		$(xsldir)/inc/teiheader2txt.xsl \
+		$(xsldir)/inc/indent.xsl
+	$(XSLTPROCESSOR) $(xsldir)/tei2c5.xsl $< >$@
 
-build-dictd: $(dictname).dict.dz $(dictname).index
-build-slob: $(dictname)-$(version).slob
 
-%.dict %.index: %.c5 query-dictd
-	dictfmt --without-time -t --headword-separator %%% $(DICTFMTFLAGS) $* <$<
+build-dictd: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
 
-%.dict.dz: %.dict
+$(BUILD_DICTD)/%.dict $(BUILD_DICTD)/%.index: $(BUILD_DICTD)/%.c5 query-dictd
+	cd $(BUILD_DICTD) && \
+		dictfmt --without-time -t --headword-separator %%% $(DICTFMTFLAGS) $* < $(notdir $<)
+
+$(BUILD_DICTD)/%.dict.dz: $(BUILD_DICTD)/%.dict
 	dictzip -k $<
 
-$(dictname)-$(version).slob: $(dictname).tei
-	# tei2slob adds the version number to the filename by itself
-	tei2slob $<
+# prevent make from removing our precious file
+.PRECIOUS: $(BUILD_DICTD)/$(dictname).dict
 
-$(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2: \
-	$(dictname).dict.dz $(dictname).index
-	tar -C .. -cvjf $@ $(addprefix $(notdir $(realpath .))/, $^)
+$(RELEASE_DIR)/freedict-$(dictname)-$(version).tar.bz2: \
+		$(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
+	tar --transform='s/build.dictd.//'   -C .. -cvjf $@ \
+		$(addprefix $(notdir $(realpath .))/, $^) \
+		$(addprefix $(notdir $(realpath .))/, $(DIST_FILES_BINARY))
 
-$(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname)-$(version).slob
-	cp $< $@
+# Please note: for historical reasons, the dictd platform is the only one
+# without a suffix in the file name.
+release-dictd: $(RELEASE_DIR) $(RELEASE_DIR)/freedict-$(dictname)-$(version).tar.bz2
 
-release-dictd: dirs $(BUILD_DIR)/dictd/freedict-$(dictname)-$(version).tar.bz2
-release-slob: dirs $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
-
-# ToDo: doesn't work
-reverse: $(dictname)-reverse.c5
-
-
-$(BUILD_DIR)/dictd/freedict-$(dictname)-$(version)-reverse.tar.bz2: \
-	$(dictname)-reverse.dict.dz $(dictname)-reverse.index
-	tar -C .. -cvjf $@ $(addprefix $(notdir $(realpath .))/, $^)
-
-# ToDo: reverse target, description, still working?
-release-dictd-reverse: dirs \
-	$(BUILD_DIR)/dictd/freedict-$(dictname)-$(version)-reverse.tar.bz2
 
 ######################################
 #### targets for evolutionary platform
@@ -226,25 +202,20 @@ uninstall: #! uninstall this dictionary
 	-rm $(DESTDIR)/$(PREFIX)/share/dictd/$(dictname).dict.dz $(DESTDIR)/$(DESTDIR)/$(dictname).index
 	$(DICTD_RESTART_SCRIPT)
 
-#### ToDo: source
+################################################################################
+#### Source 'platform'
+################################################################################
+
 # put all sources of a dictionary module into a tarball for release
 # ("distribution").  this only includes the .tei file if it doesn't have to be
 # generated from other sources
-$(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2: $(DISTFILES)
-	@if [ ! -d $(BUILD_DIR)/src ]; then \
-		mkdir -p $(BUILD_DIR)/src; fi
-	tar -C .. -cvjhf $@ \
-		--exclude=.svn --exclude=freedict-*.tar.bz2 --exclude=freedict-*.zip --exclude=.* \
-		--exclude='*.swp' \
-		$(addprefix $(notdir $(realpath .))/, $(DISTFILES))
-
-$(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip: $(DISTFILES)
-	cd .. && zip -r9 $(subst ../,,$@) $(addprefix $(dictname)/, $(DISTFILES)) \
+$(RELEASE_DIR)/freedict-$(dictname)-$(version).src.zip: $(RELEASE_DIR) $(DISTFILES)
+	cd .. && zip -r9 $(dictname)/$(subst ../,,$@) $(addprefix $(dictname)/, $(DISTFILES)) \
       -x \*/.svn/\* $(dictname)/freedict-*.tar.bz2 $(dictname)/freedict-*.zip $(dictname)/.* 
 
 # empty rule to fit into build system (build-<PLATFORM>)
 build-src: $(dictname).tei
-release-src: build-src $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.tar.bz2 $(BUILD_DIR)/src/freedict-$(dictname)-$(version).src.zip
+release-src: build-src $(RELEASE_DIR)/freedict-$(dictname)-$(version).src.zip
 
 ##################################
 #### targets for StarDict platform
@@ -332,7 +303,8 @@ clean::
 #### Phonetics import
 #######################
 
-supported_phonetics ?= $(shell PATH="$(FREEDICT_TOOLS):$(PATH)" teiaddphonetics -li)
+# ToDo: should be scripted to let eSpeak emit ISO 639-3 codes
+#supported_phonetics ?= $(shell PATH="$(FREEDICT_TOOLS):$(PATH)" teiaddphonetics -li)
 
 la1 := $(shell export V=$(dictname); echo $${V:0:3})
 #la2 := $(shell export V=$(dictname); echo $${V:4:3})
@@ -347,13 +319,28 @@ endif
 
 
 #######################
+#### Slob format for the Aard Android  dictionary client
+#######################
+
+build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
+
+$(BUILD_DIR)/$(dictname)-$(version).slob: $(dictname).tei
+	# tei2slob adds the version number to the filename by itself
+	tei2slob $<
+
+$(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob: $(dictname)-$(version).slob
+	cp $< $@
+
+
+release-slob: $(RELEASE_DIR) $(BUILD_DIR)/slob/freedict-$(dictname)-$(version).slob
+
+#######################
 #### Makefile-technical
 #######################
 
 # should be default, but is not for make-historic reasons
 .DELETE_ON_ERROR:
 
-.PHONY: all build-dictd build-slob clean dirs dist find-homographs install maintainer \
-	pos-statistics print-unsupported query-% releaase-src release release-dictd
-	release-dictd-reverse release-rpm release-rpm-reverse release-zaurus
-	status test test-reverse tests uninstall validation version
+.PHONY: all build-dictd build-slob build-src clean dist find-homographs \
+	install pos-statistics print-unsupported query-% releaase-src release release-dictd \
+	test test-reverse tests uninstall validation version
