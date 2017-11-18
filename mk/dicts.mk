@@ -40,7 +40,7 @@ version := $(subst $(space),,$(version1))
 
 # these files are included in each of the  platform releases which are *not* a
 # source release.
-DIST_FILES_BINARY = $(foreach f, README README.md README.txt README.rst \
+DISTFILES_BINARY = $(foreach f, README README.md README.txt README.rst \
 					COPYING COPYING.txt COPYING.md COPYING.rst LICENSE \
 					LICENSE.txt LICENSE.md LICENSE.rst \
 					INSTALL INSTALL.md INSTALL.rst INSTALL.txt, \
@@ -76,6 +76,11 @@ clean:: #! clean build files
 	rm -rf build
 	rm -f valid.stamp
 
+deploy:
+deploy: #! deploy all platforms of a release to the remote file hosting service
+deploy: $(foreach r, $(available_platforms), release-$(r))
+	@echo unimplemented
+	42
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
@@ -106,6 +111,11 @@ query-%: #! query platform support status; 0=dictd supported, 1=dictd unsupporte
 release: #! build releases for all available platforms
 release: $(foreach platform,$(available_platforms),release-$(platform))
 
+# This function is here to assist the release-% rules. It generates the release
+# path for each platform.
+# Arg1: platform
+release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
+	$(findstring slob,$(1)),slob,$(1).tar.xz)
 version: #! output current (source) version number
 	@echo $(version)
 
@@ -145,15 +155,14 @@ $(BUILD_DICTD)/%.dict.dz: $(BUILD_DICTD)/%.dict
 # prevent make from removing our precious file
 .PRECIOUS: $(BUILD_DICTD)/$(dictname).dict
 
-$(RELEASE_DIR)/freedict-$(dictname)-$(version).tar.bz2: \
-		$(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
-	tar --dereference --transform='s/build.dictd.//'   -C .. -cvjf $@ \
+# build release archive
+$(call release_path,dictd): $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
+	tar --dereference --transform='s/build.dictd.//'   -C .. -cJf $@ \
 		$(addprefix $(notdir $(realpath .))/, $<) \
-		$(addprefix $(notdir $(realpath .))/, $(DIST_FILES_BINARY))
+		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
 
-# Please note: for historical reasons, the dictd platform is the only one
-# without a suffix in the file name.
-release-dictd: $(RELEASE_DIR) $(RELEASE_DIR)/freedict-$(dictname)-$(version).tar.bz2
+release-dictd: $(RELEASE_DIR) $(call release_path,dictd)
+
 
 
 ######################################
@@ -194,13 +203,15 @@ uninstall: #! uninstall this dictionary
 # put all sources of a dictionary module into a tarball for release
 # ("distribution").  this only includes the .tei file if it doesn't have to be
 # generated from other sources
-$(RELEASE_DIR)/freedict-$(dictname)-$(version).src.zip: $(RELEASE_DIR) $(DISTFILES)
-	cd .. && zip -r9 $(dictname)/$(subst ../,,$@) $(addprefix $(dictname)/, $(DISTFILES)) \
-      -x build -x \*/.git/\* $(dictname)/freedict-*.tar.bz2 $(dictname)/freedict-*.zip $(dictname)/.* 
+$(call release_path,src): $(RELEASE_DIR) $(DISTFILES)
+	tar --dereference -C .. -cJf $@ \
+		$(addprefix $(notdir $(realpath .))/, $(DISTFILES))
+
 
 # empty rule to fit into build system (build-<PLATFORM>)
 build-src: $(dictname).tei
-release-src: build-src $(RELEASE_DIR)/freedict-$(dictname)-$(version).src.zip
+
+release-src: build-src $(call release_path,src)
 
 ##################################
 #### targets for StarDict platform
@@ -311,16 +322,13 @@ build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
 $(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei $(BUILD_DIR)/slob
 	# tei2slob adds the version number to the filename by itself
-	tei2slob -w $(BUILD_DIR)/slob -o $@ $<
+	tei2slob -w $(BUILD_DIR)/slob -o $(BUILD_DIR)/slob/$(dictname).slob $<
 
-$(RELEASE_DIR)/freedict-$(dictname)-$(version).slob.tar.xz: \
-		$(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR)
-	tar --dereference --transform='s/build.slob.//'   -C .. -cvJf $@ \
-		$(addprefix $(notdir $(realpath .))/, $<) \
-		$(addprefix $(notdir $(realpath .))/, $(DIST_FILES_BINARY))
+$(call release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
+	cp $< $@
 
 
-release-slob: $(RELEASE_DIR) $(RELEASE_DIR)/freedict-$(dictname)-$(version).slob.tar.xz
+release-slob: $(call release_path,slob)
 
 #######################
 #### Makefile-technical
