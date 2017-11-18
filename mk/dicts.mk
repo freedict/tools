@@ -76,11 +76,29 @@ clean:: #! clean build files
 	rm -rf build
 	rm -f valid.stamp
 
-deploy:
+# Helper rule to retrieve the release path. We cannot declare the value
+# statically, because it is only required for the deploy target and this is only
+# executed by admins. The first argument is "optional".
+deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-path)/$(1)
 deploy: #! deploy all platforms of a release to the remote file hosting service
 deploy: $(foreach r, $(available_platforms), release-$(r))
-	@echo unimplemented
-	42
+	@make -C $(FREEDICT_TOOLS) mount
+	@if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
+		echo "Creating new release directory for first release of $(dictname)"; \
+		mkdir -p $(call deploy_to,$(dictname)); fi
+	@if [ -d $(call deploy_to,$(dictname)/$(version)) ]; then \
+		if [ "${FORCE}" = "y" ]; then \
+			echo "Enforcing deployment…"; \
+		else \
+			echo "Release $(version) has been deployed already. Use \`make FORCE=y deploy\` to enforce the deployment."; \
+			exit 2; fi; \
+	else \
+		mkdir -p $(call deploy_to,$(dictname)/$(version)); fi
+	@chmod a+r $(foreach p,$(available_platforms), $(call release_path,$(p)))
+	@echo "Copying files…"
+	@cp $(foreach p,$(available_platforms), $(call release_path,$(p))) \
+		$(call deploy_to,$(dictname)/$(version))
+	@make -C $(FREEDICT_TOOLS) umount
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei

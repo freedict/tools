@@ -85,6 +85,9 @@ def setup():
                 "configuration"))
     parser.add_argument('-m', dest="make_available", action='store_true',
             help='make files in generated/ and release/ available; this will use internally either sshfs or rsync, depending on the configuration')
+    parser.add_argument('-r', dest="print_release_path", action='store_true',
+            default=False, help=("print output directory to which releases are "
+                "deployed. the value is read from the local configuration"))
     parser.add_argument('-u', dest='umount', action='store_true',
         help='clean up actions for release/ and generated/, e.g. umount of fuse mount points, etc.')
     args = parser.parse_args()
@@ -93,10 +96,10 @@ def setup():
     if args.umount and args.make_available:
         print("Error: you can only specify -u or -m exclusively.")
         sys.exit(44)
-    if not args.umount and not args.make_available and not args.print_api_path:
+    if not any((args.umount, args.make_available, args.print_api_path,
+            args.print_release_path)):
         print("Error: No option specified")
         parser.print_help()
-
     return args
 
 
@@ -109,11 +112,14 @@ def main():
         sys.exit(42)
 
     if args.print_api_path:
-        # print traditionally the path to the XML API file; configuration stores
-        # a directory
         print(config.get_path(conf['DEFAULT'],
             key='api_output_path'))
         sys.exit(0)
+    elif args.print_release_path:
+        print(config.get_path(conf['release'],
+            key='local_path'))
+        sys.exit(0)
+
     access_method = RsyncFileAccess()
     if conf['DEFAULT']['file_access_via'] == 'sshfs':
         access_method = SshfsAccess()
