@@ -52,9 +52,6 @@ endif
 	  --exclude="*/__pycache__/*" \
 	  -cvjf $@ ../tools
 
-release: #! build a release tarball in $$BUILD_DIR, ../build by default
-release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
-
 # install a file using its relative path below $(FREEDICT_TOOLS)
 define install_relative 
 endef
@@ -102,5 +99,11 @@ need-update: #! queries for unreleased dictionaries or for those with newer sour
 		-p "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -m" \
 		-o "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u" \
 		|| sleep 1; $(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
+
+release: #! build a release tarball in $$BUILD_DIR, ../build by default
+release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
+
+release-path: #! print the output directory to which releases are deployed (read from configuration); trailing newline is removed
+	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -r | tr -d '\n'
 
 .PHONY: release install api all mount umount api-validation
