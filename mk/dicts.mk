@@ -23,7 +23,7 @@ endef
 PATH := $(FREEDICT_TOOLS):$(PATH)
 
 ifeq ($(origin UNSUPPORTED_PLATFORMS), undefined)
-UNSUPPORTED_PLATFORMS = bedic evolutionary
+UNSUPPORTED_PLATFORMS = evolutionary
 endif
 
 
