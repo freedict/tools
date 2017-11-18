@@ -68,10 +68,10 @@ def rm_doubled_senses(entry):
     This function returns True if an element has been altered"""
     senses = list(findall(entry, 'sense'))
     if len(senses) == 1:
-        return # ToDo: check for multiple equivalent quotes
+        return
     # obtain a mapping from XML node -> list of words withing `<quote>…</quote>`
-    senses = {sense: tuple(q.text.strip() for q in tei_iter(sense, 'quote'))
-            for sense in senses}
+    senses = {sense: tuple(q.text.strip() for q in tei_iter(sense, 'quote')
+            if q.text) for sense in senses}
     changed = False
     # pair each sense with another and compare their content
     for s1, s2 in itertools.combinations(senses.items(), 2):
@@ -126,7 +126,8 @@ def rm_doubled_quotes(entry):
         # could have been removed already, so check:
         cit1, quote1 = trans1
         cit2, quote2 = trans2
-        if not cit1.findall(quote1.tag) or not cit2.findall(quote2.tag):
+        if not cit1.findall(quote1.tag) or not cit2.findall(quote2.tag) \
+                and cit1 is not cit2:
             continue # one of them has been removed already
         # text of both quotes match, remove second quote
         if quote1.text == quote2.text:
@@ -202,27 +203,29 @@ def main():
     tree = XmlParserWrapper(dictionary_path)
     changed = False
     for entry in tei_iter(tree.root, 'entry'):
-        changed = changed or rm_doubled_senses(entry)
-        changed = changed or rm_doubled_quotes(entry)
+        changed1 = rm_doubled_senses(entry)
+        changed2 = rm_doubled_quotes(entry)
         # the processing above might leave empty parent nodes, remove thsoe
-        changed = changed or rm_empty_nodes(entry)
-        if args.detect_changes and changed:
+        changed3 = rm_empty_nodes(entry)
+        if args.detect_changes and any((changed1, changed2, changed3)):
             print("Problems found, aborting as requested.")
             sys.exit(42)
+        changed = any((changed, changed1, changed2, changed3))
     if changed:
-        output_fn = dictionary_path.replace('.tei', '-dedup.tei')
+        output_fn = os.path.join('build', 'dictd',
+                dictionary_path.replace('.tei', '-dedup.tei'))
         tree.write(output_fn)
         # get a human-readable diff of the changes
         if not shutil.which('less'):
             print("Please install diff to get a diff of the changes that have been made.")
             sys.exit(0)
         c5 = lambda x: shlex.quote(x.replace('.tei', '.c5'))
-        exec('xsltproc $FREEDICT_TOOLS/xsl/tei2c5.xsl %s > %s ' % (output_fn,
+        exec('xsltproc $FREEDICT_TOOLS/xsl/tei2c5.xsl %s > %s' % (output_fn,
             c5(output_fn)))
         # convert original dictionary to c5
-        exec('make')
+        exec('make build-dictd')
         # execute diff without checking the return type
-        os.system('diff -u %s %s' % (c5(dictionary_path), c5(output_fn)))
+        os.system('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
     else:
         print("Nothing changed, no action taken.")
 
