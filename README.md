@@ -50,7 +50,18 @@ Debian/Ubuntu Dependencies
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-    sudo apt-get install make unzip xsltproc libxml-libxml-perl python3
+    sudo apt-get install make unzip xsltproc libxml-libxml-perl python3 python3-icu python-virtualenv git
+
+For creating slob files, you need to install tei2slob:
+
+	virtualenv env-slob -p python3 --system-site-packages  # create self contained python env
+	source env-slob/bin/activate  # activate it
+	pip install git+https://github.com/itkach/slob.git  # install general slob tools
+	pip install git+https://github.com/itkach/tei2slob.git  # install tei2slob converter
+
+Now tei2slob will be in your path. For new shells, you will have to execute
+`source env-slob/bin/activate` again, or put env-slob/bin/tei2slob into your
+PATH.
 
 Teiaddphonetics requires XML::LibXML::Reader, which is not even
 in libxml-libxml-perl in unstable, so you need to do as root:
