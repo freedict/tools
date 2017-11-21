@@ -1,6 +1,0 @@
-*	add epo-eng importer
-*	style sheet:
-	*	recognize colloc tag
-*	restructure make build system to be more modular and to be more
-	self-documenting
-*	add new API generator (AKA generator for freedict.xml)

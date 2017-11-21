@@ -97,11 +97,6 @@ def rm_empty_nodes(entry):
     for _ in range(0, 2):
         nodes = [(None, entry)]
         for parent, node in nodes:
-            # strip manual enumeration, handled by output formatters and might
-            # be wrong after node removal
-            if node.tag.endswith('sense') and node.get('n'):
-                del node.attrib['n']
-                changed = True
             if (node.text is None or node.text.strip() == '') \
                     and len(node.getchildren()) == 0:
                 parent.remove(node)
@@ -222,7 +217,7 @@ def main():
         # the processing above might leave empty parent nodes, remove those
         changed3 = rm_empty_nodes(entry)
         if args.detect_changes and any((changed1, changed2, changed3)):
-            print("Problems found, aborting as requested.")
+            print("Found duplicated entries or empty XML nodes, aborting…")
             sys.exit(42)
         changed = any((changed, changed1, changed2, changed3))
     if changed:
@@ -235,15 +230,13 @@ def main():
         exec('xsltproc $FREEDICT_TOOLS/xsl/tei2c5.xsl %s > %s' % (output_fn,
             c5(output_fn)))
         # convert original dictionary to c5
-        exec('make build-dictd')
+        exec('make --no-print-directory build-dictd')
         # execute diff without checking the return type
         if not shutil.which('less'):
             exec('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
         else:
             os.system('diff -u build/dictd/%s %s | less' % (c5(dictionary_path), c5(output_fn)))
         print("If you like the changes, copy build/tei/*.tei to .")
-    else:
-        print("Nothing changed, no action taken.")
 
 
 if __name__ == '__main__':
