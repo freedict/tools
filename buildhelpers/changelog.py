@@ -161,6 +161,14 @@ def update_date(root, date):
     date_node.attrib['when'] = date
     date_node.text = datetime.datetime.strptime(date, '%Y-%m-%d').strftime('%b %d, %Y')
 
+def update_edition(root, version):
+    try:
+        edition = next(tei_iter(root, 'edition'))
+    except StopIteration:
+        print("Could not find extent tag, possibly malformed file.")
+        sys.exit(3)
+    edition.text = version
+
 def update_extent(root):
     try:
         extent = next(tei_iter(root, 'extent'))
@@ -180,6 +188,8 @@ def update_copyright(root):
         sys.exit(3)
     copyright = re.compile(r'(©|\([cC]\))\s*([0-9]{4})(?:-)([0-9]{4})')
     for tag in availability.iter():
+        if not tag.text:
+            continue
         match = copyright.search(tag.text)
         if not match:
             continue
@@ -217,7 +227,7 @@ def main():
     edition, input_file = parse_args()
     # register TEI name space without prefix to dump the *same* XML file
     ET.register_namespace('', 'http://www.tei-c.org/ns/1.0')
-    # ToDo: username, author, edition
+    # ToDo: username, author
     isodate = datetime.datetime.today().strftime('%Y-%m-%d')
     username = 'humenda'
     tree = XmlParserWrapper(input_file)
@@ -230,6 +240,7 @@ def main():
     update_date(tree.root, isodate)
     update_copyright(tree.root)
     update_extent(tree.root)
+    update_edition(tree.root, edition)
     tree.write(input_file)
 
 main()
