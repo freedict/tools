@@ -119,7 +119,7 @@
        it's visually something distinct in most dictionaries -->
     <xsl:if test="tei:colloc">
       <xsl:text> (</xsl:text>
-      <xsl:value-of select="."/>
+      <xsl:value-of select="tei:colloc"/>
       <xsl:text>)</xsl:text>
     </xsl:if>
 
