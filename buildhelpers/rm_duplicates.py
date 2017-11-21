@@ -45,7 +45,7 @@ class HelpfulParser(argparse.ArgumentParser):
 
     def error(self, message):
         """Print error message and usage information."""
-        sys.stderr.write('Error: ' + message)
+        sys.stderr.write('Error: ' + message + '\n')
         self.print_help()
         sys.exit(2)
 
@@ -226,20 +226,22 @@ def main():
             sys.exit(42)
         changed = any((changed, changed1, changed2, changed3))
     if changed:
-        output_fn = os.path.join('build', 'dictd',
+        output_fn = os.path.join('build', 'tei',
                 dictionary_path.replace('.tei', '-dedup.tei'))
+        exec('mkdir -p build/tei')
         tree.write(output_fn)
         # get a human-readable diff of the changes
-        if not shutil.which('less'):
-            print("Please install diff to get a diff of the changes that have been made.")
-            sys.exit(0)
         c5 = lambda x: shlex.quote(x.replace('.tei', '.c5'))
         exec('xsltproc $FREEDICT_TOOLS/xsl/tei2c5.xsl %s > %s' % (output_fn,
             c5(output_fn)))
         # convert original dictionary to c5
         exec('make build-dictd')
         # execute diff without checking the return type
-        os.system('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
+        if not shutil.which('less'):
+            exec('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
+        else:
+            os.system('diff -u build/dictd/%s %s | less' % (c5(dictionary_path), c5(output_fn)))
+        print("If you like the changes, copy build/tei/*.tei to .")
     else:
         print("Nothing changed, no action taken.")
 
