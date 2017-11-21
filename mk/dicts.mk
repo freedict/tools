@@ -130,6 +130,13 @@ list-platforms: #! list all available platforms, AKA output formats
 print-unsupported: #! print unsupported platforms
 	@echo -n $(UNSUPPORTED_PLATFORMS)
 
+
+
+pos-statistics: #! print statistics about the number of the different part-of-speech tags used
+pos-statistics: $(dictname).tei
+	@grep -o "<pos>.*</pos>" $< | perl -p -e 's/<pos>(.*)<\/pos>/$$1/;' | sort | uniq -c |sort -b -g
+
+
 # Query platform support status
 # This yields an exit status of
 # 0 for dict supported on this platform
@@ -155,16 +162,28 @@ release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
 version: #! output current (source) version number
 	@echo $(version)
 
+################################################################################
+#### Quality Assurance Helpers
+################################################################################
+
+# This is a makefile-internal rule. It detects problems (duplicated entries or
+# empty nodes) within TEI files and prints a warning, if appropriate. It is
+# designed to *not* fail to allow a arelease with known problems or false
+# positives.
+duplicate:
+duplicate: $(dictname).tei
+	@$(PYTHON) $(BUILDHELPERS_DIR)/rm_duplicates.py -s $< || true
+
+qa: #! execute quality assurance helpers, for instance schema validation or detection of duplicated translations
+qa: duplicate validation
+
+rm_duplicates: #! remove duplicated entries and empty XML nodes and present a diff of the changes
+rm_duplicates: $(dictname).tei
+	@$(PYTHON) $(BUILDHELPERS_DIR)/rm_duplicates.py $<
+
 validation: #! validate dictionary with FreeDict's TEI XML subset
 validation: $(dictname).tei
 	$(XMLLINT) --noout --relaxng freedict-P5.rng $<
-
-
-
-
-pos-statistics: #! print statistics about the number of the different part-of-speech tags used
-pos-statistics: $(dictname).tei
-	@grep -o "<pos>.*</pos>" $< | perl -p -e 's/<pos>(.*)<\/pos>/$$1/;' | sort | uniq -c |sort -b -g
 
 ######################################################################
 #### Dict(d) format as used by the Dictd server and other programs
