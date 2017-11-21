@@ -193,49 +193,43 @@ def update_copyright(root):
         return # only update first copyright stanza, hopefully most current one
 
 def parse_args():
-    """Custom argument parser, parsing command lines like './foo E=bar baz`
-    (optional values are key-value pairs)."""
-    def usage(msg):
-        print(msg)
-        print("Usage: %s [E=<EDITION>] <FILE>" % sys.argv[0])
+    def usage(msg=None):
+        if msg:
+            print(msg)
+        print("Usage: make E=<EDITION>")
+        print("   or: %s <EDITION> <INPUT_FILE>" % \
+                os.path.basename(sys.argv[0]))
         print("\nThis script assists in changing a TEI header for release. It does the following:")
         print("- update the edition")
         print("- updates the release date")
         print("- adds a new changelog entry")
         print("- update the year in the availability / copyright section, if appropriate")
-        print("\nExample: %s E=1.5.2 lat-deu.tei" % sys.argv[0])
+        print("\nExample: make E=1.5.2 lat-deu.tei")
         sys.exit(0)
-    if len(sys.argv) < 2 or (sys.argv[1] in ('-h', '--help')):
-        usage("Error, at least two arguments expected.")
-    optional = dict(a.split('=') for a in sys.argv[1:] if '=' in a)
-    mandatory = list(a for a in sys.argv[1:] if '=' not in a)
-
-    known_keys = ['E']
-    invalid = tuple(k for k in optional if k not in known_keys)
-    if invalid:
-        usage("Illegal arguments: %s" % repr(invalid))
-    if len(mandatory) != 1:
-        usage("Error, exactly one input file required.")
-    return (optional, mandatory)
-
+    if len(sys.argv) == 2 and sys.argv[1] in ('-h', '--help'):
+        usage()
+    elif len(sys.argv) != 3:
+        usage("The arguments edition and input file are mandatory.")
+    else:
+        return sys.argv[1:3]
 
 def main():
+    edition, input_file = parse_args()
     # register TEI name space without prefix to dump the *same* XML file
     ET.register_namespace('', 'http://www.tei-c.org/ns/1.0')
-    # ToDo: date, username, author, edition
-    opts, mandatory = parse_args()
+    # ToDo: username, author, edition
     isodate = datetime.datetime.today().strftime('%Y-%m-%d')
     username = 'humenda'
-    tree = XmlParserWrapper(mandatory[0])
+    tree = XmlParserWrapper(input_file)
     try:
         revision_desc = next(tei_iter(tree.root, 'revisionDesc'))
     except StopIteration:
         print("Error, could not find revisionDesc.")
         sys.exit(20)
-    add_changelog_entry(revision_desc, opts['E'], isodate, username)
+    add_changelog_entry(revision_desc, edition, isodate, username)
     update_date(tree.root, isodate)
     update_copyright(tree.root)
     update_extent(tree.root)
-    tree.write(mandatory[0])
+    tree.write(input_file)
 
 main()

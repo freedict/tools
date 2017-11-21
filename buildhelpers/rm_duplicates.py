@@ -54,7 +54,7 @@ class CommentedTreeBuilder(ET.TreeBuilder):
     """A TreeBuilder subclass that retains XML comments from the source. It can
     be treated as a black box saving the contents before and after the root tag,
     so that it can be re-added when writing back a XML ElementTree to disk. This
-    is necessary because of lxml/ElementTree's inability to handle declarations
+    is necessary because of ElementTree's inability to handle declarations
     nicely."""
     def comment(self, data):
         self.start(ET.Comment, {})

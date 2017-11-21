@@ -66,6 +66,13 @@ $(foreach p, $(available_platforms), $(BUILD_DIR)/$(p)):
 $(RELEASE_DIR):
 	mkdir -p $@
 
+changelog-help:
+	@$(PYTHON) $(FREEDICT_TOOLS)/buildhelpers/changelog.py -h
+
+changelog:  #! launch a script to assist in updating a TEI header for next release, try changelog-help for usage help
+changelog: $(dictname).tei
+	@$(PYTHON) $(FREEDICT_TOOLS)/buildhelpers/changelog.py ${E} $<
+
 # This is a "double colon rule", allowing you to extend this rule in your own
 # makefile.
 # For example:
