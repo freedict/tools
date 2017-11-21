@@ -82,7 +82,14 @@ clean:: #! clean build files
 deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-path)/$(1)
 deploy: #! deploy all platforms of a release to the remote file hosting service
 deploy: $(foreach r, $(available_platforms), release-$(r))
-	@make -C $(FREEDICT_TOOLS) mount
+	@if command -v mountpoint &> /dev/null; then \
+		if mountpoint -q "$(deploy_to)"; then \
+			echo "Remote file system mounted, skipping this step."; \
+		else \
+			$(MAKE) -C $(FREEDICT_TOOLS) mount; \
+		fi; \
+	else  \
+		$(MAKE) -C $(FREEDICT_TOOLS) mount; fi
 	@if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
 		echo "Creating new release directory for first release of $(dictname)"; \
 		mkdir -p $(call deploy_to,$(dictname)); fi
@@ -96,9 +103,9 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 		mkdir -p $(call deploy_to,$(dictname)/$(version)); fi
 	@chmod a+r $(foreach p,$(available_platforms), $(call release_path,$(p)))
 	@echo "Copying files…"
-	@cp $(foreach p,$(available_platforms), $(call release_path,$(p))) \
+	cp $(foreach p,$(available_platforms), $(call release_path,$(p))) \
 		$(call deploy_to,$(dictname)/$(version))
-	@make -C $(FREEDICT_TOOLS) umount
+	@$(MAKE) -C $(FREEDICT_TOOLS) umount
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei

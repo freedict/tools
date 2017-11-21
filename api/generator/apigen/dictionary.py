@@ -129,14 +129,21 @@ class Dictionary:
         attributes = self.__mandatory.copy()
         attributes.update(self.__optional)
         return attributes
+
+
+# only match x.x, x.x.x, x-y-z, x-z
+VERSION = r'(\d+(?:-|\.)\d+(?:-|\.)?\d*)'
+DICTIONARY = '([a-z]{3}-[a-z]{3})'
+
 class DownloadFormat(enum.Enum):
-    # match a version - should not be publicly visible
-    # only match x.x, x.x.x, x-y-z, x-z
-    __VERSION = r'(\d+(?:-|\.)\d+(?:-|\.)?\d*)'
-    __DICTIONARY = '([a-z]{3}-[a-z]{3})'
-    Source = re.compile(r"freedict-%s-%s.src.(?:zip|tar.bz2|tar.gz)" % (__DICTIONARY, __VERSION))
-    DictTgz = re.compile(r"freedict-%s-%s.tar.gz" % (__DICTIONARY, __VERSION))
-    DictBz2 = re.compile(r"freedict-%s-%s.tar.bz2" % (__DICTIONARY, __VERSION))
+    """The download format, consisting both of the platform and the archive
+    format. Some formats might not have a archive format, though."""
+    Source = re.compile(r"freedict-%s-%s.src.(?:zip|tar.bz2|tar.gz|tar.xz)" % (DICTIONARY, VERSION))
+    # dict.tgz / bz2 are legacy
+    DictTgz = re.compile(r"freedict-%s-%s.tar.gz" % (DICTIONARY, VERSION))
+    DictBz2 = re.compile(r"freedict-%s-%s.tar.bz2" % (DICTIONARY, VERSION))
+    DictTxz = re.compile(r"freedict-%s-%s.dictd.tar.xz" % (DICTIONARY, VERSION))
+    Slob = re.compile(r"freedict-%s-%s.slob" % (DICTIONARY, VERSION))
 
     @staticmethod
     def get_type(file_name):
@@ -145,13 +152,10 @@ class DownloadFormat(enum.Enum):
         file_name. The file name is parsed and the corresponding enum value
         returned. If the format could not be extracted, None is returned."""
         format = DownloadFormat.Source
-        if not DownloadFormat.Source.value.search(file_name):
-            format = DownloadFormat.DictTgz
-            if not DownloadFormat.DictTgz.value.search(file_name):
-                format = DownloadFormat.DictBz2
-                if not DownloadFormat.DictBz2.value.search(file_name):
-                    return None
-        return format
+        for format in DownloadFormat:
+            if format.value.search(file_name):
+                return format
+        return None
 
     def __str__(self):
         """Return a string representation of the enum value, as used in the type
@@ -162,13 +166,17 @@ class DownloadFormat(enum.Enum):
             return 'dict-tgz'
         elif self is DownloadFormat.DictBz2:
             return 'dict-bz2'
+        elif self is DownloadFormat.DictTxz:
+            return 'dictd'
+        elif self is DownloadFormat.Slob:
+            return 'slob'
         else:
             raise ValueError("Unsupported format: " + self.name)
 
 
 class Link:
     """Represent a (download) link.
-    
+
     The link is made of of multiple parts. The hostname and base URI is taken
     from variables defined in the module config.
     The given path is assumed to exist on disk, so that the file can be
