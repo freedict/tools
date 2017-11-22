@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""This script downloads all (already approved) dictionary from the WikDic
+"""This script downloads all (already approved) dictionary from the WikDict
 project to be included in FreeDict's repository."""
 
 #pylint: disable=multiple-imports
@@ -7,6 +7,8 @@ import html.parser
 import os
 import sys
 import urllib.request, urllib.parse
+import shutil
+from datetime import date
 
 SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/basic/'
 
@@ -57,6 +59,28 @@ def assert_correct_working_directory():
         sys.exit(9)
 
 
+def make_changelog(path):
+    tmpl_vars = {
+            'date': date.today(),
+            'dict': path,
+    }
+    with open(os.path.join(path, 'ChangeLog'), 'w') as f:
+        f.write("""
+{date}
+
+  * automatic import of {dict} dictionary from WikDict
+        """.strip().format(**tmpl_vars) + '\n')
+
+
+def replace_dict_dir(path):
+    dir_template = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            'template'
+    )
+    shutil.rmtree(path, ignore_errors=True)
+    shutil.copytree(dir_template, path, symlinks=True)
+
+
 def main():
     assert_correct_working_directory()
     prefix = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
@@ -73,10 +97,9 @@ def main():
         base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
         if base_name in white_list:
             print('Importing',base_name)
-            # check that target directory exists
-            if not os.path.exists(base_name):
-                raise OSError("Couldn't find directory for '%s', needs to be created first." % base_name)
+            replace_dict_dir(base_name)
             download_to(link, os.path.join(base_name, base_name + '.tei'))
+            make_changelog(base_name)
         else: print("Ignoring",base_name)
     os.system('git status')
 
