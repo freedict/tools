@@ -121,8 +121,12 @@ def main():
         base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
         if base_name in white_list:
             print('Importing',base_name)
+<<<<<<< HEAD
             os.makedirs(base_name, exist_ok=True)
             update_dict_files(base_name, sys.argv[1])
+=======
+            replace_dict_dir(base_name)
+>>>>>>> aec9389... import_wikdict: create dictonary folders from template
             download_to(link, os.path.join(base_name, base_name + '.tei'))
             make_changelog(base_name)
         else: print("Ignoring",base_name)
