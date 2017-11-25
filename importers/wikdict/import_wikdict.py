@@ -10,9 +10,12 @@ import urllib.request, urllib.parse
 import shutil
 from datetime import date
 
-SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/basic/'
+SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/recommended/'
 
-white_list = ['fra-deu', 'deu-fra', 'dan-deu', 'deu-dan', 'deu-swe', 'swe-deu']
+white_list = [
+    'fra-deu', 'deu-fra', 'dan-deu', 'deu-dan', 'deu-swe', 'swe-deu',
+    'eng-fin', 'pol-eng', 'deu-spa', 'fin-eng', 'fra-spa', 'pol-spa',
+]
 
 
 class LinkExtractor(html.parser.HTMLParser):
