@@ -69,7 +69,7 @@ def rm_doubled_senses(entry):
     senses = list(findall(entry, 'sense'))
     if len(senses) == 1:
         return
-    # obtain a mapping from XML node -> list of words withing `<quote>…</quote>`
+    # obtain a mapping from XML node -> list of words within `<quote>…</quote>`
     senses = {sense: tuple(q.text.strip() for q in tei_iter(sense, 'quote')
             if q.text) for sense in senses}
     changed = False
@@ -205,7 +205,7 @@ def main():
     for entry in tei_iter(tree.root, 'entry'):
         changed1 = rm_doubled_senses(entry)
         changed2 = rm_doubled_quotes(entry)
-        # the processing above might leave empty parent nodes, remove thsoe
+        # the processing above might leave empty parent nodes, remove those
         changed3 = rm_empty_nodes(entry)
         if args.detect_changes and any((changed1, changed2, changed3)):
             print("Problems found, aborting as requested.")

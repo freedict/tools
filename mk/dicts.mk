@@ -50,7 +50,7 @@ PREFIX ?= /usr
 DESTDIR ?= 
 
 ################
-# General targets (default target, maintainance targets)
+# General targets (default target, maintenance targets)
 ################
 
 

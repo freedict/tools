@@ -38,7 +38,7 @@ def execute(cmd, raise_on_error=False):
             sys.exit(ret)
 
 class RsyncFileAccess:
-    """This class is one of two classes to allow acces to remote files using
+    """This class is one of two classes to allow access to remote files using
     rsync. The drawback with rsync is that before the usage by other scripts,
     all files have to be downloaded. On the other hand, this might speed up
     subsequent runs and allows offline work. On Windows, it might be desirable

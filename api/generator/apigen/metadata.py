@@ -55,7 +55,7 @@ class MetaDataParser(xmlhandlers.TeiHeadParser):
         try:
             super().parse()
         except ET.ParseError as e:
-            print(("Warning: while parsing {} an error occured. Might be still "
+            print(("Warning: while parsing {} an error occurred. Might be still "
                     "ok though.{}").format(self.dictionary.get_name(),
                         '; '.join(e.args)))
 

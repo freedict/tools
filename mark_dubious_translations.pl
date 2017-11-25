@@ -20,7 +20,7 @@ tags, and tries to query http://en.wiktionary.org online dictionary for articles
 titled as value found between <quote></quote>. If article is found and has a
 section <language name> inside, then this translation is considered to be ok.
 Otherwise translation is considered to be dubious and marked with a <mark> sign
-at the beginning ot the line.
+at the beginning to the line.
 
 Then you can use `diff -u10` and deal with dubious translation only.
 
@@ -116,7 +116,7 @@ print $out $buf;
 
 
 # If you do not know perl well consider this function a magic, that moves $error_mark
-# from the middle of the line to the beggining
+# from the middle of the line to the beginning
 sub my_print
 {
   my $str = shift;

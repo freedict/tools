@@ -36,7 +36,7 @@ start_time = time.asctime()
 #
 rex_hdwd = re.compile('^\w.*$') #Headword  starts with anything not a white space
 rex_descpt = re.compile('^\s\s+.*$') #Description starts with more than one white space
-## TODO add matches for parts of speech pronounciation etc. here hmm more command line options ...
+## TODO add matches for parts of speech pronunciation etc. here hmm more command line options ...
 
 ## TODO add matches for file names here (to autogen out names)
 

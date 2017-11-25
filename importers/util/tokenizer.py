@@ -65,7 +65,7 @@ will be tokenized as
     [(Word, 'a'), (Comma, None), (Word, 'b'), (Paren, 'c,;d')]
 
 The prefix ChunkType has been omitted for readibility reasons.
-This precendence rule also means that nested structures are *not* recognized,
+This precedence rule also means that nested structures are *not* recognized,
 the outer wins. This won't work:
 
     ([(blah)])
@@ -98,7 +98,7 @@ will result in
                 tmp_storage.append(ch)
 
         else: # ChunkType.Word
-            # separate a enclosed expression if preceeded by whitespace /
+            # separate a enclosed expression if preceded by whitespace /
             # beginning of string; handle slash separately
             if is_new_word() and (ch in FRAMING or (parse_slash and \
                     ch == '/' and not space_before_slash(source, idx))):

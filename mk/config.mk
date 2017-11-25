@@ -77,7 +77,7 @@ ifndef PYTHON
 	PYTHON := python
 endif
 
-# script to restart the dictd deamon, if installed
+# script to restart the dictd daemon, if installed
 DICTD_RESTART_SCRIPT = $(BUILDHELPERS_DIR)dict_restart_helper.sh
 
 # Define the help system, use #! after the colon of a rule to add a

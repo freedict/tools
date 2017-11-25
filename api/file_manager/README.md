@@ -11,7 +11,7 @@ Dependencies
 ------------
 
 This script required python > 3.4. Depending on the configure file access
-method, either rsync or sshfs is required, too. It is adviced to install and
+method, either rsync or sshfs is required, too. It is advised to install and
 configure sshfs, if a decent internet connection is available. If you run Debian
 or Ubuntu, execute:
 

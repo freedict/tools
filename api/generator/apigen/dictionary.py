@@ -57,7 +57,7 @@ class Dictionary:
 
     def get_name(self):
         """Return name of dictionary. This is a three-letter-code followed by a
-        hypen and followed by a three-letter-code.
+        hyphen and followed by a three-letter-code.
         Example: deu-fra"""
         return self.__name
 
