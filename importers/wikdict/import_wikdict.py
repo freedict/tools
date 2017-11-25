@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+#vim: set expandtab sts=4 ts=4 sw=4 autoindent ft=python:
 """This script downloads all (already approved) dictionary from the WikDict
 project to be included in FreeDict's repository."""
 
 #pylint: disable=multiple-imports
 import html.parser
 import os
+import re
 import sys
 import urllib.request, urllib.parse
 import shutil
@@ -19,7 +21,8 @@ white_list = [
 
 
 class LinkExtractor(html.parser.HTMLParser):
-    """Link extractor class."""
+    """Extract all URL's from a HTML file. Use extract_links for a more
+    easy-to-use function."""
     def __init__(self):
         self.links = []
         super().__init__()
@@ -40,7 +43,7 @@ def extract_links(from_string):
 
 
 def download_to(link, target):
-    """Download a link to a specified target."""
+    """Download a link to a specified (file system) target."""
     try:
         with urllib.request.urlopen(link) as u:
             open(target, 'wb').write(u.read())
@@ -54,10 +57,9 @@ def download_to(link, target):
 
 def assert_correct_working_directory():
     """Check, that this script is execute from the correct directory."""
-    import re
-    files = filter(bool, [re.search('^[a-z]{3}-[a-z]{3}$', fn) for fn in
-        os.listdir('.')])
-    if len(tuple(files)) < 4: # well, possibly smaller, but add some fuzzyness
+    files = sum(1 for fn in os.listdir('.')
+            if re.search('^[a-z]{3}-[a-z]{3}$', fn))
+    if len(files) < 4: # less than four dictionaries, probably not a dictionary place
         print("Error: must be run from the FreeDict source root.")
         sys.exit(9)
 
@@ -106,5 +108,5 @@ def main():
         else: print("Ignoring",base_name)
     os.system('git status')
 
-main()
-#vim: set expandtab sts=4 ts=4 sw=4 autoindent ft=xml:
+if __name__ == '__main__':
+    main()
