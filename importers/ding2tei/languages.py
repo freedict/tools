@@ -1,8 +1,10 @@
 """This module contains the language-specific pre- and postprocessors."""
 
-# forgive me, ubt I actually really need all of them
-from dictstructure import AbstractParser, ChunkType, Form, GramGrp, \
-        ParserError, Sense, Translation, Unprocessed, Usage
+import re
+
+# forgive me, but I actually really need all of them
+from dictstructure import AbstractParser, ChunkType, Definition, Form, \
+        GramGrp, ParserError, Sense, Translation, Unprocessed, Usage
 
 class DeuEngParser(AbstractParser):
     GENDER = ['n', 'm', 'f'] # ontology?
@@ -12,6 +14,11 @@ class DeuEngParser(AbstractParser):
             'n': 'n', 'num': 'num', 'prp': 'prep', 'prep': 'prep',
             'prn': 'pron', 'ppron': 'pron', 'pron': 'pron',
             'v': 'v', 'vi': 'vi', 'vr': 'vr', 'vt': 'vt', 'vti': 'vti'}
+    CASE_RGX = re.compile(r"""([A-Z|a-z]\??)? # optional collocate with optional question mark
+        \+\s*(Gen|Dat|Akk)\.? # grammatical case
+            /?\s*(.*)$ # optional preposition/collocate
+        """, re.VERBOSE)
+
     def recognize_gender_or_number(self, text):
         if text in self.GENDER:
             return GramGrp(pos='n', gender=text)
@@ -46,15 +53,35 @@ class DeuEngParser(AbstractParser):
                 g = GramGrp()
                 for t in tokens:
                     g.add_child(GramGrp(pos=t))
-                return g
+                outer.add_child(g)
             elif len(tokens) == 2: # past participle, etc. of a verb
                 f = node_class(text=tokens)
                 f.add_attr("type", "infl")
                 return f
             else:
-                # ToDo: raise
-                print(ParserError("Couldn't recognize expression: {%s}" % text))
-                return GramGrp() # ToDo, remove, dummy
+                # try to find case hints, etc.
+                g = GramGrp()
+                for token in tokens:
+                    if token in self.POS:
+                        g.pos = token
+                        continue
+
+                    match = self.CASE_RGX.search(token)
+                    if match:
+                        match = match.groups()
+                        usg = Usage(match[1])
+                        usg.add_attr('type', 'gram')
+                        outer.add_child(usg)
+                        for colloc in (x for x in (match[0], match[2]) if x):
+                            if colloc in self.POS:
+                                g.pos = self.POS[colloc] # missing semicolon to POS
+                            else:
+                                g.colloc = colloc
+                    else:
+                        # ToDo: raise
+                        print(ParserError("Couldn't recognize expression: {%s}" % text))
+                        return # ToDo, remove, dummy
+                outer.add_child(g)
 
         gram = self.recognize_gender_or_number(text)
         if gram:

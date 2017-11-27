@@ -56,11 +56,11 @@ def download_to(link, target):
 
 
 def assert_correct_working_directory():
-    """Check, that this script is execute from the correct directory."""
-    files = sum(1 for fn in os.listdir('.')
+    """Check that this script is executed from the correct directory."""
+    num_files = sum(1 for fn in os.listdir('.')
             if re.search('^[a-z]{3}-[a-z]{3}$', fn))
-    if len(files) < 4: # less than four dictionaries, probably not a dictionary place
-        print("Error: must be run from the FreeDict source root.")
+    if num_files < 2: # less than two dictionaries, probably not a dictionary root
+        print("Error: must be run from a FreeDict source root.")
         sys.exit(9)
 
 
@@ -77,17 +77,36 @@ def make_changelog(path):
         """.strip().format(**tmpl_vars) + '\n')
 
 
-def replace_dict_dir(path):
+def update_dict_files(path, shared_file_path):
     dir_template = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             'template'
     )
-    shutil.rmtree(path, ignore_errors=True)
-    shutil.copytree(dir_template, path, symlinks=True)
+    try:
+        tei = next(os.path.join(path, f) for f in os.listdir(path))
+        os.remove(tei)
+    except (StopIteration, FileNotFoundError):
+        pass
+    def copy(files):
+        for file in files:
+            try:
+                shutil.copy2(file, path)
+            except shutil.SameFileError:
+                pass
+    copy(os.path.join(shared_file_path, f) for f in 
+            ('freedict-dictionary.css', 'freedict-P5.dtd', 'freedict-P5.rng',
+                'freedict-P5.xml'))
+    copy(os.path.join(dir_template, f) for f in os.listdir(dir_template))
 
 
 def main():
     assert_correct_working_directory()
+    if len(sys.argv) != 2:
+        print("Error, path to shared FreeDict files required as first argument.")
+        sys.exit(1)
+    if not os.path.exists(sys.argv[1]):
+        print("Error, path does not exist",sys.argv[1])
+        sys.exit(2)
     prefix = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
     with urllib.request.urlopen(SOURCE_URL) as src:
         data = ""
@@ -102,11 +121,11 @@ def main():
         base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
         if base_name in white_list:
             print('Importing',base_name)
-            replace_dict_dir(base_name)
+            os.makedirs(base_name, exist_ok=True)
+            update_dict_files(base_name, sys.argv[1])
             download_to(link, os.path.join(base_name, base_name + '.tei'))
             make_changelog(base_name)
         else: print("Ignoring",base_name)
-    os.system('git status')
 
 if __name__ == '__main__':
     main()
