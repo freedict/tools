@@ -21,7 +21,7 @@ all: build_all $(DICTs)
 build_all: $(DICTS)
 
 $(DICTS):
-	$(MAKE) -C $@
+	@$(MAKE) -C $@
 
 install: #! install the built files, without attempting to restart any applications using them
 install: build_all

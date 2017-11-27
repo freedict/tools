@@ -346,7 +346,6 @@ endif
 build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
 $(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei $(BUILD_DIR)/slob
-	# tei2slob adds the version number to the filename by itself
 	tei2slob -w $(BUILD_DIR)/slob -o $@ $<
 
 $(call release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
