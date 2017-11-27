@@ -82,30 +82,34 @@ clean:: #! clean build files
 deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-path)/$(1)
 deploy: #! deploy all platforms of a release to the remote file hosting service
 deploy: $(foreach r, $(available_platforms), release-$(r))
-	@if command -v mountpoint &> /dev/null; then \
+	@MOUNTED=0; \
+	if command -v mountpoint &> /dev/null; then \
 		if mountpoint -q "$(deploy_to)"; then \
 			echo "Remote file system mounted, skipping this step."; \
 		else \
 			$(MAKE) -C $(FREEDICT_TOOLS) mount; \
+			MOUNTED=1; \
 		fi; \
 	else  \
-		$(MAKE) -C $(FREEDICT_TOOLS) mount; fi
-	@if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
+		$(MAKE) -C $(FREEDICT_TOOLS) mount; fi; \
+	if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
 		echo "Creating new release directory for first release of $(dictname)"; \
-		mkdir -p $(call deploy_to,$(dictname)); fi
-	@if [ -d $(call deploy_to,$(dictname)/$(version)) ]; then \
+		mkdir -p $(call deploy_to,$(dictname)); fi; \
+	if [ -d $(call deploy_to,$(dictname)/$(version)) ]; then \
 		if [ "${FORCE}" = "y" ]; then \
 			echo "Enforcing deployment…"; \
 		else \
 			echo "Release $(version) has been deployed already. Use \`make FORCE=y deploy\` to enforce the deployment."; \
 			exit 2; fi; \
 	else \
-		mkdir -p $(call deploy_to,$(dictname)/$(version)); fi
-	@chmod a+r $(foreach p,$(available_platforms), $(call release_path,$(p)))
-	@echo "Copying files…"
+		mkdir -p $(call deploy_to,$(dictname)/$(version)); fi; \
+	chmod a+r $(foreach p,$(available_platforms), $(call release_path,$(p))); \
+	echo "Copying files…";\
 	cp $(foreach p,$(available_platforms), $(call release_path,$(p))) \
-		$(call deploy_to,$(dictname)/$(version))
-	@$(MAKE) -C $(FREEDICT_TOOLS) umount
+		$(call deploy_to,$(dictname)/$(version)); \
+	if [ $$MOUNTED -eq 1 ]; then \
+		$(MAKE) -C $(FREEDICT_TOOLS) umount; \
+		fi
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
