@@ -108,6 +108,20 @@ def rm_empty_nodes(entry):
                 changed = True
             else:
                 nodes.extend((node, c) for c in node.getchildren())
+    # try to strip enumeration of senses they aren't adjacent anymore; map
+    # sense: numeration first or discard if no numbering
+    sense_numbers = {sense: int(sense.attrib.get('n'))
+            for sense in tei_iter(entry, 'sense') if sense.attrib.get('n')}
+    if sense_numbers:
+        # if not all values between min and max sense number, enumeration is
+        # broken and can be stripped
+        if not all(n in sense_numbers.values()
+                for n in range(1, max(iter(sense_numbers.values())))):
+            for node in sense_numbers:
+                # strip manual enumeration, handled by output formatters and might
+                # be wrong after node removal
+                del node.attrib['n']
+                changed = True
     return changed
 
 def rm_doubled_quotes(entry):
