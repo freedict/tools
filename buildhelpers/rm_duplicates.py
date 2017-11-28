@@ -99,8 +99,9 @@ def rm_empty_nodes(entry):
         for parent, node in nodes:
             if (node.text is None or node.text.strip() == '') \
                     and len(node.getchildren()) == 0:
-                parent.remove(node)
-                changed = True
+                if parent:
+                    parent.remove(node)
+                    changed = True
             else:
                 nodes.extend((node, c) for c in node.getchildren())
     # try to strip enumeration of senses they aren't adjacent anymore; map
@@ -177,7 +178,13 @@ class XmlParserWrapper:
         self.after_root = content[tei_end:]
         content = content[:tei_end]
         parser = ET.XMLParser(target = CommentedTreeBuilder())
-        parser.feed(content)
+        try:
+            parser.feed(content)
+        except ET.ParseError as e:
+            sys.stderr.write("Error while parsing input file\n")
+            sys.stderr.write(str(e).encode(sys.getdefaultencoding()) + '\n')
+            sys.exit(15)
+
         self.root = parser.close()
 
     def write(self, file_name):

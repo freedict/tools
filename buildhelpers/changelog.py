@@ -8,7 +8,6 @@ Please see the usage from parse_args() for more details."""
 # ought to find a way to properly ship this as a module.
 
 import datetime
-import io
 import os
 import re
 import shutil
@@ -63,7 +62,6 @@ def replace_tag_content(document, tag, new_text):
     _, start, end, _ = find_tag(document, tag)
     return document[:start] + new_text + document[end:]
 
-#pylint: disable=redefined-variable-type
 def add_changelog_entry(document, edition, date, username, author=None):
     """Try to detect an text editor, open it and add the written content to a
     new change tag within the supplied revision_desc."""
@@ -86,33 +84,31 @@ def add_changelog_entry(document, edition, date, username, author=None):
         data = '\n'.join(l.rstrip() for l in f
                 if l.strip() and not l.lstrip().startswith('#')) + '\n'
     os.remove(fn)
-    change = ET.Element('change')
-    change.attrib['when'] = date
-    change.attrib['who'] = username
-    change.attrib['n'] = edition
-    change.text = data
+    change = '<change when="{}" who="{}" n="{}">\n'.format(date,
+            username, edition)
     if author:
-        author_node = ET.Element('name')
-        author_node.text = author
-        change.append(author)
-    #lbreak, spaces = get_spacing(revision_desc)
-    last_change, _, _, _ = find_tag(document, 'change')
-    while last_change > 0 and document[last_change].isspace() and \
-            document[last_change] != '\n':
-        last_change -= 1
-    change = ET.ElementTree(change)
-    with io.BytesIO() as buffer:
-        change.write(buffer, encoding="UTF-8")
-        buffer.seek(0)
-        return document[:last_change] + buffer.read().decode('UTF-8') + \
-                '\n' + document[last_change:]
+        change += '<name>%s</name>' % author
+    change += '%s\n</change>' % data
+    latest_change, _, _, _ = find_tag(document, 'change')
+    latest_change_tag = latest_change
+    latest_change -= 1
+    while latest_change > 0 and document[latest_change].isspace() and \
+            document[latest_change] != '\n':
+        latest_change -= 1
+    indent = document[latest_change+1:latest_change_tag]
+    change = change.rstrip().replace('\n', '\n' + indent)
+    return ''.join((document[:latest_change],
+                '\n', indent, change, '\n', indent,
+                document[latest_change_tag:])).lstrip()
 
 def update_date(document, date):
     """Find publicationStmt/date, update it."""
     opening_start, _, _, closing_end = find_tag(document, 'date')
+    if opening_start < 0:
+        return document # no date, no action
     # try to detect whether this date is within a change tag
     change = document[:opening_start].rfind('<change')
-    if change < 0 or (opening_start - change) <= 75:
+    if change > 0:
         return document
     date = datetime.datetime.now().strftime('<date when="%Y-%m-%d">%b %d, %Y</date>')
     return document[:opening_start] + date + document[closing_end:]
