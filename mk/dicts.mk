@@ -87,11 +87,11 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 		if mountpoint -q "$(deploy_to)"; then \
 			echo "Remote file system mounted, skipping this step."; \
 		else \
-			$(MAKE) -C $(FREEDICT_TOOLS) mount; \
+			$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) mount; \
 			MOUNTED=1; \
 		fi; \
 	else  \
-		$(MAKE) -C $(FREEDICT_TOOLS) mount; fi; \
+		$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) mount; fi; \
 	if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
 		echo "Creating new release directory for first release of $(dictname)"; \
 		mkdir -p $(call deploy_to,$(dictname)); fi; \
@@ -108,7 +108,7 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 	cp $(foreach p,$(available_platforms), $(call release_path,$(p))) \
 		$(call deploy_to,$(dictname)/$(version)); \
 	if [ $$MOUNTED -eq 1 ]; then \
-		$(MAKE) -C $(FREEDICT_TOOLS) umount; \
+		$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) umount; \
 		fi
 
 find-homographs: #! find all homographs and list them, one per line
