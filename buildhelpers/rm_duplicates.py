@@ -224,7 +224,8 @@ def main():
         # the processing above might leave empty parent nodes, remove those
         changed3 = rm_empty_nodes(entry)
         if args.detect_changes and any((changed1, changed2, changed3)):
-            print("Found duplicated entries or empty XML nodes, aborting…")
+            print(("Warning: Found duplicated entries or empty XML nodes. Try "
+                    "`make rm_duplicates`."))
             sys.exit(42)
         changed = any((changed, changed1, changed2, changed3))
     if changed:

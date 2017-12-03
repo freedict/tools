@@ -82,7 +82,7 @@ def add_changelog_entry(document, edition, date, username, author=None):
         sys.exit(2)
     with open(fn, encoding='UTF-8') as f:
         data = '\n'.join(l.rstrip() for l in f
-                if l.strip() and not l.lstrip().startswith('#')) + '\n'
+                if l.strip() and not l.lstrip().startswith('#'))
     os.remove(fn)
     change = '<change when="{}" who="{}" n="{}">\n'.format(date,
             username, edition)
@@ -103,7 +103,12 @@ def add_changelog_entry(document, edition, date, username, author=None):
 
 def update_date(document, date):
     """Find publicationStmt/date, update it."""
-    opening_start, _, _, closing_end = find_tag(document, 'date')
+    try:
+        opening_start, _, _, closing_end = find_tag(document, 'date')
+    except TagNotFoundException:
+        sys.stderr.write(("Warning: <date> tag not found. It's advised that "
+            "this is added to the header.\n"))
+        return document
     if opening_start < 0:
         return document # no date, no action
     # try to detect whether this date is within a change tag
@@ -174,5 +179,6 @@ def main():
     document = update_edition(document, edition)
     with open(input_file, 'w', encoding='UTF-8') as f:
         f.write(document)
+    print("You might want to re-indent the latest <change/> to fit it to the rest of the document.")
 
 main()
