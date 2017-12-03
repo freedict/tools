@@ -170,12 +170,12 @@ version: #! output current (source) version number
 # empty nodes) within TEI files and prints a warning, if appropriate. It is
 # designed to *not* fail to allow a arelease with known problems or false
 # positives.
-duplicate:
-duplicate: $(dictname).tei
+report-duplicates:
+report-duplicates: $(dictname).tei
 	@$(PYTHON) $(BUILDHELPERS_DIR)/rm_duplicates.py -s $< || true
 
 qa: #! execute quality assurance helpers, for instance schema validation or detection of duplicated translations
-qa: duplicate validation
+qa: report-duplicates validation
 
 rm_duplicates: #! remove duplicated entries and empty XML nodes and present a diff of the changes
 rm_duplicates: $(dictname).tei
