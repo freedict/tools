@@ -334,12 +334,11 @@ clean::
 la1 := $(shell export V=$(dictname); echo $${V:0:3})
 #la2 := $(shell export V=$(dictname); echo $${V:4:3})
 
-ifneq (,$(findstring $(la1),$(supported_phonetics)))
+ifeq ($(la1),$(findstring $(la1),$(supported_phonetics)))
 
 # TEIADDPHONETICS ?= -v
 $(dictname).tei: $(dictname)-nophon.tei
 	teiaddphonetics $(TEIADDPHONETICS) -i $< -ou $@ -mbrdico-path $(MBRDICO_PATH)
-
 endif
 
 
