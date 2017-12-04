@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Releasing a bunch of dictionaries can be tedious because of the change log
-editing, copyright adjusting and more. This script helps to automate this
-process as much as possible.
-Please see the usage from parse_args() for more details."""
+"""Releasing a bunch of dictionaries can be tedious because of the adjustments
+to the header. This script automated the following:
 
-# To Do: the classes in this file are a *fork* of rm_duplicates.py. We
-# ought to find a way to properly ship this as a module.
+* update the date tag
+* update the copyright year within the availability information, because a
+  new release also renews the copyright
+* open $EDITOR to ask the user for a changelog message
+* count headwords
+* update the edition
+
+For the concrete usage see the corresponding usage message."""
 
 import datetime
 import io
