@@ -45,7 +45,7 @@ class HelpfulParser(argparse.ArgumentParser):
 
     def error(self, message):
         """Print error message and usage information."""
-        sys.stderr.write('Error: ' + message)
+        sys.stderr.write('Error: ' + message + '\n')
         self.print_help()
         sys.exit(2)
 
@@ -54,7 +54,7 @@ class CommentedTreeBuilder(ET.TreeBuilder):
     """A TreeBuilder subclass that retains XML comments from the source. It can
     be treated as a black box saving the contents before and after the root tag,
     so that it can be re-added when writing back a XML ElementTree to disk. This
-    is necessary because of lxml/ElementTree's inability to handle declarations
+    is necessary because of ElementTree's inability to handle declarations
     nicely."""
     def comment(self, data):
         self.start(ET.Comment, {})
@@ -97,15 +97,11 @@ def rm_empty_nodes(entry):
     for _ in range(0, 2):
         nodes = [(None, entry)]
         for parent, node in nodes:
-            # strip manual enumeration, handled by output formatters and might
-            # be wrong after node removal
-            if node.tag.endswith('sense') and node.get('n'):
-                del node.attrib['n']
-                changed = True
             if (node.text is None or node.text.strip() == '') \
                     and len(node.getchildren()) == 0:
-                parent.remove(node)
-                changed = True
+                if parent:
+                    parent.remove(node)
+                    changed = True
             else:
                 nodes.extend((node, c) for c in node.getchildren())
     # try to strip enumeration of senses they aren't adjacent anymore; map
@@ -182,7 +178,13 @@ class XmlParserWrapper:
         self.after_root = content[tei_end:]
         content = content[:tei_end]
         parser = ET.XMLParser(target = CommentedTreeBuilder())
-        parser.feed(content)
+        try:
+            parser.feed(content)
+        except ET.ParseError as e:
+            sys.stderr.write("Error while parsing input file\n")
+            sys.stderr.write(str(e).encode(sys.getdefaultencoding()) + '\n')
+            sys.exit(15)
+
         self.root = parser.close()
 
     def write(self, file_name):
@@ -222,26 +224,27 @@ def main():
         # the processing above might leave empty parent nodes, remove those
         changed3 = rm_empty_nodes(entry)
         if args.detect_changes and any((changed1, changed2, changed3)):
-            print("Problems found, aborting as requested.")
+            print(("Warning: Found duplicated entries or empty XML nodes. Try "
+                    "`make rm_duplicates`."))
             sys.exit(42)
         changed = any((changed, changed1, changed2, changed3))
     if changed:
-        output_fn = os.path.join('build', 'dictd',
+        output_fn = os.path.join('build', 'tei',
                 dictionary_path.replace('.tei', '-dedup.tei'))
+        exec('mkdir -p build/tei')
         tree.write(output_fn)
         # get a human-readable diff of the changes
-        if not shutil.which('less'):
-            print("Please install diff to get a diff of the changes that have been made.")
-            sys.exit(0)
         c5 = lambda x: shlex.quote(x.replace('.tei', '.c5'))
         exec('xsltproc $FREEDICT_TOOLS/xsl/tei2c5.xsl %s > %s' % (output_fn,
             c5(output_fn)))
         # convert original dictionary to c5
-        exec('make build-dictd')
+        exec('make --no-print-directory build-dictd')
         # execute diff without checking the return type
-        os.system('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
-    else:
-        print("Nothing changed, no action taken.")
+        if not shutil.which('less'):
+            exec('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
+        else:
+            os.system('diff -u build/dictd/%s %s | less' % (c5(dictionary_path), c5(output_fn)))
+        print("If you like the changes, copy build/tei/*.tei to .")
 
 
 if __name__ == '__main__':

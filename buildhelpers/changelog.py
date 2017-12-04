@@ -12,84 +12,11 @@ to the header. This script automated the following:
 For the concrete usage see the corresponding usage message."""
 
 import datetime
-import io
 import os
 import re
 import shutil
 import sys
 import xml.etree.ElementTree as ET
-
-# TEI name space, LXML's parser doesn't handle them nicely
-TEI_NS = '{http://www.tei-c.org/ns/1.0}'
-# findall/iter with TEI namespace removed
-findall = lambda x,y: x.findall(TEI_NS + y)
-tei_iter = lambda x,y: x.iter(TEI_NS + y)
-
-
-class CommentedTreeBuilder(ET.TreeBuilder):
-    """A TreeBuilder subclass that retains XML comments from the source. It can
-    be treated as a black box saving the contents before and after the root tag,
-    so that it can be re-added when writing back a XML ElementTree to disk. This
-    is necessary because of lxml/ElementTree's inability to handle declarations
-    nicely."""
-    def comment(self, data):
-        self.start(ET.Comment, {})
-        self.data(data)
-        self.end(ET.Comment)
-
-
-
-#pylint: disable=too-few-public-methods
-class XmlParserWrapper:
-    """This thin wrapper guards the parsing process.  It manually finds the TEI
-    element and copies everything before and afterwards *verbatim*. This is due
-    to the inability of the ElementTree parser to handle multiple "root
-    elements", for instance comments before or after the root node or '<!'
-    declarations.
-    """
-    def __init__(self, file_name):
-        with open(file_name, encoding='utf-8') as file:
-            content = file.read()
-        if not any(u in content for u in ('utf-8', 'utf8', 'UTF8', 'UTF-8')):
-            raise ValueError("XML file is not encoded in UTF-8. Please recode "
-                    "the file or extend this parser and XML writer.")
-        tei_start = content.find('<TEI')
-        if tei_start < 0:
-            raise ValueError("Couldn't find string `<TEI` in the XML file.  Please extend this parser.")
-        self.before_root = content[:tei_start]
-        content = content[tei_start:]
-        tei_end = content.find('</TEI>')
-        if tei_end < 0:
-            raise ValueError("Couldn't find `</TEI>` in the input file, please extend the parser.")
-        tei_end += len('</TEI>')
-        self.after_root = content[tei_end:]
-        content = content[:tei_end]
-        parser = ET.XMLParser(target = CommentedTreeBuilder())
-        parser.feed(content)
-        self.root = parser.close()
-
-    def write(self, file_name):
-        """Write the XML element tree to a file, with hopefully a very similar
-        formatting as before."""
-        tree = ET.ElementTree(self.root)
-        in_mem = io.BytesIO()
-        tree.write(in_mem, encoding="UTF-8")
-        in_mem.seek(0)
-        with open(file_name, 'wb') as file:
-            file.write(self.before_root.encode('UTF-8'))
-            file.write(in_mem.read())
-            file.write(self.after_root.encode('UTF-8'))
-            if not self.after_root.endswith('\n'):
-                file.write(b'\n')
-
-def get_spacing(element):
-    """This function returns a tuple with the mnemonics (linebreak, indentation)
-    of this element. If a the node is indented with four spaces, the tuple will
-    be ('\\n', '    ') and if there's no whitespace between the nodes, it'll be
-    ('', '')."""
-    spaces = re.search('^\\n*( +|\\t+)', element.text)
-    return (('\n' if element.text.startswith('\n') else ''),
-            (spaces.groups()[0] if spaces else ''))
 
 def get_editor():
     """Detect an editor to use. Try to use $EDITOR or probe for a bunch of
@@ -111,7 +38,35 @@ def get_editor():
         return editor
 
 
-def add_changelog_entry(revision_desc, edition, date, username, author=None):
+
+class TagNotFoundException(Exception):
+    pass
+
+def find_tag(document, tag):
+    """Find a tag in a document, returning start and end positions of the
+    opening and closing tag."""
+    match = re.search(r'<\s*%s\b.*?>' % tag, document)
+    if not match:
+        raise TagNotFoundException(tag)
+    opening_start, opening_end = match.span()
+    # find closing tag
+    match = re.search(r'<\s*/\s*%s\s*>' % tag, document[opening_end:])
+    if not match:
+        raise TagNotFoundException('no closing tag for `%s`' % tag)
+    closing_start, closing_end = (c + opening_end for c in match.span())
+    # python's ranges are exclusive, so add + 1
+    return (opening_start, opening_end, closing_start, closing_end)
+
+def get_text(document, tag):
+    """Get the text of a specified tag."""
+    _, start, end, _ = find_tag(document, tag)
+    return document[start:end]
+
+def replace_tag_content(document, tag, new_text):
+    _, start, end, _ = find_tag(document, tag)
+    return document[:start] + new_text + document[end:]
+
+def add_changelog_entry(document, edition, date, username, author=None):
     """Try to detect an text editor, open it and add the written content to a
     new change tag within the supplied revision_desc."""
     editor = get_editor()
@@ -125,121 +80,115 @@ def add_changelog_entry(revision_desc, edition, date, username, author=None):
 # `<list><item>blah</item></list>`. Please note that you need to take care of
 # escaping yourself.
 """)
+        last_modified = os.path.getmtime(fn)
     ret = os.system('%s %s' % (editor, fn))
     if ret:
         print("Error while starting", editor)
         sys.exit(2)
     with open(fn, encoding='UTF-8') as f:
         data = '\n'.join(l.rstrip() for l in f
-                if l.strip() and not l.lstrip().startswith('#')) + '\n'
+                if l.strip() and not l.lstrip().startswith('#'))
+        if not data.strip():
+            print("No changes, aborting…")
+            sys.exit(0)
     os.remove(fn)
-    change = ET.Element('change')
-    change.attrib['when'] = date
-    change.attrib['who'] = username
-    change.attrib['n'] = edition
+    change = '<change when="{}" who="{}" n="{}">\n'.format(date,
+            username, edition)
     if author:
-        author_node = ET.Element('name')
-        author_node.text = author
-        change.append(author)
-    lbreak, spaces = get_spacing(revision_desc)
-    try:
-        child = ET.fromstring(data)
-        change.text = lbreak + spaces
-        change.append(child)
-    except ET.ParseError: # treat it as plain text
-        change.text = data + spaces
-    change.tail = lbreak + spaces
-    revision_desc.insert(0, change)
+        change += '<name>%s</name>' % author
+    change += '%s\n</change>' % data
+    latest_change, _, _, _ = find_tag(document, 'change')
+    latest_change_tag = latest_change
+    if latest_change > 0 and document[latest_change-1].isspace():
+        latest_change -= 1
+        while latest_change > 0 and document[latest_change].isspace() and \
+                document[latest_change] != '\n':
+            latest_change -= 1
+    indent = document[latest_change+1:latest_change_tag]
+    change = change.rstrip().replace('\n', '\n' + indent)
+    return ''.join((document[:latest_change],
+                '\n', indent, change, '\n', indent,
+                document[latest_change_tag:])).lstrip()
 
-def update_date(root, date):
+def update_date(document, date):
     """Find publicationStmt/date, update it."""
     try:
-        publication = next(tei_iter(root, 'publicationStmt'))
-    except StopIteration:
-        print("File lacks a publicationStmt node, possibly malformed.")
-        sys.exit(3)
-    try:
-        date_node = next(tei_iter(publication, 'date'))
-    except StopIteration:
-        return
-    date_node.attrib['when'] = date
-    date_node.text = datetime.datetime.strptime(date, '%Y-%m-%d').strftime('%b %d, %Y')
+        opening_start, _, _, closing_end = find_tag(document, 'date')
+    except TagNotFoundException:
+        sys.stderr.write(("Warning: <date> tag not found. It's advised that "
+            "this is added to the header.\n"))
+        return document
+    if opening_start < 0:
+        return document # no date, no action
+    # try to detect whether this date is within a change tag
+    change = document[:opening_start].rfind('<change')
+    if change > 0:
+        return document
+    date = datetime.datetime.now().strftime('<date when="%Y-%m-%d">%b %d, %Y</date>')
+    return document[:opening_start] + date + document[closing_end:]
 
-def update_extent(root):
-    try:
-        extent = next(tei_iter(root, 'extent'))
-    except StopIteration:
-        print("Could not find extent tag, possibly malformed file.")
-        sys.exit(3)
-    extent.text = '%i headwords' % sum(1 for _ in tei_iter(root, 'entry'))
+def update_edition(document, version):
+    return replace_tag_content(document, 'edition', version)
+
+def update_extent(document):
+    headwordcount = len(re.findall(r'<\s*entry.*?>', document))
+    return replace_tag_content(document, 'extent', '%s headwords' % headwordcount)
 
 
-def update_copyright(root):
+def update_copyright(document):
     """Find a stanza containing "(c) 2014-2017 xyz" or "© 2020 foo" to update
     the year."""
-    try:
-        availability = next(tei_iter(root, 'availability'))
-    except StopIteration:
-        print("Unable to find availability tag, possibly malformed TEI file.")
-        sys.exit(3)
-    copyright = re.compile(r'(©|\([cC]\))\s*([0-9]{4})(?:-)([0-9]{4})')
-    for tag in availability.iter():
-        match = copyright.search(tag.text)
-        if not match:
-            continue
-        start, end = match.span()
-        year = match.groups()[1]
-        if match.groups()[2]:
-            year = match.groups()[2]
-        tag.text = tag.text[:start] + tag.text[start:end].replace(year,
+    availability = get_text(document, 'availability')
+    match = re.search(r'(©|\([cC]\))\s*([0-9]{4})(?:-)([0-9]{4})', availability)
+    if not match:
+        return document
+    start, end = match.span()
+    year = match.groups()[1]
+    if match.groups()[2]:
+        year = match.groups()[2]
+    availability = availability[:start] + availability[start:end].replace(year,
                     datetime.datetime.now().strftime('%Y')) + \
-                tag.text[end:]
-        return # only update first copyright stanza, hopefully most current one
+                availability[end:]
+    return replace_tag_content(document, 'availability', availability)
 
 def parse_args():
-    """Custom argument parser, parsing command lines like './foo E=bar baz`
-    (optional values are key-value pairs)."""
-    def usage(msg):
-        print(msg)
-        print("Usage: %s [E=<EDITION>] <FILE>" % sys.argv[0])
+    def usage(msg=None):
+        if msg:
+            print(msg)
+        print("Usage: make E=<EDITION>")
+        print("   or: %s <EDITION> <INPUT_FILE>" % \
+                os.path.basename(sys.argv[0]))
         print("\nThis script assists in changing a TEI header for release. It does the following:")
         print("- update the edition")
         print("- updates the release date")
         print("- adds a new changelog entry")
         print("- update the year in the availability / copyright section, if appropriate")
-        print("\nExample: %s E=1.5.2 lat-deu.tei" % sys.argv[0])
+        print("\nExample: make E=1.5.2 lat-deu.tei")
         sys.exit(0)
-    if len(sys.argv) < 2 or (sys.argv[1] in ('-h', '--help')):
-        usage("Error, at least two arguments expected.")
-    optional = dict(a.split('=') for a in sys.argv[1:] if '=' in a)
-    mandatory = list(a for a in sys.argv[1:] if '=' not in a)
-
-    known_keys = ['E']
-    invalid = tuple(k for k in optional if k not in known_keys)
-    if invalid:
-        usage("Illegal arguments: %s" % repr(invalid))
-    if len(mandatory) != 1:
-        usage("Error, exactly one input file required.")
-    return (optional, mandatory)
-
+    if len(sys.argv) == 2 and sys.argv[1] in ('-h', '--help'):
+        usage()
+    elif len(sys.argv) != 3:
+        usage("The arguments edition and input file are mandatory.")
+    else:
+        return sys.argv[1:3]
 
 def main():
+    edition, input_file = parse_args()
     # register TEI name space without prefix to dump the *same* XML file
     ET.register_namespace('', 'http://www.tei-c.org/ns/1.0')
-    # ToDo: date, username, author, edition
-    opts, mandatory = parse_args()
+    # ToDo: username, author
     isodate = datetime.datetime.today().strftime('%Y-%m-%d')
     username = 'humenda'
-    tree = XmlParserWrapper(mandatory[0])
-    try:
-        revision_desc = next(tei_iter(tree.root, 'revisionDesc'))
-    except StopIteration:
-        print("Error, could not find revisionDesc.")
-        sys.exit(20)
-    add_changelog_entry(revision_desc, opts['E'], isodate, username)
-    update_date(tree.root, isodate)
-    update_copyright(tree.root)
-    update_extent(tree.root)
-    tree.write(mandatory[0])
+    with open(input_file, 'r', encoding='UTF-8') as f:
+        document = f.read()
+    document = add_changelog_entry(document, edition, isodate, username)
+    document = update_date(document, isodate)
+    document = update_copyright(document)
+    document = update_extent(document)
+    document = update_edition(document, edition)
+    with open(input_file, 'w', encoding='UTF-8') as f:
+        f.write(document)
+    print("You might want to re-indent the latest <change/> to fit it to the rest of the document.")
 
-main()
+if __name__ == '__main__':
+    main()
