@@ -337,8 +337,8 @@ la1 := $(shell export V=$(dictname); echo $${V:0:3})
 ifneq (,$(findstring $(la1),$(supported_phonetics)))
 
 # TEIADDPHONETICS ?= -v
-$(dictname).tei: $(dictname)-nophon.tei
-	teiaddphonetics $(TEIADDPHONETICS) -i $< -ou $@ -mbrdico-path $(MBRDICO_PATH)
+#$(dictname).tei: $(dictname)-nophon.tei
+#	teiaddphonetics $(TEIADDPHONETICS) -i $< -ou $@ -mbrdico-path $(MBRDICO_PATH)
 
 endif
 
