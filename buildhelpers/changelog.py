@@ -91,10 +91,11 @@ def add_changelog_entry(document, edition, date, username, author=None):
     change += '%s\n</change>' % data
     latest_change, _, _, _ = find_tag(document, 'change')
     latest_change_tag = latest_change
-    latest_change -= 1
-    while latest_change > 0 and document[latest_change].isspace() and \
-            document[latest_change] != '\n':
+    if latest_change > 0 and document[latest_change-1].isspace():
         latest_change -= 1
+        while latest_change > 0 and document[latest_change].isspace() and \
+                document[latest_change] != '\n':
+            latest_change -= 1
     indent = document[latest_change+1:latest_change_tag]
     change = change.rstrip().replace('\n', '\n' + indent)
     return ''.join((document[:latest_change],
@@ -181,4 +182,5 @@ def main():
         f.write(document)
     print("You might want to re-indent the latest <change/> to fit it to the rest of the document.")
 
-main()
+if __name__ == '__main__':
+    main()
