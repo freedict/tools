@@ -67,8 +67,9 @@ def load_configuration(conffile):
     return config
 
 def discover_and_load():
-    """This file attempts to discover and load a configuration file. If no
-        configuration was found, a ConfigurationError is raised."""
+    """This file attempts to discover and load a FreeDict configuration file at
+    the usual places. If no configuration was found, a ConfigurationError is
+    raised."""
     paths = [os.path.join(os.path.expanduser("~"), '.config/freedict/freedictrc')]
     if os.environ.get('LOCALAPPDATA'):
         paths.append(os.path.join(os.environ['LOCALAPPDATA'], 'freedict/freedict.ini'))
