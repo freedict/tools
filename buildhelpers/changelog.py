@@ -120,10 +120,10 @@ def add_changelog_entry(document, edition, date, username, author):
     with open(fn, encoding='UTF-8') as f:
         data = '\n'.join(l.rstrip() for l in f
                 if l.strip() and not l.lstrip().startswith('#'))
-        if not data.strip():
-            print("No changes, aborting…")
-            sys.exit(0)
     os.remove(fn)
+    if not data.strip():
+        print("No changes, aborting…")
+        sys.exit(0)
     change = '<change when="{}" who="{}" n="{}">\n'.format(date,
             username, edition)
     if author:

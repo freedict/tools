@@ -67,26 +67,16 @@ class MetaDataParser(xmlhandlers.TeiHeadParser):
                 % self.dictionary.get_name() + ', '.join(missing))
 
     def handle_tag(self, elem):
-        """Delegate parsing of XML elements."""
-        if istag(elem, 'date') and not self.dictionary['date']:
-            # take when attribute, is often in ISO 8601
-            if elem.get('when'):
-                self.dictionary['date'] = elem.get('when')
-            else: # check for correct format and if present, take it
-                if self.DATE_PATTERN.search(elem.text):
-                    self.dictionary['date'] = elem.text[:]
-        else:
-            result = None # try to figure out date:
-            if istag(elem, 'revisionDesc') and not self.dictionary['date']:
-                result = self.__handle_revisionDesc(elem)
-            else: # call specialized tag handler function, if possible
-                tag = elem.tag.split(self._namespace)[-1] # strip etree namespace
-                funcname = 'handle_%s' % tag
-                if not hasattr(self, funcname):
-                    return
-                result = getattr(self, funcname)(elem)
-            if result:
-                self.dictionary.update(result)
+        """Delegate parsing of XML tags to specialised functions."""
+        if istag(elem, 'date') or istag(elem, 'change'):
+            self.__extract_date(elem)
+        tag = elem.tag.split(self._namespace)[-1] # strip etree namespace
+        funcname = 'handle_%s' % tag
+        if not hasattr(self, funcname):
+            return
+        result = getattr(self, funcname)(elem)
+        if result:
+            self.dictionary.update(result)
 
 
     def handle_sourceDesc(self, node):
@@ -150,18 +140,26 @@ class MetaDataParser(xmlhandlers.TeiHeadParser):
         else:
             return {'maintainerName': maintainer.rstrip().lstrip()}
 
-    def __handle_revisionDesc(self, elem):
+    def __extract_date(self, elem):
         """If date has not been set with the <date/> attrbiute in the header,
         guess it from change log."""
-        latest_change = elem[0]
-        if not latest_change.tag.endswith('change'):
-            return # is not a change attribute, can't read any information
-        if latest_change.get('when'):
-            return {'date': latest_change.get('when')}
-        namespace = latest_change.tag[:latest_change.tag.index('}')+1]
-        for child in latest_change.iter(namespace + 'date'):
-            if child.tag.endswith('date'):
-                return {'date': child.text}
+        parse_date = lambda x: datetime.datetime.strptime(x, '%Y-%m-%d')
+        def set_date(isodate):
+            try:
+                if self.dictionary['date'] is None:
+                    self.dictionary['date'] = isodate
+                elif parse_date(isodate) > parse_date(self.dictionary['date']):
+                    self.dictionary['date'] = isodate
+            except ValueError:
+                pass # we cannot parse all date formats
+        if istag(elem, 'date'):
+            if elem.get('when'): # use when, is usually in desired format
+                set_date(elem.get('when').strip())
+            else: # check for correct format and if present, take it
+                if self.DATE_PATTERN.search(elem.text):
+                    set_date(elem.text.strip())
+        elif istag(elem, 'change') and elem.get('when'):
+            set_date(elem.get('when').strip())
 
     def __format_date(self, date):
         """Bring date into the following format: YYYY-MM-dd."""

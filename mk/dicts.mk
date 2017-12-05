@@ -10,7 +10,7 @@ export HELP_SUFFIX
 define HELP_SUFFIX =
 NOTE: For the targets `release` and `build`, there are targets called
     `release-PLATFORM` and `build-PLATFORM` available, if you just want to build
-    one target.
+    one platform.
 endef
 
 
