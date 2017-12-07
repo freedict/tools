@@ -124,10 +124,10 @@ def add_changelog_entry(document, edition, date, username, author):
     if not data.strip():
         print("No changes, aborting…")
         sys.exit(0)
-    change = '<change when="{}" who="{}" n="{}">\n'.format(date,
-            username, edition)
+    change = '<change n="{}" when="{}" who="#{}">\n'.format(date,
+            username.rplace('#', ''), edition)
     if author:
-        change += '<name>%s</name> ' % author
+        change += '<name>%s</name>\n' % author
     change += '%s\n</change>' % data
     latest_change, _, _, _ = find_tag(document, 'change')
     latest_change_tag = latest_change
