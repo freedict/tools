@@ -195,7 +195,7 @@ $(BUILD_DICTD)/$(dictname).c5: $(dictname).tei $(BUILD_DICTD) \
 		$(xsldir)/tei2c5.xsl $(xsldir)/inc/teientry2txt.xsl \
 		$(xsldir)/inc/teiheader2txt.xsl \
 		$(xsldir)/inc/indent.xsl
-	$(XSLTPROCESSOR) $(xsldir)/tei2c5.xsl $< >$@
+	$(XSLTPROCESSOR) $(XSLTPROCESSORARGS) $(xsldir)/tei2c5.xsl $< >$@
 
 
 build-dictd: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
@@ -294,15 +294,6 @@ $(stardict_prefix)$(dictname).ifo: \
 $(stardict_prefix)$(dictname).ifo: \
 	idxfilesize=$(strip $(shell zcat $(stardict_prefix)$(dictname).idx | wc -c))
 
-authorresp.out: $(dictname).tei $(xsldir)/getauthor.xsl
-	$(XSLTPROCESSOR) $(xsldir)/getauthor.xsl $< >$@
-
-title.out: $(dictname).tei $(xsldir)/gettitle.xsl
-	$(XSLTPROCESSOR) $(xsldir)/gettitle.xsl $< >$@
-
-sourceurl.out: $(dictname).tei $(xsldir)/getsourceurl.xsl
-	$(XSLTPROCESSOR) $(xsldir)/getsourceurl.xsl $< >$@
-
 $(stardict_prefix)$(dictname).ifo: $(stardict_prefix)$(dictname).idx \
 	dictd2dic.out authorresp.out title.out sourceurl.out
 	@echo "Generating $@..."
@@ -339,16 +330,6 @@ clean::
 	$(stardict_prefix)$(dictname).dict.dz $(stardict_prefix)$(dictname).ifo \
 	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2 \
 	dictd2dic.out authorresp.out title.out sourceurl.out
-
-#####################
-#### targets for ding
-#####################
-
-%.ding: %.tei $(xsldir)/tei2ding.xsl
-	$(XSLTPROCESSOR) $(xsldir)/tei2ding.xsl $< >$@
-
-clean::
-	rm -f *.ding
 
 #######################
 #### Phonetics import

@@ -13,7 +13,8 @@ SHELL=bash
 .DEFAULT_GOAL := all
 
 # `xsltproc' comes with libxml/libxslt, see xmlsoft.org
-XSLTPROCESSOR ?= xsltproc --novalid
+XSLTPROCESSOR ?= xsltproc
+XSLTPROCESSORARGS ?= --novalid --xinclude
 
 # set default value
 FREEDICT_TOOLS ?= .
