@@ -1,19 +1,11 @@
 FreeDict Tools
 ===============
 
-The FreeDict tools are used to import, export and manage FreeDict dictionaries.
-Most of the documentation can be found in the FreeDict HOWTO at
-
-    https://github.com/freedict/fd-dictionaries/wiki/FreeDict-HOWTO
-
-In general, it is a good idea to have a look at our wiki at
-    
-    https://github.com/freedict/fd-dictionaries/wiki
+The FreeDict tools are used to import, export (build) and manage FreeDict
+dictionaries.
 
 Getting Started
 ---------------
-
-The following lines may get you started on some requirements:
 
 FreeDict databases are encoded in the TEI XML format (chapter 9), see
 <http://www.tei-c.org/release/doc/tei-p5-doc/en/html/DI.html>.
@@ -22,35 +14,43 @@ The conversion is based on XSL stylesheets (see directory `xsl/`). These can in
 principle transform to any format, but only the .dict format is supported at the
 moment.
 
+### Dependencies
+
 You should have at least the following tools installed, to build the
 dictionaries: make, xsltproc, tar, gzip, dictzip, dictfmt
 
 For proper use of all our tools, Perl, Python > 3.4, Git and a XML-capable
 editor are strongly advised.
-
-If you find a `Makefile` in a directory, you can be sure that `make help` will
-assist you in what you can do with it. The help screen will also inform you how
-to build dictionary releases. Furthermore, the whole build system is explained
-in chapter 8 of the HOWTO, mentioned earlier.
-
-If you read this file, because you want to figure out how to build a dictionary,
-please have a look at a dictionary from
-<https://github.com/freedict/fd-dictionaries) and run make in one of the various
-dictionary directories.
-
-In any case, it is a good idea to set the `FREEDICT_TOOLS` variable to the path
-to this directory (of the README), so that the make build system can locate its
-On unixoid systems, open your shell in this directory and type:
-
-    echo "export FREEDICTDIR=`pwd`" >> ~/.$(basename $0)rc
-
-
-Debian/Ubuntu Dependencies
---------------------------
+#### Debian/Ubuntu Dependencies
 
 If you use Debian/Ubuntu, you should install the following packages:
 
     sudo apt-get install make unzip xsltproc libxml-libxml-perl python3 python3-icu python-virtualenv git
+
+### Setting Up The Build System
+
+You should clone this repository to a path with no spaces and add an environment
+variable `FREEDICT_TOOLS` to point to this directory.
+
+Once done, you can get help on the available actions in any dictory containing a
+`Makefile` by typing `make help`.
+
+### Documentation
+
+Most of the documentation can be found in the FreeDict HOWTO at
+
+    https://github.com/freedict/fd-dictionaries/wiki/FreeDict-HOWTO
+
+In general, it is a good idea to have a look at our wiki at
+    
+    https://github.com/freedict/fd-dictionaries/wiki
+
+
+Furthermore, the whole build system is explained
+in chapter 8 of the HOWTO, mentioned above.
+
+Additional Output Formats
+-------------------------
 
 For creating slob files, you need to install tei2slob:
 
@@ -63,12 +63,5 @@ Now tei2slob will be in your path. For new shells, you will have to execute
 `source env-slob/bin/activate` again, or put env-slob/bin/tei2slob into your
 PATH.
 
-Teiaddphonetics requires XML::LibXML::Reader, which is not even
-in libxml-libxml-perl in unstable, so you need to do as root:
-
-	cpan XML::LibXML
-
-Please note that Teiaddphonetics is broken at the moment and hence not relevant.
-
-Sebastian Humenda, July 2017
+Sebastian Humenda, Mar 2018
 
