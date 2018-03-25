@@ -21,11 +21,18 @@ dictionaries: make, xsltproc, tar, gzip, dictzip, dictfmt
 
 For proper use of all our tools, Perl, Python > 3.4, Git and a XML-capable
 editor are strongly advised.
+
 #### Debian/Ubuntu Dependencies
 
 If you use Debian/Ubuntu, you should install the following packages:
 
     sudo apt-get install make unzip xsltproc libxml-libxml-perl python3 python3-icu python-virtualenv git
+
+#### Windows
+
+On Windows, it is easiest to install [Msys2](https://www.msys2.org/) or
+[Cygwin](https://www.cygwin.com). Both offer an easy method to install the
+required tools.
 
 ### Setting Up The Build System
 
