@@ -213,7 +213,7 @@ $(BUILD_DICTD)/%.dict.dz: $(BUILD_DICTD)/%.dict
 # build release archive
 $(call release_path,dictd): $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
 	tar --dereference --transform='s/build.dictd.//'   -C .. -cJf $@ \
-		$(addprefix $(notdir $(realpath .))/, $<) \
+		$(addprefix $(notdir $(realpath .))/, $^) \
 		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
 
 release-dictd: $(RELEASE_DIR) $(call release_path,dictd)
