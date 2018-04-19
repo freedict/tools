@@ -30,6 +30,9 @@ class ChunkType(enum.Enum):
     VerticalBar = 6 # has to be surrounded by spaces, is a delimiter as e.g. comma
     Slash = 7 # optional; example usage include abbreviations "/ETC/"
 
+    def __repr__(self):
+        return '<%s.%s>' % (self.__class__.__name__, self.name)
+
 def space_before_slash(string, i):
     """The tokenizer can recognize chunks enclosed by slashes. To avoid to many
     false positives, only expressions with no space are supported, ATM. This
