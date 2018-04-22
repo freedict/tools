@@ -14,9 +14,6 @@
 #    - keyword (first orth)
 #    - byte-start-offset of entry in tei file (end is found by
 #      outputting until </entry>)
-#  * maybe dict.py in the tools-directory of freedict.sf.net could do the same
-#    but i don't know python and there is less documentation and it
-#    needs a tei.header - uncomfortable...
 #  * we could try DB_File (see manpage), but let's try simple hash first
 #     key: <orth>-characters
 #     value: struct <entry>-offset

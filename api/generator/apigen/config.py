@@ -2,12 +2,10 @@
 
 import re
 
-# don't use www.sourceforge.net since that is redirected to sourceforge.net
-# anyway and results in a "HostChangedError"
-PROJECTHOME_HOST = 'sourceforge.net'
+# domain where downloads are stored
+PROJECTHOME_HOST = 'download.freedict.org'
 # base on web server, used for the link generation
-RELEASE_HTTP_BASE = '/projects/freedict/files/'
-
+RELEASE_HTTP_BASE = '/dictionaries'
 
 # pattern to identify dictionaries; matches three-digit ISO 6639 letter codes
 DICTIONARY_PATTERN = re.compile(r'(?:freedict-)?([a-z]{3}-[a-z]{3}).*')

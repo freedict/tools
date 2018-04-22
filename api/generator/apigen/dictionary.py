@@ -197,8 +197,11 @@ class Link:
         path = tuple(map(urllib.request.quote, self.path.split(os.sep)))
         if len(path) < 3:
             raise ValueError("Required is a path with the structure LongName/version/filename")
-        return 'https://{}{}{}/{}/{}/download'.format(config.PROJECTHOME_HOST,
-                config.RELEASE_HTTP_BASE, path[-3], path[-2], path[-1])
+        path_base = config.RELEASE_HTTP_BASE
+        if not path_base.endswith('/'):
+            path_base += '/'
+        return 'https://{}{}{}/{}/{}'.format(config.PROJECTHOME_HOST,
+                path_base, path[-3], path[-2], path[-1])
 
 def mklink(full_path, format, version):
     """Create a Link object with all the required information, i.e. file size.

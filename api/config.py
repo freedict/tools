@@ -37,8 +37,8 @@ def load_configuration(conffile):
     config['generated']['user'] = 'anonymous'
     config['generated']['skip'] = 'no'
     config['release'] = {}
-    config['release']['server'] = 'frs.sf.net'
-    config['release']['remote_path'] = '/home/pfs/project/freedict'
+    config['release']['server'] = 'freedict.org'
+    config['release']['remote_path'] = '/var/www/download/dictionaries'
     config['release']['local_path'] = ''
     config['release']['user'] = 'anonymous'
     config['release']['skip'] = 'no'
