@@ -16,6 +16,7 @@ SHELL=bash
 XSLTPROCESSOR ?= xsltproc
 XSLTPROCESSORARGS ?= --novalid --xinclude
 
+DICTFMTFLAGS ?= --utf8
 # set default value
 FREEDICT_TOOLS ?= .
 
@@ -37,18 +38,9 @@ XMLDECLARATION ?= /usr/share/xml/declaration/xml.dcl
 # you can also set this in ~/.bashrc
 SGML_CATALOG_FILES ?= /etc/sgml/catalog
 
-
-# dictfmts pre 1.10 are considered "old" and don't understand the --utf8 switch
-old_dictfmt := $(shell dictfmt --version | perl -pe '\
-if(/^dictfmt v. (\d+)\.(\d+)(\.(\d+))?.*/)\
-{ exit (($$1>=1 && $$2 >= 10 && ($$4 eq "" || $$4 >=1)) ? 0 : 1); };\
-exit 2;'; echo $$?)
-
-ifeq ($(old_dictfmt), 1)
-DICTD_LOCALE ?= en_GB.utf8
-DICTFMTFLAGS += --locale $(DICTD_LOCALE)
-else
-DICTFMTFLAGS += --utf8
+DICTFMT = $(shell command -v dictfmt 2> /dev/null)
+ifeq ($(DICTFMT),)
+	$(warnrning The command dictfmt was not found, you will not be able to convert into the dictd format.)
 endif
 
 charlint_in_path := $(shell which charlint.pl 2>/dev/null)
