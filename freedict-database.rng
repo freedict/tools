@@ -54,7 +54,8 @@
             <data type="date"/> <!-- 2005-11-20 -->
           </attribute>
           <attribute name="URL">
-            <data type="anyURI"/> <!-- "http://prdownloads.sourceforge.net/freedict/deu-ita.tar.gz?download -->
+            <data type="anyURI"/> <!-- "
+            https://download.freedict.org/dictionaries/... -->
           </attribute>
         </element>
       </oneOrMore>

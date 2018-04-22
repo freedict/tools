@@ -33,8 +33,8 @@ this:
 
 -   `file_access_with`: sets the file access strategy; possible values are rsync
     or sshfs, default is rsync
--   `[release]`: server on which to look for the released dictionaries, that's
-    sourceforge at the moment; `,freedict` has to be part of the user name
+-   `[release]`: server on which to look for the released dictionaries, by
+    default freedict.org.
 -   `[generated]`: this configures account information for the file services
     containing all auto-generated dictionaries
 

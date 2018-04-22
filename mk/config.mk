@@ -51,9 +51,6 @@ else
 DICTFMTFLAGS += --utf8
 endif
 
-# this tool comes with libbedic, see http://www.sourceforge.net/projects/bedic
-XEROX ?= xerox -d --verbose
-
 charlint_in_path := $(shell which charlint.pl 2>/dev/null)
 ifneq ($(charlint_in_path), )
 CHARLINT := $(charlint_in_path)
