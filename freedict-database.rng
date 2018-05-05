@@ -57,6 +57,9 @@
             <data type="anyURI"/> <!-- "
             https://download.freedict.org/dictionaries/... -->
           </attribute>
+          <attribute name="checksum">
+            <text/> <!-- e.g. 3ab5dcf9g7... -->
+          </attribute>
         </element>
       </oneOrMore>
     </element>
