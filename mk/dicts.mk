@@ -110,9 +110,11 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 			exit 2; fi; \
 	else \
 		mkdir -p $(call deploy_to,$(dictname)/$(version)); fi; \
-	chmod a+r $(foreach p,$(available_platforms), $(call release_path,$(p))); \
+	chmod a+r $(foreach p,$(available_platforms), $(call gen_release_path,$(p))); \
 	echo "Copying files…";\
-	cp $(foreach p,$(available_platforms), $(call release_path,$(p))) \
+	cp $(foreach p,$(available_platforms), $(call gen_release_path,$(p))) \
+		$(call deploy_to,$(dictname)/$(version)); \
+	cp $(foreach p,$(available_platforms), $(call gen_release_hashpath,$(p))) \
 		$(call deploy_to,$(dictname)/$(version)); \
 	if [ $$MOUNTED -eq 1 ]; then \
 		$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) umount; \
@@ -126,6 +128,10 @@ find-homographs: $(dictname).tei
 
 list-platforms: #! list all available platforms, AKA output formats
 	@echo -n $(available_platforms)
+
+%.sha512: %
+	cd $(dir $^); \
+		sha512sum $(notdir $^) > $(notdir $@)
 
 print-unsupported: #! print unsupported platforms
 	@echo -n $(UNSUPPORTED_PLATFORMS)
@@ -157,8 +163,10 @@ release: $(foreach platform,$(available_platforms),release-$(platform))
 # This function is here to assist the release-% rules. It generates the release
 # path for each platform.
 # Arg1: platform
-release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
+gen_release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
 	$(findstring slob,$(1)),slob,$(1).tar.xz)
+gen_release_hashpath = $(call gen_release_path,$(1)).sha512
+
 version: #! output current (source) version number
 	@echo $(version)
 
@@ -211,12 +219,14 @@ $(BUILD_DICTD)/%.dict.dz: $(BUILD_DICTD)/%.dict
 .PRECIOUS: $(BUILD_DICTD)/$(dictname).dict
 
 # build release archive
-$(call release_path,dictd): $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
+$(call gen_release_path,dictd): $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
 	tar --dereference --transform='s/build.dictd.//'   -C .. -cJf $@ \
 		$(addprefix $(notdir $(realpath .))/, $^) \
 		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
 
-release-dictd: $(RELEASE_DIR) $(call release_path,dictd)
+release-dictd: $(RELEASE_DIR) $(call gen_release_path,dictd) \
+	$(call gen_release_hashpath,dictd)
+
 
 
 
@@ -258,7 +268,7 @@ uninstall: #! uninstall this dictionary
 # put all sources of a dictionary module into a tarball for release
 # ("distribution").  this only includes the .tei file if it doesn't have to be
 # generated from other sources
-$(call release_path,src): $(RELEASE_DIR) $(DISTFILES)
+$(call gen_release_path,src): $(RELEASE_DIR) $(DISTFILES)
 	tar --dereference -C .. -cJf $@ \
 		$(addprefix $(notdir $(realpath .))/, $(DISTFILES))
 
@@ -266,7 +276,7 @@ $(call release_path,src): $(RELEASE_DIR) $(DISTFILES)
 # empty rule to fit into build system (build-<PLATFORM>)
 build-src: $(dictname).tei
 
-release-src: build-src $(call release_path,src)
+release-src: build-src $(call gen_release_path,src) $(call gen_release_hashpath,src)
 
 ##################################
 #### targets for StarDict platform
@@ -358,11 +368,11 @@ $(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei $(BUILD_DIR)/slob
 	@rm -rf $@
 	tei2slob -w $(BUILD_DIR)/slob -o $(@:-$(version).slob=.slob) $<
 
-$(call release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
+$(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
 	cp $< $@
 
 
-release-slob: $(call release_path,slob)
+release-slob: $(call gen_release_path,slob) $(call gen_release_hashpath,slob)
 
 #######################
 #### Makefile-technical
