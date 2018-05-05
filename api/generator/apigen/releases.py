@@ -38,7 +38,14 @@ def get_release_info_for_dict(path, version):
         elif parsed_name != name:
             raise ReleaseError('Found two different dictionary identifiers in %s: %s and %s' \
                         % (path, parsed_name, name))
-        files[os.path.join(path, file)] = (name, format)
+        full_path = os.path.join(path, file)
+        try:
+            with open(full_path + '.sha512', 'r') as f:
+                sha = f.read().strip().split('  ')[0]
+        except FileNotFoundError:
+            raise FileNotFoundError('expected a sha512 checksum, found nothing',
+                    full_path + '.sha512', 'r')
+        files[full_path] = (name, format, sha)
     if len(files) < 1:
         raise ReleaseError("no downloads available for %s" % path)
     return files
@@ -75,8 +82,8 @@ def get_all_downloads(root):
             name = next(iter(files.values()))[0]
             if not name in dictionaries_with_release:
                 dictionaries_with_release[name] = {}
-            # transform {path: (name, format)} to (path, format)
-            dictionaries_with_release[name][version] = tuple((k, v[1])
+            # transform {path: (name, format, hash)} to (path, format, hash)
+            dictionaries_with_release[name][version] = tuple((k, v[1], v[2])
                     for k,v in files.items())
     return dictionaries_with_release
 

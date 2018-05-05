@@ -53,8 +53,8 @@ def read_dict_info(conf, generate_api=True):
             version = releases.get_latest_version(release_files[name])
         except releases.ReleaseError as e: # add file name to error
             raise releases.ReleaseError(list(e.args) + [name])
-        for full_file, format in release_files[name][version]:
-            dict.add_download(dictionary.mklink(full_file, format, version))
+        for full_file, format, sha in release_files[name][version]:
+            dict.add_download(dictionary.mklink(full_file, format, version, sha))
     return dictionaries
 
 

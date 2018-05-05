@@ -19,7 +19,8 @@ def write_freedict_database(path, dicts):
             essence['releases'].append({'platform': str(release.format),
                 'size': str(release.size),
                 'date': release.last_modification_date,
-                'URL': str(release), 'version': str(release.version)
+                'URL': str(release), 'version': str(release.version),
+                'checksum': release.hash,
             })
         serialized.append(essence)
     with open(path, 'w', encoding='utf-8') as fhandle:

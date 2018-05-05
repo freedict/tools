@@ -151,6 +151,8 @@ class DownloadFormat(enum.Enum):
         """This function allows to get the correct enum value from a given
         file_name. The file name is parsed and the corresponding enum value
         returned. If the format could not be extracted, None is returned."""
+        if file_name.endswith('.sha512'):
+            return None
         format = DownloadFormat.Source
         for format in DownloadFormat:
             if format.value.search(file_name):
@@ -183,13 +185,15 @@ class Link:
     determined.
     Additionally to the given link path, a link also saves the information about
     the file format (dict-bz2 or source) and also the version of the
-    dictionary."""
-    def __init__(self, path, format, version):
+    dictionary.
+    It also mandates a hash for verification of the file."""
+    def __init__(self, path, format, version, sha):
         self.path = path
         self.format = format
         self.version = version
         self.size = -1
         self.last_modification_date = 'NONE' # YYYY-MM-dd
+        self.hash = sha
 
     def __str__(self):
         """Get a download link."""
@@ -203,14 +207,14 @@ class Link:
         return 'https://{}{}{}/{}/{}'.format(config.PROJECTHOME_HOST,
                 path_base, path[-3], path[-2], path[-1])
 
-def mklink(full_path, format, version):
+def mklink(full_path, format, version, sha):
     """Create a Link object with all the required information, i.e. file size.
     It queries the referenced `full_path` for its size and last modification
     date. It doesn't care whether it's actually on the file system or mounted
     with e.g. sshfs."""
     chunks = full_path.split(os.sep)
     path = '{}/{}/{}'.format(chunks[-3], chunks[-2], chunks[-1])
-    link = Link(path, format, version)
+    link = Link(path, format, version, sha)
     # get file size
     link.size = os.path.getsize(full_path)
     # get last modification date

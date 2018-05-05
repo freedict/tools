@@ -69,7 +69,8 @@ def dictionary2xml(dictionary):
         attrib = {'platform': str(download.format),
                 'size': str(download.size),
                 'date': download.last_modification_date,
-                'URL': str(download), 'version': str(download.version)
+                'URL': str(download), 'version': str(download.version),
+                'checksum': download.hash
             }
         create_child(dictionary, 'release', attrib)
     return dictionary
