@@ -12,11 +12,9 @@ import os
 import sys
 import time
 
-from apigen import dictionary, jsonhandlers, metadata, releases, xmlhandlers
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
-from config import get_path
-import config
+from fd_file_mgmt.api import dictionary, jsonhandlers, metadata, releases, xmlhandlers
+from fd_file_mgmt import config
+from fd_file_mgmt.config import get_path
 
 
 
@@ -73,7 +71,7 @@ def find_outdated_releases(dictionaries):
     return candidates
 
 
-def main(args):
+def main_body(args):
     parser = argparse.ArgumentParser(description='FreeDict API generator')
     parser.add_argument("-n", "--need-update", dest="check_for_unreleased_dicts",
             action="store_true", default=False,
@@ -121,10 +119,11 @@ def main(args):
     time.sleep(2)
     exec_or_fail(args.postexc) # umount or rsync files, if required
 
-if __name__ == '__main__':
+def main():
+    """Wrapper for nicer error case handling."""
     #pylint: disable=broad-except
     try:
-        main(sys.argv)
+        main_body(sys.argv)
     except Exception as e:
         if 'DEBUG' not in os.environ:
             print('Error:',str(e))
@@ -134,3 +133,5 @@ if __name__ == '__main__':
         else:
             raise e
 
+if __name__ == '__main__':
+    main()

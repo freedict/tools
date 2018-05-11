@@ -1,11 +1,10 @@
 """Tests for apigen.dictionary."""
 
 #pylint: disable=too-many-public-methods,import-error,too-few-public-methods,missing-docstring,unused-variable,multiple-imports
-import sys
 import unittest
 
 
-from apigen.dictionary import Dictionary
+from fd_file_mgmt.api.dictionary import Dictionary
 
 class TestTictionary(unittest.TestCase):
     def test_unset_mandatory_fields_are_detected(self):

@@ -3,6 +3,7 @@
 *.bak
 build
 */build/*
+*.egg-info
 freedict-database.xml
 *.mo
 *__pycache__*

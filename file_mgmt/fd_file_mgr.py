@@ -11,8 +11,7 @@ import subprocess
 import sys
 
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
-import config
+from fd_file_mgmt import config
 
 
 def execute(cmd, raise_on_error=False):
@@ -155,4 +154,5 @@ def main():
                 print(e.args[0])
                 continue
 
-main()
+if __name__ == '__main__':
+    main()
