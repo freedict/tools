@@ -61,14 +61,35 @@ BUILD_DIR=build
 RELEASE_DIR=$(BUILD_DIR)/release
 
 
+# script to restart the dictd daemon, if installed
+DICTD_RESTART_SCRIPT = $(BUILDHELPERS_DIR)dict_restart_helper.sh
+
+################################################################################
+# Python special handling
+
+# find python
+PYTHON := $(shell command -v python3 2> /dev/null)
+ifeq ($(PYTHON), )
+	PYTHON := $(shell command -v python 2> /dev/null)
+ifeq ("$(PYTHON)" "")
+$(error No Python executable found, please make sure that a recent Python is in the search path)
+endif
+endif
+
+PYTHON_VERSION_FULL := $(wordlist 2,4,$(subst ., ,$(shell $(PYTHON) --version 2>&1)))
+PYTHON_VERSION_MAJOR := $(word 1,${PYTHON_VERSION_FULL})
+
+ifneq ($(PYTHON_VERSION_MAJOR),3)
+$(error a python Version >= 3.4 is required, current python major is $(PYTHON_VERSION_MAJOR))
+endif
+
 # find python
 PYTHON := $(shell command -v python3 2> /dev/null)
 ifndef PYTHON
 	PYTHON := python
 endif
 
-# script to restart the dictd daemon, if installed
-DICTD_RESTART_SCRIPT = $(BUILDHELPERS_DIR)dict_restart_helper.sh
+
 
 # Define the help system, use #! after the colon of a rule to add a
 # documentation string
@@ -90,6 +111,4 @@ help:
 # NOTE: If you want to add a HELP_SUFFIX, you have to export the variable as
 # environment variable.
 # Note II: wc -w is necessary, because HELP_SUFFIX might be a multi-line string
-
-
 
