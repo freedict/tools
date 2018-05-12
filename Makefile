@@ -17,18 +17,17 @@ TARGET_DIRS = $(addprefix $(INSTALLDIR)/tools/, $(dirs))
 api: #! generate the api with information about all dictionaries and their downloads at the configured api path
 api:
 	$(call mount_or_reuse); \
-		$(call exc_python,-m,fd_api) || sleep 1; \
+		$(call exc_pyscript,fd_api) || sleep 1; \
 		$(call umount_or_keep)
 
 mount: #! mount or synchronize FreeDict releases / generated dictionaries
-	$(call mount_or_reuse)
+	$(call exc_pyscript,fd_file_mgr,-m)
 
-# provide a clean up rule which can be run, if sshfs was not umounted cleanly
-umount: #! runs umount / clean up actions if make api failed and cannot be executed in a subsequent run
-	@$(call exc_python,-m,fd_file_mgr,-u)
+umount: #! runs umount / clean up actions for unmounting remote volumes (if SSH is used)
+	@$(call exc_pyscript,fd_file_mgr,-u)
 
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
-	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -a | tr -d '\n'
+	@$(call exc_pyscript,fd_file_mgr,-a) | tr -d '\n'
 
 api-validation: #! validate the freedict-database.xml against its RNG schema
 	xmllint --noout --relaxng freedict-database.rng $(shell $(MAKE) api-path)/freedict-database.xml
@@ -91,7 +90,7 @@ install:
 
 need-update: #! queries for unreleased dictionaries or for those with newer source changes
 	$(call mount_or_reuse); \
-		$(call exc_python,-m,fd_api,-n)\
+		$(call exc_pyscript,fd_api,-n)\
 			|| sleep 1; \
 		$(call umount_or_keep)
 
@@ -99,6 +98,6 @@ release: #! build a release tarball in $$BUILD_DIR, ../build by default
 release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
 
 release-path: #! print the output directory to which releases are deployed (read from configuration); trailing newline is removed
-	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -r | tr -d '\n'
+	@$(call exc_pyscript,fd_file_mgr,-r) | tr -d '\n'
 
 .PHONY: release install api all mount umount api-validation

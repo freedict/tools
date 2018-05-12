@@ -62,16 +62,23 @@ DICTD_RESTART_SCRIPT = $(BUILDHELPERS_DIR)dict_restart_helper.sh
 
 ################################################################################
 # Python special handling
+# First, the interpreter is queried for the correct version (and name). Then the
+# setup for a virtual environment is done. For the "end-user", all that matters
+# should be the exc_pyscript function, e.g.:
+#
+# 	foo:
+# 		$(exc_pyscript) fd_api --what-ever
 
-# find python
+# find interpreter with matching name, python3 or python?
 PYTHON := $(shell command -v python3 2> /dev/null)
-ifeq ($(PYTHON), )
+ifeq ($(PYTHON),)
 	PYTHON := $(shell command -v python 2> /dev/null)
 ifeq ("$(PYTHON)" "")
 $(error No Python executable found, please make sure that a recent Python is in the search path)
 endif
 endif
 
+# query version
 PYTHON_VERSION_FULL := $(wordlist 2,4,$(subst ., ,$(shell $(PYTHON) --version 2>&1)))
 PYTHON_VERSION_MAJOR := $(word 1,${PYTHON_VERSION_FULL})
 
@@ -79,13 +86,13 @@ ifneq ($(PYTHON_VERSION_MAJOR),3)
 $(error a python Version >= 3.4 is required, current python major is $(PYTHON_VERSION_MAJOR))
 endif
 
-# find python
-PYTHON := $(shell command -v python3 2> /dev/null)
-ifndef PYTHON
-	PYTHON := python
-endif
+# exc_pyscript is meant to either call a system-wide installed version or one
+# from a virtual env. The latter needs to be specified in the FD configuration,
+# documented in the wiki.
+# This is a fallback for system-wide script usage:
+exc_pyscript = $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)
 
-exc_python = $(PYTHON) $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)
+# find a (python) virtual env
 # ToDo: look at detection algorithm
 FREEDICTRC = $(HOME)/.config/freedict/freedictrc
 ifneq ($(wildcard $(FREEDICTRC)),)
@@ -95,8 +102,8 @@ VIRTUAL_ENV=$(shell grep -E 'virtual_env.*=.*' < $(FREEDICTRC) | cut -d = -f 2\
 ifneq ($(VIRTUAL_ENV),)
 ifneq ($(wildcard $(VIRTUAL_ENV)),)
 # call python from the virtual environment
-exc_python = source $(VIRTUAL_ENV)/bin/activate; \
-	python $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)
+exc_pyscript = source $(VIRTUAL_ENV)/bin/activate; \
+	$(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)
 endif
 endif
 endif
@@ -104,7 +111,13 @@ endif
 
 ################################################################################
 # Remote file handling
-mount_or_reuse=$(call exc_python,-m,fd_file_mgr,-m); \
+# These two functions are meant to be used within a rule (combined as *one*
+# shell line) to remember state. If remote volumes were mounted before, don't
+# umount them, otherwise, do. Example:
+#
+# 	foo:
+# 		$(call mount_or_reuse); mycommand; $(call umount_or_keep)
+mount_or_reuse=$(call exc_python,fd_file_mgr,-m); \
 	if [ $$? -eq 201 ]; then \
 		STAY_MOUNTED=1; \
 	else \
@@ -112,9 +125,10 @@ mount_or_reuse=$(call exc_python,-m,fd_file_mgr,-m); \
 	fi
 umount_or_keep = \
 	if [ $$STAY_MOUNTED -eq 0 ]; then \
-		$(call exc_python,-m,fd_file_mgr,-u); \
+		$(call exc_python,fd_file_mgr,-u); \
 	fi
 
+################################################################################
 # Define the help system, use #! after the colon of a rule to add a
 # documentation string
 help:
