@@ -30,10 +30,8 @@ import sys
 import languages
 import tei
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(
-    sys.argv[0]))))
-from util import tokenizer
-import util.output
+from fd_import import tokenizer
+import fd_import.output
 
 
 
@@ -72,10 +70,10 @@ def main(input_path, tei_file, output_directory):
         root.write(output, encoding="utf-8", xml_declaration=None)
         output.write(b'\n')
     print("Reindenting file")
-    util.output.reindent_xml(tei_fn)
+    fd_import.output.reindent_xml(tei_fn)
     print(lnum, "entries written.")
-    util.output.copy_readme(input_path, output_directory)
-    util.output.mk_makefile(output_directory, [os.path.basename(tei_fn)])
+    fd_import.output.copy_readme(input_path, output_directory)
+    fd_import.output.mk_makefile(output_directory, [os.path.basename(tei_fn)])
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:

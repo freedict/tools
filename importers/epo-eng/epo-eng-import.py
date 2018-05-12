@@ -9,9 +9,8 @@ import urllib.request
 import xml.sax.saxutils as saxutils
 
 # allow tokenizer import
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))))
-from util.tokenizer import ChunkType, tokenize
-import util
+from fd_import.tokenizer import ChunkType, tokenize
+import fd_import
 
 
 class WordType(enum.Enum):
@@ -201,7 +200,7 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
         f.write(body_xml)
         f.write(header[body_start+1:].lstrip().rstrip() + '\n')
 
-    util.output.reindent_xml(tei_file)
+    fd_import.output.reindent_xml(tei_file)
     if not os.path.exists(os.path.join(base_dir, 'COPYING')):
         # retrieve copyright information
         print("Downloading CC unported 3.0 license")
@@ -216,7 +215,7 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
                 f.write(u.read())
 
     # write Makefile
-    util.output.mk_makefile(base_dir, ['epo-eng.tei', 'epo-eng.patch'])
+    fd_import.output.mk_makefile(base_dir, ['epo-eng.tei', 'epo-eng.patch'])
 
 
 def main(input_file, tei_skeleton, output_directory):
