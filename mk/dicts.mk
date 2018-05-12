@@ -366,7 +366,7 @@ build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
 $(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei $(BUILD_DIR)/slob
 	@rm -rf $@
-	tei2slob -w $(BUILD_DIR)/slob -o $(@:-$(version).slob=.slob) $<
+	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$(@:-$(version).slob=.slob),$<)
 
 $(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
 	cp $< $@
