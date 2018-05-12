@@ -67,11 +67,11 @@ $(RELEASE_DIR):
 	mkdir -p $@
 
 changelog-help:
-	@$(PYTHON) $(FREEDICT_TOOLS)/buildhelpers/changelog.py -h
+	@$(call exc_pyscript,fd_changelog,-h)
 
 changelog:  #! launch a script to assist in updating a TEI header for next release, try changelog-help for usage help
 changelog: $(dictname).tei
-	@$(PYTHON) $(FREEDICT_TOOLS)/buildhelpers/changelog.py ${E} $<
+	@$(call exc_pyscript,fd_changelog,${E},$<)
 
 # This is a "double colon rule", allowing you to extend this rule in your own
 # makefile.
@@ -180,14 +180,14 @@ version: #! output current (source) version number
 # positives.
 report-duplicates:
 report-duplicates: $(dictname).tei
-	@$(PYTHON) $(BUILDHELPERS_DIR)/rm_duplicates.py -s $< || true
+	@$(call exc_pyscript,rm_duplicates,-s,$<) || true
 
 qa: #! execute quality assurance helpers, for instance schema validation or detection of duplicated translations
 qa: report-duplicates validation
 
 rm_duplicates: #! remove duplicated entries and empty XML nodes and present a diff of the changes
 rm_duplicates: $(dictname).tei
-	@$(PYTHON) $(BUILDHELPERS_DIR)/rm_duplicates.py $<
+	@$(call exc_pyscript,rm_duplicates,$<)
 
 validation: #! validate dictionary with FreeDict's TEI XML subset
 validation: $(dictname).tei

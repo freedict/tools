@@ -12,9 +12,9 @@ import os
 import sys
 import time
 
-from fd_file_mgmt.api import dictionary, jsonhandlers, metadata, releases, xmlhandlers
-from fd_file_mgmt import config
-from fd_file_mgmt.config import get_path
+from fd_tool.api import dictionary, jsonhandlers, metadata, releases, xmlhandlers
+from fd_tool import config
+from fd_tool.config import get_path
 
 
 

@@ -1,5 +1,5 @@
--e git+git@github.com:freedict/tools@simplify_python_setup#egg=fd_file_mgmt&subdirectory=file_mgmt
+-e git+git@github.com:freedict/tools@simplify_python_setup#egg=fd_fd_tool&subdirectory=fd_tool
 pkg-resources==0.0.0
 PyICU==2.0.3
-git+https://github.com/itkach/slob
-git+https://github.com/itkach/tei2slob
+Slob==1.0
+tei2slob==1.0

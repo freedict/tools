@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 
-from fd_file_mgmt import config
+from fd_tool import config
 
 
 def execute(cmd, raise_on_error=False):

@@ -2,7 +2,7 @@
 """
 This script attempts to deduplicate entries in a dictionary or to detect whether
 duplicates are present.
-In the normal operating mode, the questionable entries are removed, the result
+In the normal operation mode, the questionable entries are removed, the result
 is written to a file-dedup.py and then it is converted to the C5 format. From
 there, a diff with the original format is done. With the diff, the human in
 front of this very computer can then reason about the changes.

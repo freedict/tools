@@ -14,13 +14,11 @@ For the concrete usage see the corresponding usage message."""
 #pylint: disable=wrong-import-position
 import datetime
 import os
-from os.path import dirname, abspath, join
 import re
 import shutil
 import sys
 
-sys.path.append(join(dirname(dirname(abspath(sys.argv[0]))), 'api'))
-import config
+from fd_tool import config
 
 def get_editor():
     """Detect an editor to use. Try to use $EDITOR or probe for a bunch of
