@@ -16,21 +16,16 @@ TARGET_DIRS = $(addprefix $(INSTALLDIR)/tools/, $(dirs))
 
 api: #! generate the api with information about all dictionaries and their downloads at the configured api path
 api:
-	# -p: mount / synchronize released and generated files; -o: umount them
-	#  again
-	$(PYTHON) $(FREEDICT_TOOLS)/api/generator/generator.py \
-		-p "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -m" \
-		-o "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u" \
-		|| sleep 1; $(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
-# the last line above makes sure that sshfs volumes are umounted, if something
-# goes wrong
+	$(call mount_or_reuse); \
+		$(call exc_python,-m,fd_api) || sleep 1; \
+		$(call umount_or_keep)
 
 mount: #! mount or synchronize FreeDict releases / generated dictionaries
-	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -m
+	$(call mount_or_reuse)
 
 # provide a clean up rule which can be run, if sshfs was not umounted cleanly
 umount: #! runs umount / clean up actions if make api failed and cannot be executed in a subsequent run
-	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
+	@$(call exc_python,-m,fd_file_mgr,-u)
 
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
 	@$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -a | tr -d '\n'
@@ -95,10 +90,10 @@ install:
 
 
 need-update: #! queries for unreleased dictionaries or for those with newer source changes
-	$(PYTHON) $(FREEDICT_TOOLS)/api/generator/generator.py -n \
-		-p "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -m" \
-		-o "$(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u" \
-		|| sleep 1; $(PYTHON) $(FREEDICT_TOOLS)/api/file_manager/file_manager.py -u
+	$(call mount_or_reuse); \
+		$(call exc_python,-m,fd_api,-n)\
+			|| sleep 1; \
+		$(call umount_or_keep)
 
 release: #! build a release tarball in $$BUILD_DIR, ../build by default
 release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2

@@ -2,10 +2,6 @@
 # Furthermore, it defines a help target which makes the buildsystem
 # self-documenting.
 
-# that might need adaptation, standard debian ships with dash these days and
-# people might not have bash at all; it's also questionable what functionality
-# from bash is actually used; on the other hand, the help system relis on bash
-# substitutions
 SHELL=bash
 
 
@@ -89,7 +85,35 @@ ifndef PYTHON
 	PYTHON := python
 endif
 
+exc_python = $(PYTHON) $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)
+# ToDo: look at detection algorithm
+FREEDICTRC = $(HOME)/.config/freedict/freedictrc
+ifneq ($(wildcard $(FREEDICTRC)),)
+VIRTUAL_ENV=$(shell grep -E 'virtual_env.*=.*' < $(FREEDICTRC) | cut -d = -f 2\
+			|tr -d ' ')
+# if virtual env found
+ifneq ($(VIRTUAL_ENV),)
+ifneq ($(wildcard $(VIRTUAL_ENV)),)
+# call python from the virtual environment
+exc_python = source $(VIRTUAL_ENV)/bin/activate; \
+	python $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)
+endif
+endif
+endif
 
+
+################################################################################
+# Remote file handling
+mount_or_reuse=$(call exc_python,-m,fd_file_mgr,-m); \
+	if [ $$? -eq 201 ]; then \
+		STAY_MOUNTED=1; \
+	else \
+		STAY_MOUNTED=0; \
+	fi
+umount_or_keep = \
+	if [ $$STAY_MOUNTED -eq 0 ]; then \
+		$(call exc_python,-m,fd_file_mgr,-u); \
+	fi
 
 # Define the help system, use #! after the colon of a rule to add a
 # documentation string

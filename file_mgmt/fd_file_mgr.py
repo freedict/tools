@@ -47,7 +47,7 @@ class RsyncFileAccess:
 
     def make_avalailable(self, user, server, remote_path, path):
         """Synchronize files to have them available locally."""
-        execute("rsync --archives --verbose -e ssh {}@{}:/{}/ {}".format(
+        return execute("rsync --archives --verbose -e ssh {}@{}:/{}/ {}".format(
                 user, server, remote_path, path))
 
     #pylint: disable=unused-argument
@@ -63,10 +63,13 @@ class SshfsAccess:
 
     def make_avalailable(self, user, server, remote_path, path):
         """Mount remote file system using sshfs."""
-        if len(os.listdir('.')) == 0:
-            print("Error: %s has to be empty, otherwise sshfs won't work." % path)
+        # is mounted?
+        if os.path.ismount(path): # mounted, -m help says we need to return 201
+            return 201 # and no action
+        if len(os.listdir(path)) > 0:
+            print("Error: %s has to be empty, otherwise mounting impossible." % path)
             sys.exit(41)
-        execute('sshfs {}@{}:{} {}'.format(user, server, remote_path, path))
+        return execute('sshfs {}@{}:{} {}'.format(user, server, remote_path, path))
 
     def make_unavailable(self, path):
         execute('fusermount -u {}'.format(path), raise_on_error=True)
@@ -83,7 +86,11 @@ def setup():
                 "json are stored;  the value is read from the local "
                 "configuration"))
     parser.add_argument('-m', dest="make_available", action='store_true',
-            help='make files in generated/ and release/ available; this will use internally either sshfs or rsync, depending on the configuration')
+            help='''make files in generated/ and release/ available; this will \
+                    use internally either sshfs or rsync, depending on the \
+                    configuration. The script will exit with 0 on success, \
+                    with 201 if remote filesystem was mounted already and with \
+                    the error code of the appropriate subcommand otherwise.''')
     parser.add_argument('-r', dest="print_release_path", action='store_true',
             default=False, help=("print output directory to which releases are "
                 "deployed. the value is read from the local configuration"))
@@ -132,6 +139,7 @@ def main():
             # we could try running fusermount -u:
             os.system('fusermount -u "%s"' % release_directory)
 
+    ret = 0
     if args.make_available:
         for section in ('release', 'generated'):
             if conf[section].getboolean('skip'):
@@ -140,7 +148,7 @@ def main():
             print('Making files for "%s" available...' % section)
             options = conf[section]
             target_path = config.get_path(options)
-            access_method.make_avalailable(options['user'], options['server'],
+            ret = access_method.make_avalailable(options['user'], options['server'],
                 options['remote_path'], target_path)
     elif args.umount:
         for section in ('generated', 'release'):
@@ -153,6 +161,7 @@ def main():
             except OSError as e:
                 print(e.args[0])
                 continue
+    sys.exit(ret)
 
 if __name__ == '__main__':
     main()
