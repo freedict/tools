@@ -1,5 +1,5 @@
 -e git://github.com/freedict/tools.git@simplify_python_setup#egg=fd_fd_tool&subdirectory=fd_tool
 pkg-resources==0.0.0
 PyICU==2.0.3
-Slob==1.0
-tei2slob==1.0
+-e git://github.com/itkach/slob.git#egg=slob
+-e git://github.com/itkach/tei2slob.git#egg=tei2slob

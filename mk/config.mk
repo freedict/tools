@@ -61,6 +61,13 @@ RELEASE_DIR=$(BUILD_DIR)/release
 DICTD_RESTART_SCRIPT = $(BUILDHELPERS_DIR)dict_restart_helper.sh
 
 ################################################################################
+# FreeDict configuration
+# Use FREEDICTRC to discover a configuration. If the variable is empty, no
+# configuration was found.
+FREEDICTRC = $(wildcard $(HOME)/.config/freedict/freedictrc $(LOCALAPPDATA)/freedict/freedict.ini)
+
+
+################################################################################
 # Python special handling
 # First, the interpreter is queried for the correct version (and name). Then the
 # setup for a virtual environment is done. For the "end-user", all that matters

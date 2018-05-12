@@ -20,12 +20,6 @@ api:
 		$(call exc_pyscript,fd_api) || sleep 1; \
 		$(call umount_or_keep)
 
-mount: #! mount or synchronize FreeDict releases / generated dictionaries
-	$(call exc_pyscript,fd_file_mgr,-m)
-
-umount: #! runs umount / clean up actions for unmounting remote volumes (if SSH is used)
-	@$(call exc_pyscript,fd_file_mgr,-u)
-
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
 	@$(call exc_pyscript,fd_file_mgr,-a) | tr -d '\n'
 
@@ -33,6 +27,19 @@ api-validation: #! validate the freedict-database.xml against its RNG schema
 	xmllint --noout --relaxng freedict-database.rng $(shell $(MAKE) api-path)/freedict-database.xml
 
 
+
+
+mount: #! mount or synchronize FreeDict releases / generated dictionaries
+	$(call exc_pyscript,fd_file_mgr,-m)
+
+need-update: #! queries for unreleased dictionaries or for those with newer source changes
+	$(call mount_or_reuse); \
+		$(call exc_pyscript,fd_api,-n)\
+			|| sleep 1; \
+		$(call umount_or_keep)
+
+umount: #! runs umount / clean up actions for unmounting remote volumes (if SSH is used)
+	@$(call exc_pyscript,fd_file_mgr,-u)
 
 $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2: Makefile* *.pl
 ifeq ($(wildcard $(BUILD_DIR)),)
@@ -45,10 +52,6 @@ endif
 	  --exclude="*/ergane/zip/*" \
 	  --exclude="*/__pycache__/*" \
 	  -cvjf $@ ../tools
-
-# install a file using its relative path below $(FREEDICT_TOOLS)
-define install_relative 
-endef
 
 install-deps: #! probe current operating system to install build prerequisites for dictionary development
 	echo -n "Do you want to use rsync or sshfs? Enter one of them or nothing: "; \
@@ -65,6 +68,31 @@ install-deps: #! probe current operating system to install build prerequisites f
 		echo "Unknown platform. Feel free to report the corresponding packages to us."; \
 	fi
 
+
+mk_venv: #! initialise a new (Python) virtual environment to make use of the shipped Python scripts; use "make mk_venv P="/some/path" to specify the output path
+	@if [ "${P}" = '' ]; then \
+		echo Need to give a path with P=, e.g. "make mk_venv P=/some/dir"; \
+		exit 222; fi
+	@virtualenv -q -p $(PYTHON) ${P}
+	source ${P}/bin/activate; pip install -r requirements.txt
+	@if [ "$(FREEDICTRC)" = "" ]; then \
+		echo "You don't have a FreeDict configuration yet. Please create one, "; \
+		echo 'as described in the chapter "Build System" of the FreeDict HOWTO';\
+		echo "from the Wiki";fi
+	@if ! grep virtual_env < $(FREEDICTRC); then \
+		echo -n "Do you want to add the virtual_env to the FreeDict configuration? [y|n] "; \
+		read CHOICE;\
+		if [ "$$CHOICE" = "y" ]; then \
+			if ! grep -r '[DEFAULT]' $(FREEDICTRC); then \
+				echo >> $(FREEDICTRC);\
+				echo '[DEFAULT]' >> $(FREEDICTRC); \
+				echo "virtual_env = ${P}" >> $(FREEDICTRC) ;\
+			else \
+				sed -i 's|\[DEFAULT\]|[DEFAULT]\nvirtual_env = '${P}'|' $(FREEDICTRC); \
+			fi; \
+			echo done; \
+		fi; \
+	fi
 
 # NOTE: the directories below HAVE to be on one line
 DIRS := api api/generator api/file_manager api/generator/apigen mk xquery xsl/inc
@@ -87,12 +115,6 @@ install:
 
 
 
-
-need-update: #! queries for unreleased dictionaries or for those with newer source changes
-	$(call mount_or_reuse); \
-		$(call exc_pyscript,fd_api,-n)\
-			|| sleep 1; \
-		$(call umount_or_keep)
 
 release: #! build a release tarball in $$BUILD_DIR, ../build by default
 release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
