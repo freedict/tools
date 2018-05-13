@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 #vim: set expandtab sts=4 ts=4 sw=4 autoindent ft=python:
 """This script downloads all (already approved) dictionary from the WikDict
-project to be included in FreeDict's repository."""
+project to be included in FreeDict's repository.
+This script requires a FreeDict API file to figure out which dictionaries are
+from WikDict and which not. It searches first for a local file referenced by the
+FreeDict configuration. This is the preferred way. Then it downloads a version
+from freedict.org.
+"""
 
 #pylint: disable=multiple-imports
 import html.parser
+import json
 import os
 import re
 import sys
@@ -14,6 +20,36 @@ import xml.etree.ElementTree
 from datetime import date
 
 SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/recommended/'
+
+
+def get_fd_api():
+    """Read local FreeDict API file or load from given path from configuration
+    or download it from freedict.org as fallback."""
+    js = None
+    fd_tool = None # make except happy
+    try:
+        import fd_tool.config as config
+        cnf = config.discover_and_load()
+        js = json.load(open(cnf['DEFAULT']['virtual_env']))
+    except fd_tool.conifg.ConfigurationError:
+        pass # no conf, download json
+    except ImportError:
+        # try to activate virtual env, if configured but not sourced yet
+        paths = [os.path.join(os.path.expanduser("~"), '.config/freedict/freedictrc')]
+        if os.environ.get('LOCALAPPDATA'):
+            paths.append(os.path.join(os.environ['LOCALAPPDATA'], 'freedict/freedict.ini'))
+            conffile = [path for path in paths if os.path.exists(path)]
+            if conffile:
+                import configparser
+                cnf = configparser.ConfigParser()
+                cnf.read_file(open(conffile[0]))
+                if 'DEFAULT' in cnf and 'api_output_path' in cnf['DEFAULT']:
+                    js = json.load(open(cnf['DEFAULT']['api_output_path']))
+    if not js:
+        from urllib.request import urlopen
+        with urlopen('https://freedict.org/freedict-database.json') as u:
+            js = json.loads(u.read().decode('utf-8'))
+    return js
 
 
 class LinkExtractor(html.parser.HTMLParser):
@@ -86,7 +122,7 @@ def update_dict_files(path, shared_file_path):
                 shutil.copy2(file, path)
             except shutil.SameFileError:
                 pass
-    copy(os.path.join(shared_file_path, f) for f in 
+    copy(os.path.join(shared_file_path, f) for f in
             ('freedict-dictionary.css', 'freedict-P5.dtd', 'INSTALL',
                 'freedict-P5.rng', 'freedict-P5.xml'))
     copy(os.path.join(dir_template, f) for f in os.listdir(dir_template))
