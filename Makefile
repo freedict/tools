@@ -82,12 +82,20 @@ mk_venv: #! initialise a new (Python) virtual environment to make use of the shi
 		echo "You don't have a FreeDict configuration yet. Please create one, "; \
 		echo 'as described in the chapter "Build System" of the FreeDict HOWTO';\
 		echo "from the Wiki";fi
-	@if ! grep virtual_env < $(FREEDICTRC); then \
+	if ! [ -f $(FREEDICTRC) ]; then \
+		NO_CONF=1; \
+	elif ! grep virtual_env < $(FREEDICTRC) &> /dev/null; then \
+		NO_CONF=1; \
+	else NO_CONF=0; \
+	fi; \
+	if [ $$NO_CONF -eq 1 ]; then \
 		echo -n "Do you want to add the virtual_env to the FreeDict configuration? [y|n] "; \
 		read CHOICE;\
 		if [ "$$CHOICE" = "y" ]; then \
+			mkdir -p $(dir $(FREEDICTRC));\
+			touch $(FREEDICTRC);\
 			PATH=$(abspath ${P}); \
-			if ! grep -r '[DEFAULT]' $(FREEDICTRC); then \
+			if ! grep -r '[DEFAULT]' $(FREEDICTRC) &> /dev/null; then \
 				echo >> $(FREEDICTRC);\
 				echo '[DEFAULT]' >> $(FREEDICTRC); \
 				echo "virtual_env = $$PATH" >> $(FREEDICTRC) ;\
