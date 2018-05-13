@@ -1,4 +1,4 @@
-# This script installs fd_util, it does not and should not install the importer
+# This script installs fd_import, it does not and should not install the importer
 # scripts.
 from setuptools import setup
 

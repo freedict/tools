@@ -3,14 +3,11 @@ entries. It can only support a subset of TEI and is intended to reflect the
 features of the Ding format."""
 
 import abc
-from os.path import abspath, dirname
-import sys
 
 
 
-sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
-import util.tokenizer as tokenizer
-from util.tokenizer import ChunkType
+from fd_import import tokenizer
+from fd_import.tokenizer import ChunkType
 
 class ParserError(Exception):
     pass

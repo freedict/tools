@@ -83,12 +83,13 @@ mk_venv: #! initialise a new (Python) virtual environment to make use of the shi
 		echo -n "Do you want to add the virtual_env to the FreeDict configuration? [y|n] "; \
 		read CHOICE;\
 		if [ "$$CHOICE" = "y" ]; then \
+			PATH=$(abspath ${P}); \
 			if ! grep -r '[DEFAULT]' $(FREEDICTRC); then \
 				echo >> $(FREEDICTRC);\
 				echo '[DEFAULT]' >> $(FREEDICTRC); \
-				echo "virtual_env = ${P}" >> $(FREEDICTRC) ;\
+				echo "virtual_env = $$PATH" >> $(FREEDICTRC) ;\
 			else \
-				sed -i 's|\[DEFAULT\]|[DEFAULT]\nvirtual_env = '${P}'|' $(FREEDICTRC); \
+				sed -i 's|\[DEFAULT\]|[DEFAULT]\nvirtual_env = '$$PATH'|' $(FREEDICTRC); \
 			fi; \
 			echo done; \
 		fi; \

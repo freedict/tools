@@ -1,4 +1,5 @@
 -e git://github.com/freedict/tools.git@simplify_python_setup#egg=fd_fd_tool&subdirectory=fd_tool
+-e git://github.com/freedict/tools.git@simplify_python_setup#egg=fd_import&subdirectory=importers
 pkg-resources==0.0.0
 PyICU==2.0.3
 -e git://github.com/itkach/slob.git#egg=slob
