@@ -36,7 +36,7 @@ SGML_CATALOG_FILES ?= /etc/sgml/catalog
 
 DICTFMT = $(shell command -v dictfmt 2> /dev/null)
 ifeq ($(DICTFMT),)
-	$(warnrning The command dictfmt was not found, you will not be able to convert into the dictd format.)
+$(warnrning The command dictfmt was not found, you will not be able to convert into the dictd format.)
 endif
 
 charlint_in_path := $(shell which charlint.pl 2>/dev/null)

@@ -73,6 +73,9 @@ mk_venv: #! initialise a new (Python) virtual environment to make use of the shi
 	@if [ "${P}" = '' ]; then \
 		echo Need to give a path with P=, e.g. "make mk_venv P=/some/dir"; \
 		exit 222; fi
+	@if ! command -v virtualenv &> /dev/null; then \
+		echo '`virtualenv` not found, please install it and try again.'; exit 10; \
+		fi
 	@virtualenv -q -p $(PYTHON) ${P}
 	source ${P}/bin/activate; pip install -r requirements.txt
 	@if [ "$(FREEDICTRC)" = "" ]; then \
