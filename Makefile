@@ -69,7 +69,31 @@ install-deps: #! probe current operating system to install build prerequisites f
 	fi
 
 
-mk_venv: #! initialise a new (Python) virtual environment to make use of the shipped Python scripts; use "make mk_venv P="/some/path" to specify the output path
+# This helps to express \n as a special variable to Make; it **needs** two
+# newlines within the define
+define newline
+
+
+endef
+
+#  This may not contain apostrophes
+define VENV_HELP
+A virtual environment is a local copy of all Python utilities, scripts and
+libraries for Python development. With a virtual environment, you do not need to
+install all the FreeDict scripts globally in your system, but you are of course
+free to do so. The mk_venv command will make sure that the virtual environment
+is created at the correct place; use "P=/some/path" to specify the path.
+Example:
+    make mk_venv P=../fd-venv
+After installation, you will be asked whether the virtual environment should be
+added to the FreeDict configuration. This is generally a good idea, because this
+means that the FreeDict build system will take care of all the required steps.
+endef
+
+mk_venv-help:
+	echo -e '$(subst $(newline),\n,${VENV_HELP})'
+
+mk_venv: #! initialise a new (Python) virtual environment; use mk_venv-help for detailled help
 	@if [ "${P}" = '' ]; then \
 		echo Need to give a path with P=, e.g. "make mk_venv P=/some/dir"; \
 		exit 222; fi

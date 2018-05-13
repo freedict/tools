@@ -39,7 +39,15 @@ required tools.
 You should clone this repository to a path with no spaces and add an environment
 variable `FREEDICT_TOOLS` to point to this directory.
 
-Once done, you can get help on the available actions in any dictory containing a
+A lot of the internal scripts need additional Python libraries. To fully make
+use of them, you should set up a Python virtual environment for that. To help
+you getting started, `make mk_venv` is there to guide you through process and
+`make mk_venv-help` will explain you why and how you should use `make mk_venv`.
+
+Hint: If you do not like virtual environments, you are free to set up everything
+by hand yourself. See the file requirements.txt for more details.
+
+Once done, you can get help on the available actions in any directory containing a
 `Makefile` by typing `make help`.
 
 ### Documentation
