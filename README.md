@@ -41,8 +41,8 @@ variable `FREEDICT_TOOLS` to point to this directory.
 
 A lot of the internal scripts need additional Python libraries. To fully make
 use of them, you should set up a Python virtual environment for that. To help
-you getting started, `make mk_venv` is there to guide you through process and
-`make mk_venv-help` will explain you why and how you should use `make mk_venv`.
+you getting started, `make mk_venv` is there to guide you through the process
+and `make mk_venv-help` will explain you why and how you should use `make mk_venv`.
 
 Hint: If you do not like virtual environments, you are free to set up everything
 by hand yourself. See the file requirements.txt for more details.
