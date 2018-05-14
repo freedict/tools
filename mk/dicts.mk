@@ -234,7 +234,7 @@ release-dictd: $(RELEASE_DIR) $(call gen_release_path,dictd) \
 #### targets for evolutionary platform
 ######################################
 
-date=$(shell date +%G-%m-%d)
+date=$(shell date +%Y-%m-%d)
 
 install-base: $(dictname).dict.dz $(dictname).index
 	install -d $(DESTDIR)/$(PREFIX)/share/dictd
@@ -316,7 +316,7 @@ $(stardict_prefix)$(dictname).ifo: $(stardict_prefix)$(dictname).idx \
 	@echo "email=$(shell sed -e "s/.* <\(.*\)>/\1/" <authorresp.out)" >> $@
 	@echo "website=$(shell cat sourceurl.out)" >> $@
 	@echo "description=Converted to StarDict format by freedict.org" >> $@
-	@echo "date=$(shell date +%G.%m.%d)" >> $@
+	@echo "date=$(shell date +%Y.%m.%d)" >> $@
 	@echo "sametypesequence=m" >> $@
 	@cat $@
 
