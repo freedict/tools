@@ -234,7 +234,7 @@ release-dictd: $(RELEASE_DIR) $(call gen_release_path,dictd) \
 #### targets for evolutionary platform
 ######################################
 
-date=$(shell date +%G-%m-%d)
+date=$(shell date +%Y-%m-%d)
 
 install-base: $(dictname).dict.dz $(dictname).index
 	install -d $(DESTDIR)/$(PREFIX)/share/dictd
