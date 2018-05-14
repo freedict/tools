@@ -124,7 +124,7 @@ endif
 #
 # 	foo:
 # 		$(call mount_or_reuse); mycommand; $(call umount_or_keep)
-mount_or_reuse=$(call exc_python,fd_file_mgr,-m); \
+mount_or_reuse=$(call exc_pyscript,fd_file_mgr,-m); \
 	if [ $$? -eq 201 ]; then \
 		STAY_MOUNTED=1; \
 	else \
@@ -132,7 +132,7 @@ mount_or_reuse=$(call exc_python,fd_file_mgr,-m); \
 	fi
 umount_or_keep = \
 	if [ $$STAY_MOUNTED -eq 0 ]; then \
-		$(call exc_python,fd_file_mgr,-u); \
+		$(call exc_pyscript,fd_file_mgr,-u); \
 	fi
 
 ################################################################################
