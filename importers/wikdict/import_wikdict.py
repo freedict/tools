@@ -10,14 +10,10 @@ import re
 import sys
 import urllib.request, urllib.parse
 import shutil
+import xml.etree.ElementTree
 from datetime import date
 
 SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/recommended/'
-
-white_list = [
-    'fra-deu', 'deu-fra', 'dan-deu', 'deu-dan', 'deu-swe', 'swe-deu',
-    'eng-fin', 'pol-eng', 'deu-spa', 'fin-eng', 'fra-spa', 'pol-spa',
-]
 
 
 class LinkExtractor(html.parser.HTMLParser):
@@ -82,11 +78,8 @@ def update_dict_files(path, shared_file_path):
             os.path.dirname(os.path.realpath(__file__)),
             'template'
     )
-    try:
-        tei = next(os.path.join(path, f) for f in os.listdir(path))
-        os.remove(tei)
-    except (StopIteration, FileNotFoundError):
-        pass
+    shutil.rmtree(path, ignore_errors=True)
+    os.makedirs(path, exist_ok=True)
     def copy(files):
         for file in files:
             try:
@@ -97,6 +90,24 @@ def update_dict_files(path, shared_file_path):
             ('freedict-dictionary.css', 'freedict-P5.dtd', 'INSTALL',
                 'freedict-P5.rng', 'freedict-P5.xml'))
     copy(os.path.join(dir_template, f) for f in os.listdir(dir_template))
+
+
+def other_dict_exists(base_name):
+    try:
+        with open(os.path.join(base_name, base_name + '.tei'), 'rb') as f:
+            ns = '{http://www.tei-c.org/ns/1.0}'
+            parser = xml.etree.ElementTree.XMLPullParser(events=['end'])
+            for line in f:
+                parser.feed(line)
+                for (_, element) in parser.read_events():
+                    if element.tag == ns + 'sourceDesc':
+                        if b'wikdict' in xml.etree.ElementTree.tostring(element):
+                            return False
+                        else:
+                            return True
+    except FileNotFoundError:
+        return False
+    raise Exception('No sourceDesc in dictionary ' + base_name)
 
 
 def main():
@@ -119,13 +130,16 @@ def main():
         if not urllib.parse.urlsplit(link)[1]: # no host in URL
             link = urllib.parse.urljoin(prefix, link)
         base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
-        if base_name in white_list:
-            print('Importing',base_name)
-            os.makedirs(base_name, exist_ok=True)
-            update_dict_files(base_name, sys.argv[1])
-            download_to(link, os.path.join(base_name, base_name + '.tei'))
-            make_changelog(base_name)
-        else: print("Ignoring",base_name)
+        if not re.match(r'\w{3}-\w{3}', base_name):
+            continue
+        if other_dict_exists(base_name):
+            print('Manually edited dict for {} found, skip import'.format(base_name))
+            continue
+
+        print('Importing', base_name)
+        update_dict_files(base_name, sys.argv[1])
+        download_to(link, os.path.join(base_name, base_name + '.tei'))
+        make_changelog(base_name)
 
 if __name__ == '__main__':
     main()
