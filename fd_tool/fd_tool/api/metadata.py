@@ -81,14 +81,15 @@ class MetaDataParser(xmlhandlers.TeiHeadParser):
 
     def handle_sourceDesc(self, node):
         """Extract a source url, if any."""
-        ptr = node.findall(self._namespace + 'ptr')
-        if not ptr: # search whether ptr is embedded in p tag
-            for p in node:
-                ptr = p.findall(self._namespace + 'ptr')
-                if ptr:
-                    return {'sourceURL': ptr[0].get('target')}
-        else:
-            return {'sourceURL': ptr.get('target')}
+        ptr = node.findall('.//%sptr' % self._namespace)
+        if ptr:
+            return {'sourceURL': ptr[0].get('target')}
+        # search for source URL within '<ref target=""')
+        ref = node.findall('.//%sref' % self._namespace)
+        if ref:
+            return {'sourceURL': ref[0].get('target')}
+        return None
+
 
     def handle_edition(self, elem):
         return {'edition': elem.text[:]}
