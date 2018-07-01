@@ -47,8 +47,10 @@ class RsyncFileAccess:
 
     def make_avalailable(self, user, server, remote_path, path):
         """Synchronize files to have them available locally."""
-        return execute("rsync --archives --verbose -e ssh {}@{}:/{}/ {}".format(
+        ret = os.system("rsync --info=progress2 --progress --archive --verbose -e ssh {}@{}:/{}/ {}".format(
                 user, server, remote_path, path))
+        if ret:
+            raise OSError("Process gave error code %d" % ret)
 
     #pylint: disable=unused-argument
     def make_unavailable(self, path):
