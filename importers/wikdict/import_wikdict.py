@@ -16,23 +16,27 @@ import re
 import sys
 import urllib.request, urllib.parse
 import shutil
-import xml.etree.ElementTree
+import xml.etree.ElementTree as ET
 from datetime import date
 
 SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/recommended/'
-
+# minimal number of words to consider a dictionary for inclusion
+MIN_WORD_COUNT = 10000
 
 def get_fd_api():
     """Read local FreeDict API file or load from given path from configuration
-    or download it from freedict.org as fallback."""
+    or download it from freedict.org as fallback.
+    It is advised to generate a fresh API copy locally.
+    This function will try to load a virtual environment, if configured."""
     js = None
-    fd_tool = None # make except happy
+    #pylint: disable=bare-except
+    api_file = lambda c: os.path.join(os.path.expanduser(
+            c['DEFAULT']['api_output_path']), 'freedict-database.json')
+
     try:
         import fd_tool.config as config
         cnf = config.discover_and_load()
-        js = json.load(open(cnf['DEFAULT']['virtual_env']))
-    except fd_tool.conifg.ConfigurationError:
-        pass # no conf, download json
+        js = json.load(open(api_file(cnf)))
     except ImportError:
         # try to activate virtual env, if configured but not sourced yet
         paths = [os.path.join(os.path.expanduser("~"), '.config/freedict/freedictrc')]
@@ -44,7 +48,9 @@ def get_fd_api():
                 cnf = configparser.ConfigParser()
                 cnf.read_file(open(conffile[0]))
                 if 'DEFAULT' in cnf and 'api_output_path' in cnf['DEFAULT']:
-                    js = json.load(open(cnf['DEFAULT']['api_output_path']))
+                            js = json.load(open(api_file(cnf)))
+    except KeyboardInterrupt: # fd_tool.config.ConfigurationError -- but we don't know whether it wasbe imported before
+        pass
     if not js:
         from urllib.request import urlopen
         with urlopen('https://freedict.org/freedict-database.json') as u:
@@ -74,11 +80,11 @@ def extract_links(from_string):
     return parser.links
 
 
-def download_to(link, target):
-    """Download a link to a specified (file system) target."""
+def download(link):
+    """Download given link and decode the bytes."""
     try:
         with urllib.request.urlopen(link) as u:
-            open(target, 'wb').write(u.read())
+            return u.read().decode('UTF-8')
     except urllib.error.HTTPError as h:
         if int(h.code) == 404:
             reason = '%s; url: %s' % (str(h), link)
@@ -92,7 +98,7 @@ def assert_correct_working_directory():
     num_files = sum(1 for fn in os.listdir('.')
             if re.search('^[a-z]{3}-[a-z]{3}$', fn))
     if num_files < 2: # less than two dictionaries, probably not a dictionary root
-        print("Error: must be run from a FreeDict source root.")
+        print("Error: must be run from a FreeDict source root, i.e. where all generated dictionaries are stored.")
         sys.exit(9)
 
 
@@ -128,23 +134,27 @@ def update_dict_files(path, shared_file_path):
     copy(os.path.join(dir_template, f) for f in os.listdir(dir_template))
 
 
-def other_dict_exists(base_name):
-    try:
-        with open(os.path.join(base_name, base_name + '.tei'), 'rb') as f:
-            ns = '{http://www.tei-c.org/ns/1.0}'
-            parser = xml.etree.ElementTree.XMLPullParser(events=['end'])
-            for line in f:
-                parser.feed(line)
-                for (_, element) in parser.read_events():
-                    if element.tag == ns + 'sourceDesc':
-                        if b'wikdict' in xml.etree.ElementTree.tostring(element):
-                            return False
-                        else:
-                            return True
-    except FileNotFoundError:
-        return False
-    raise Exception('No sourceDesc in dictionary ' + base_name)
+def dict_exists_from_other_source(api_dump, dictname):
+    dictionary = [d for d in api_dump if d['name'] == dictname]
 
+    return dictionary and ('sourceURL' not in dictionary[0] or \
+            'wikdict' not in dictionary[0]['sourceURL'])
+
+def enough_headwords(tei):
+    """This function parses the TEI header and returns true if the given
+    dictionary contains more than the minimal required number of headwords."""
+    tei = ET.fromstring(tei)
+    node = tei.find('*//{http://www.tei-c.org/ns/1.0}extent')
+    count = re.search(r'(\d+\s*,?\.?\d*)\s+.*word', node.text).groups()[0]
+    return int(count.strip(' ,.')) >= MIN_WORD_COUNT
+
+def parse_links():
+    with urllib.request.urlopen(SOURCE_URL) as src:
+        try:
+            data = src.read().decode('utf-8')
+        except UnicodeEncodeError:
+            raise ValueError("Could not encode page with encoding UTF-8; please adjust manually")
+        return [l  for l in extract_links(data)  if l.endswith('.tei')]
 
 def main():
     assert_correct_working_directory()
@@ -155,27 +165,34 @@ def main():
         print("Error, path does not exist",sys.argv[1])
         sys.exit(2)
     prefix = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
-    with urllib.request.urlopen(SOURCE_URL) as src:
-        data = ""
-        try:
-            data = src.read().decode('utf-8')
-        except UnicodeEncodeError:
-            raise ValueError("Could not encode page with encoding UTF-8; please adjust manually")
-    links = [l  for l in extract_links(data)  if l.endswith('.tei')]
-    for link in links:
+    # statistics
+    too_small, manual = [], []
+    for link in parse_links():
         if not urllib.parse.urlsplit(link)[1]: # no host in URL
             link = urllib.parse.urljoin(prefix, link)
         base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
+        api = get_fd_api()
         if not re.match(r'\w{3}-\w{3}', base_name):
             continue
-        if other_dict_exists(base_name):
-            print('Manually edited dict for {} found, skip import'.format(base_name))
+        if dict_exists_from_other_source(api, base_name):
+            manual.append(base_name)
+            continue
+        tei = download(link)
+        if not enough_headwords(tei):
+            too_small.append(base_name)
             continue
 
         print('Importing', base_name)
+        continue
+        with open(os.path.join(base_name, base_name + '.tei'), 'w',
+                encoding='utf-8') as file:
+            file.write(tei)
         update_dict_files(base_name, sys.argv[1])
-        download_to(link, os.path.join(base_name, base_name + '.tei'))
         make_changelog(base_name)
+    print("The following dictionaries were skipped because:")
+    print("… a non-WikDict version exists:",', '.join(manual))
+    print("… they were too small:", ', '.join(too_small))
+
 
 if __name__ == '__main__':
     main()
