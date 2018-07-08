@@ -61,6 +61,22 @@ class CommentedTreeBuilder(ET.TreeBuilder):
         self.data(data)
         self.end(ET.Comment)
 
+# These helpers allow the identification of similar nodes (comparison of quote
+# or usg)
+def nodes_eq(node1, node2, tag=None):
+    """Check whether both given nodes contain equal text. If tag is given, not
+    the nodes themselves, but the given child nodes are compared."""
+    if not tag:
+        tag = node1.tag
+    node1 = node1.find('.//' + TEI_NS + tag)
+    node2 = node2.find('.//' + TEI_NS + tag)
+    if node1 is None and node2 is None:
+        return True # means equality, differences are searched
+    if node1 is None or node2 is None:
+        return False
+    return node1.text == node2.text
+
+usages_match = lambda n1, n2: nodes_eq(n1, n2, 'usg')
 
 def rm_doubled_senses(entry):
     """Some entries have multiple senses. A few of them are exactly the same,
@@ -76,10 +92,11 @@ def rm_doubled_senses(entry):
     # pair each sense with another and compare their content
     for s1, s2 in itertools.combinations(senses.items(), 2):
         if len(s1[1]) == len(s2[1]):
-            # if two senses are *excactly* identical
-            if all(e1 == e2 for e1, e2 in zip(s1[1], s2[1])):
+            # if two senses are *exacctly* identical
+            if all(definition in s2[1] for definition in s1[1]) \
+                    and usages_match(s1[0], s2[0]):
                 try:
-                    entry.remove(s2[0]) # sense node object
+                    entry.remove(s2[0]) # remove sense from entry
                     changed = True
                 except ValueError: # already removed?
                     pass
@@ -98,7 +115,7 @@ def rm_empty_nodes(entry):
         nodes = [(None, entry)]
         for parent, node in nodes:
             if (node.text is None or node.text.strip() == '') \
-                    and len(node.getchildren()) == 0:
+                    and not node.getchildren():
                 if parent:
                     parent.remove(node)
                     changed = True
@@ -126,21 +143,17 @@ def rm_doubled_quotes(entry):
     This function return True, if the entry has been modified."""
     senses = list(findall(entry, 'sense'))
     # add quote elements
-    senses = [(cit, q)  for s in senses for cit in findall(s, 'cit')
+    senses = [(s, cit, q)  for s in senses for cit in findall(s, 'cit')
             for q in findall(cit, 'quote')]
     if len(senses) <= 1:
         return
     changed = False
     # pair each sense with another and compare their content
     for trans1, trans2 in itertools.combinations(senses, 2):
-        # could have been removed already, so check:
-        cit1, quote1 = trans1
-        cit2, quote2 = trans2
-        if not cit1.findall(quote1.tag) or not cit2.findall(quote2.tag) \
-                and cit1 is not cit2:
-            continue # one of them has been removed already
-        # text of both quotes match, remove second quote
-        if quote1.text == quote2.text:
+        # translation could have been removed by a previous pairing
+        sense1, _cit1, quote1 = trans1
+        sense2, cit2, quote2 = trans2
+        if quote1.text == quote2.text and usages_match(sense1, sense2):
             cit2.remove(quote2)
             changed = True
     return changed
@@ -219,15 +232,14 @@ def main():
     tree = XmlParserWrapper(dictionary_path)
     changed = False
     for entry in tei_iter(tree.root, 'entry'):
-        changed1 = rm_doubled_senses(entry)
-        changed2 = rm_doubled_quotes(entry)
+        changed = changed or rm_doubled_senses(entry)
+        #changed = changed or rm_doubled_quotes(entry)
         # the processing above might leave empty parent nodes, remove those
-        changed3 = rm_empty_nodes(entry)
-        if args.detect_changes and any((changed1, changed2, changed3)):
+        changed = changed or rm_empty_nodes(entry)
+        if args.detect_changes and changed:
             print(("Warning: Found duplicated entries or empty XML nodes. Try "
                     "`make rm_duplicates`."))
             sys.exit(42)
-        changed = any((changed, changed1, changed2, changed3))
     if changed:
         output_fn = os.path.join('build', 'tei',
                 dictionary_path.replace('.tei', '-dedup.tei'))
