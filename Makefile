@@ -33,7 +33,7 @@ mount: #! mount or synchronize FreeDict releases / generated dictionaries
 	$(call exc_pyscript,fd_file_mgr,-m)
 
 need-update: #! queries for unreleased dictionaries or for those with newer source changes
-	$(call mount_or_reuse); \
+	@$(call mount_or_reuse); \
 		$(call exc_pyscript,fd_api,-n)\
 			|| sleep 1; \
 		$(call umount_or_keep)
