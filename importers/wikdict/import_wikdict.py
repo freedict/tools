@@ -9,8 +9,10 @@ from freedict.org.
 """
 
 #pylint: disable=multiple-imports
+import enum
 import html.parser
 import json
+import multiprocessing
 import os
 import re
 import sys
@@ -22,7 +24,7 @@ from datetime import date
 SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/recommended/'
 # minimal number of words to consider a dictionary for inclusion
 MIN_WORD_COUNT = 10000
-
+DOWNLOAD_PREFIX = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
 def get_fd_api():
     """Read local FreeDict API file or load from given path from configuration
     or download it from freedict.org as fallback.
@@ -48,7 +50,7 @@ def get_fd_api():
                 cnf = configparser.ConfigParser()
                 cnf.read_file(open(conffile[0]))
                 if 'DEFAULT' in cnf and 'api_output_path' in cnf['DEFAULT']:
-                            js = json.load(open(api_file(cnf)))
+                    js = json.load(open(api_file(cnf)))
     except KeyboardInterrupt: # fd_tool.config.ConfigurationError -- but we don't know whether it wasbe imported before
         pass
     if not js:
@@ -154,7 +156,39 @@ def parse_links():
             data = src.read().decode('utf-8')
         except UnicodeEncodeError:
             raise ValueError("Could not encode page with encoding UTF-8; please adjust manually")
-        return [l  for l in extract_links(data)  if l.endswith('.tei')]
+        return (l  for l in extract_links(data)  if l.endswith('.tei'))
+
+class DictionaryStrategy(enum.Enum):
+    TooSmall = 0
+    ManuallyEdited = 1
+    Imported = 2
+    Rubbish = 3
+
+def import_dictionary(api, link):
+    """Import a dictionary from WikDict and prepare dictionary directory for a
+    release."""
+    if not urllib.parse.urlsplit(link)[1]: # no host in URL
+        link = urllib.parse.urljoin(DOWNLOAD_PREFIX, link)
+    base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
+    if not re.match(r'\w{3}-\w{3}', base_name):
+        return (DictionaryStrategy.Rubbish, None)
+    if dict_exists_from_other_source(api, base_name):
+        return (base_name, DictionaryStrategy.ManuallyEdited)
+    tei = download(link)
+    if not enough_headwords(tei):
+        return (base_name, DictionaryStrategy.TooSmall)
+
+    print('Importing', base_name)
+    if not os.path.exists(base_name):
+        os.makedirs(base_name)
+    # erase old files, write new ones
+    update_dict_files(base_name, sys.argv[1])
+    with open(os.path.join(base_name, base_name + '.tei'), 'w',
+            encoding='utf-8') as file:
+        file.write(tei)
+    make_changelog(base_name)
+    return (base_name, DictionaryStrategy.Imported)
+
 
 def main():
     assert_correct_working_directory()
@@ -164,31 +198,18 @@ def main():
     if not os.path.exists(sys.argv[1]):
         print("Error, path does not exist",sys.argv[1])
         sys.exit(2)
-    prefix = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
     # statistics
     too_small, manual = [], []
-    for link in parse_links():
-        if not urllib.parse.urlsplit(link)[1]: # no host in URL
-            link = urllib.parse.urljoin(prefix, link)
-        base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
-        api = get_fd_api()
-        if not re.match(r'\w{3}-\w{3}', base_name):
-            continue
-        if dict_exists_from_other_source(api, base_name):
-            manual.append(base_name)
-            continue
-        tei = download(link)
-        if not enough_headwords(tei):
-            too_small.append(base_name)
-            continue
-
-        print('Importing', base_name)
-        continue
-        with open(os.path.join(base_name, base_name + '.tei'), 'w',
-                encoding='utf-8') as file:
-            file.write(tei)
-        update_dict_files(base_name, sys.argv[1])
-        make_changelog(base_name)
+    api = get_fd_api()
+    with multiprocessing.Pool(5) as p:
+        res = p.starmap(import_dictionary, # ↓ pair with api, see import_dictionary
+                ((api, l) for l in sorted(parse_links())))
+        for action in res:
+            dictname, action = action # what has been done with which dictionary
+            if action is DictionaryStrategy.TooSmall:
+                too_small.append(dictname)
+            elif action == DictionaryStrategy.ManuallyEdited:
+                manual.append(dictname)
     print("The following dictionaries were skipped because:")
     print("… a non-WikDict version exists:",', '.join(manual))
     print("… they were too small:", ', '.join(too_small))
