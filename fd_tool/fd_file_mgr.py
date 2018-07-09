@@ -59,6 +59,7 @@ class UnisonFileAccess:
         os.environ['UNISON'] = os.path.join(path, '.unison')
         ret = os.system("unison -auto -log -times -contactquietly -terse " + \
                 "-ignore 'Regex .*.swp' -ignore 'Regex .*.swo' " + \
+                "-ignore 'Regex .*/build' " + \
                 "-ignore 'Regex .*~' -ignore 'Regex .unison.*' " + \
                 "ssh://{}@{}/{}/ {}".format(user, server,
                     remote_path, path))
