@@ -42,11 +42,16 @@ class UnisonFileAccess:
     all files have to be downloaded. On the other hand, this might speed up
     subsequent runs and allows offline work. On Windows, it might be desirable
     to use unison, because sshfs is not officially ported to Windows."""
+    def __init__(self):
+        # save make_available arguments for make_unavailable
+        self.args = tuple()
+
     def name(self):
         return "unison"
 
-    def make_avalailable(self, user, server, remote_path, path):
+    def make_available(self, user, server, remote_path, path):
         """Synchronize files to have them available locally."""
+        self.args = (user, server, remote_path, path)
         # set UNISON=`path` to avoid usage of any $HOME/.unison/default.prf
         oldunison = None
         if 'UNISON' in os.environ:
@@ -65,7 +70,9 @@ class UnisonFileAccess:
     #pylint: disable=unused-argument
     def make_unavailable(self, path):
         """Synchronise in case files were created."""
-        self.make_unavailable()
+        if not self.args:
+            return
+        self.make_available(*self.args)
 
 class SshfsAccess:
     """This class mounts and umounts the remote files using sshfs. This will
@@ -73,7 +80,7 @@ class SshfsAccess:
     def name(self):
         return 'sshfs'
 
-    def make_avalailable(self, user, server, remote_path, path):
+    def make_available(self, user, server, remote_path, path):
         """Mount remote file system using sshfs."""
         # is mounted?
         if os.path.ismount(path): # mounted, -m help says we need to return 201
@@ -160,7 +167,7 @@ def main():
             print('Making files for "%s" available...' % section)
             options = conf[section]
             target_path = config.get_path(options)
-            ret = access_method.make_avalailable(options['user'], options['server'],
+            ret = access_method.make_available(options['user'], options['server'],
                 options['remote_path'], target_path)
     elif args.umount:
         for section in ('generated', 'release'):
