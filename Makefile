@@ -54,7 +54,7 @@ endif
 	  -cvjf $@ ../tools
 
 install-deps: #! probe current operating system to install build prerequisites for dictionary development
-	echo -n "Do you want to use rsync or sshfs? Enter one of them or nothing: "; \
+	echo -n "Do you want to use unison or sshfs? Enter one of them or nothing: "; \
 	read ACCESS_METHOD; \
 	if command -v apt-get; then \
 		sudo apt-get install unzip tar xsltproc libxml-libxml-perl python3 $$ACCESS_METHOD; \

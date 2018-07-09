@@ -26,13 +26,13 @@ def load_configuration(conffile):
     missing mandatory options will raise a ConfigurationError."""
     config = configparser.ConfigParser()
     config['DEFAULT'] = {
-            'file_access_via': 'sshfs', # rsync or sshfs possible
+            'file_access_via': 'sshfs', # unison or sshfs possible
             'api_output_path': '.'}
     config['crafted'] = {}
     config['crafted']['local_path'] = ''
     config['generated'] = {}
-    config['generated']['server'] = 'www.wikdict.com'
-    config['generated']['remote_path'] = '/home/freedict/lf-dictionaries'
+    config['generated']['server'] = 'freedict.org'
+    config['generated']['remote_path'] = '/var/www/download/generated'
     config['generated']['local_path'] = ''
     config['generated']['user'] = 'anonymous'
     config['generated']['skip'] = 'no'
@@ -47,9 +47,9 @@ def load_configuration(conffile):
     with open(conffile) as configfile:
         config.read_file(configfile)
 
-    if config['DEFAULT']['file_access_via'] not in ['sshfs', 'rsync']:
+    if config['DEFAULT']['file_access_via'] not in ['sshfs', 'unison']:
         raise ConfigurationError(('section=DEFAULT, file_access_via="%s": '
-            'invalid value, possible values are sshfs and rsync') \
+            'invalid value, possible values are sshfs and unison') \
                 % config['DEFAULT']['file_access_via'], conffile)
     api_path = config['DEFAULT']['api_output_path']
     if api_path and os.path.exists(api_path) and os.path.isfile(api_path):

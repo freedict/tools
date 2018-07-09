@@ -36,28 +36,36 @@ def execute(cmd, raise_on_error=False):
                 ret = 1
             sys.exit(ret)
 
-class RsyncFileAccess:
+class UnisonFileAccess:
     """This class is one of two classes to allow access to remote files using
-    rsync. The drawback with rsync is that before the usage by other scripts,
+    unison. The drawback with unison is that before the usage by other scripts,
     all files have to be downloaded. On the other hand, this might speed up
     subsequent runs and allows offline work. On Windows, it might be desirable
-    to use rsync, because sshfs is not officially ported to Windows."""
+    to use unison, because sshfs is not officially ported to Windows."""
     def name(self):
-        return "rsync"
+        return "unison"
 
     def make_avalailable(self, user, server, remote_path, path):
         """Synchronize files to have them available locally."""
-        ret = os.system("rsync --info=progress2 --progress --archive " + \
-                "--verbose --exclude '*.swp' --exclude '*.swo' " + \
-                "--exclude '*~' -e ssh {}@{}:/{}/ {}".format(user, server,
+        # set UNISON=`path` to avoid usage of any $HOME/.unison/default.prf
+        oldunison = None
+        if 'UNISON' in os.environ:
+            oldunison = os.environ['UNISON']
+        os.environ['UNISON'] = os.path.join(path, '.unison')
+        ret = os.system("unison -auto -log -times -contactquietly -terse " + \
+                "-ignore 'Regex .*.swp' -ignore 'Regex .*.swo' " + \
+                "-ignore 'Regex .*~' -ignore 'Regex .unison.*' " + \
+                "ssh://{}@{}/{}/ {}".format(user, server,
                     remote_path, path))
         if ret:
             raise OSError("Process gave error code %d" % ret)
+        if oldunison:
+            os.environ['UNISON'] = oldunison
 
     #pylint: disable=unused-argument
     def make_unavailable(self, path):
-        """Don't do anything, rsync has no clean up requirements."""
-        pass
+        """Synchronise in case files were created."""
+        self.make_unavailable()
 
 class SshfsAccess:
     """This class mounts and umounts the remote files using sshfs. This will
@@ -91,7 +99,7 @@ def setup():
                 "configuration"))
     parser.add_argument('-m', dest="make_available", action='store_true',
             help='''make files in generated/ and release/ available; this will \
-                    use internally either sshfs or rsync, depending on the \
+                    use internally either sshfs or unison, depending on the \
                     configuration. The script will exit with 0 on success, \
                     with 201 if remote filesystem was mounted already and with \
                     the error code of the appropriate subcommand otherwise.''')
@@ -130,7 +138,7 @@ def main():
             key='local_path'))
         sys.exit(0)
 
-    access_method = RsyncFileAccess()
+    access_method = UnisonFileAccess()
     if conf['DEFAULT']['file_access_via'] == 'sshfs':
         access_method = SshfsAccess()
 

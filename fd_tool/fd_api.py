@@ -78,7 +78,7 @@ def main_body(args):
             help="check for unreleased dictionaries instead of generating the API file")
     parser.add_argument('-p', "--pre-exec-script", dest="prexec", metavar="PATH",
             help=('script/command to execute before this script, e.g. to set up a sshfs '
-                'connection to a remote server, or to invoke rsync.'))
+                'connection to a remote server, or to invoke unison.'))
     parser.add_argument('-o', "--post-exec-script", dest="postexc", metavar="PATH",
             help=("script/command to execute after this script is done, e.g. to "
                 "umount mounted volumes."))
@@ -117,7 +117,7 @@ def main_body(args):
     # if the files had been mounted with sshfs, it's a good idea to give it some
     # time to synchronize its state, otherwise umounting fails
     time.sleep(2)
-    exec_or_fail(args.postexc) # umount or rsync files, if required
+    exec_or_fail(args.postexc) # umount or unison files, if required
 
 def main():
     """Wrapper for nicer error case handling."""

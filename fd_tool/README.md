@@ -24,8 +24,12 @@ this:
     [generated]
     user=USER
 
--   `file_access_with`: sets the file access strategy; possible values are rsync
-    or sshfs, default is rsync
+-   `file_access_with`: sets the file access strategy; possible values are
+    unison or sshfs, default is unison 
+    -   unison: synchronisation of all files to local disk -- quicker
+        operations, more initial download
+    -   sshfs (UNIX only): direct access over a network connection, slower
+        actions and problematic, since direct file manipulation
 -   `[release]`: server on which to look for the released dictionaries, by
     default freedict.org.
 -   `[generated]`: this configures account information for the file services
@@ -44,7 +48,7 @@ The API generation consists of two steps. In the first step, remote files are
 made available, in the second, the actual XML file is generated.
 
 Remote files are all released files and the auto-imported dictionaries. In order
-to make them available, either SSHFS or RSYNC can be used. This can be
+to make them available, either SSHFS or Unison can be used. This can be
 configured in the FreeDict configuration, see <ToDo, Chapter 9 of HOWTO>. The
 `file_manager` will take care of doing this work, transparently.
 
