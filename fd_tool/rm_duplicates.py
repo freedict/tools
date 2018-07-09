@@ -247,6 +247,7 @@ def main():
         tree.write(output_fn)
         # get a human-readable diff of the changes
         c5 = lambda x: shlex.quote(x.replace('.tei', '.c5'))
+        shutil.copy('freedict-P5.dtd', os.path.dirname(output_fn))
         exec('xsltproc $FREEDICT_TOOLS/xsl/tei2c5.xsl %s > %s' % (output_fn,
             c5(output_fn)))
         # convert original dictionary to c5
