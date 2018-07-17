@@ -257,7 +257,9 @@ def main():
             exec('diff -u build/dictd/%s %s' % (c5(dictionary_path), c5(output_fn)))
         else:
             os.system('diff -u build/dictd/%s %s | less' % (c5(dictionary_path), c5(output_fn)))
-        print("If you like the changes, copy build/tei/*.tei to .")
+        if input("Do you want to overwrite %s with the new version (y|n): " % \
+                dictionary_path) == 'y':
+            shutil.copy(output_fn, dictionary_path)
 
 
 if __name__ == '__main__':
