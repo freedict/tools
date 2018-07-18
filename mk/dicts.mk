@@ -173,16 +173,27 @@ version: #! output current (source) version number
 ################################################################################
 #### Quality Assurance Helpers
 ################################################################################
+# Each helper HAS TO output an error code and each of the error codes need to
+# have an explanation in $FREEDICT_TOOLS/mk/qa.
+
+describe: #! `make describe E=<CODE>` explains CODE, as printed by `make qa`
+	@if [ -f "$$FREEDICT_TOOLS/mk/qa/${E}.md" ]; then \
+			cat "$$FREEDICT_TOOLS/mk/qa/${E}.md"; \
+		else \
+			echo "No such error code."; \
+		fi
 
 # This is a makefile-internal rule. It detects problems (duplicated entries or
-# empty nodes) within TEI files and prints a warning, if appropriate. It is
-# designed to *not* fail to allow a arelease with known problems or false
-# positives.
+# empty nodes) within TEI files and prints a warning, if appropriate. By default
+# it does not fail when an issue is encountered to allow the continuation of
+# parent targets as `qa`. However, if used from a script, the a non-zero exit
+# code can be enforced on error by supplying EXIT=y
 report-duplicates:
 report-duplicates: $(dictname).tei
-	@$(call exc_pyscript,rm_duplicates,-s,$<) || true
+	@$(call exc_pyscript,rm_duplicates,-s,$<) || \
+		(if [ "${EXIT}" = "y" ]; then exit 1; fi)
 
-qa: #! execute quality assurance helpers, for instance schema validation or detection of duplicated translations
+qa: #! execute quality assurance helpers, use make explain E='NUM' if an error occurs
 qa: report-duplicates validation
 
 rm_duplicates: #! remove duplicated entries and empty XML nodes and present a diff of the changes
@@ -191,7 +202,7 @@ rm_duplicates: $(dictname).tei
 
 validation: #! validate dictionary with FreeDict's TEI XML subset
 validation: $(dictname).tei
-	$(XMLLINT) --noout --relaxng freedict-P5.rng $<
+	@$(XMLLINT) --noout --relaxng freedict-P5.rng $<
 
 ######################################################################
 #### Dict(d) format as used by the Dictd server and other programs

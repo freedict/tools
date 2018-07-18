@@ -176,9 +176,6 @@ class XmlParserWrapper:
     def __init__(self, file_name):
         with open(file_name, encoding='utf-8') as file:
             content = file.read()
-        if not any(u in content for u in ('utf-8', 'utf8', 'UTF8', 'UTF-8')):
-            raise ValueError("XML file is not encoded in UTF-8. Please recode "
-                    "the file or extend this parser and XML writer.")
         tei_start = content.find('<TEI')
         if tei_start < 0:
             raise ValueError("Couldn't find string `<TEI` in the XML file.  Please extend this parser.")
@@ -237,7 +234,7 @@ def main():
         # the processing above might leave empty parent nodes, remove those
         changed = changed or rm_empty_nodes(entry)
         if args.detect_changes and changed:
-            print(("Warning: Found duplicated entries or empty XML nodes. Try "
+            print(("E1: Found duplicated entries or empty XML nodes. Try "
                     "`make rm_duplicates`."))
             sys.exit(42)
     if changed:
