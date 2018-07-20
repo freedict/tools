@@ -375,13 +375,14 @@ endif
 
 build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
-$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei $(BUILD_DIR)/slob
-	@rm -rf $@
-	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$(@:-$(version).slob=.slob),$<)
+$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei | $(BUILD_DIR)/slob
+	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$@,$<)
 
 $(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
 	cp $< $@
 
+# make the hash depend on the release file
+$(call gen_release_hashpath,slob): gen_release_path,slob)
 
 release-slob: $(call gen_release_path,slob) $(call gen_release_hashpath,slob)
 
