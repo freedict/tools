@@ -382,7 +382,7 @@ $(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(R
 	cp $< $@
 
 # make the hash depend on the release file
-$(call gen_release_hashpath,slob): gen_release_path,slob)
+$(call gen_release_hashpath,slob): $(call gen_release_path,slob)
 
 release-slob: $(call gen_release_path,slob) $(call gen_release_hashpath,slob)
 

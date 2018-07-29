@@ -230,7 +230,7 @@ def main():
     changed = False
     for entry in tei_iter(tree.root, 'entry'):
         changed = changed or rm_doubled_senses(entry)
-        #changed = changed or rm_doubled_quotes(entry)
+        changed = changed or rm_doubled_quotes(entry)
         # the processing above might leave empty parent nodes, remove those
         changed = changed or rm_empty_nodes(entry)
         if args.detect_changes and changed:
