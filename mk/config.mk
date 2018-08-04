@@ -80,7 +80,7 @@ FREEDICTRC = $(wildcard $(HOME)/.config/freedict/freedictrc $(LOCALAPPDATA)/free
 PYTHON := $(shell command -v python3 2> /dev/null)
 ifeq ($(PYTHON),)
 	PYTHON := $(shell command -v python 2> /dev/null)
-ifeq ("$(PYTHON)" "")
+ifeq ("$(PYTHON)","")
 $(error No Python executable found, please make sure that a recent Python is in the search path)
 endif
 endif

@@ -150,11 +150,14 @@ def rm_doubled_quotes(entry):
     changed = False
     # pair each sense with another and compare their content
     for trans1, trans2 in itertools.combinations(senses, 2):
-        # translation could have been removed by a previous pairing
         sense1, _cit1, quote1 = trans1
         sense2, cit2, quote2 = trans2
+        # translation could have been removed by a previous pairing
         if quote1.text == quote2.text and usages_match(sense1, sense2):
-            cit2.remove(quote2)
+            try:
+                cit2.remove(quote2)
+            except ValueError:
+                continue # already removed
             changed = True
     return changed
 
@@ -228,15 +231,29 @@ def main():
     dictionary_path = args.dictionary_path[0]
     tree = XmlParserWrapper(dictionary_path)
     changed = False
-    for entry in tei_iter(tree.root, 'entry'):
-        changed = changed or rm_doubled_senses(entry)
-        changed = changed or rm_doubled_quotes(entry)
-        # the processing above might leave empty parent nodes, remove those
-        changed = changed or rm_empty_nodes(entry)
+    if args.detect_changes: # abort if first change detected
+        for entry in tei_iter(tree.root, 'entry'):
+            changed = changed or rm_doubled_senses(entry)
+            changed = changed or rm_doubled_quotes(entry)
+            # the processing above might leave empty parent nodes, remove those
+            changed = changed or rm_empty_nodes(entry)
+            if args.detect_changes and changed:
+                print(("E1: Found duplicated entries or empty XML nodes. Try "
+                        "`make rm_duplicates`."))
+                sys.exit(42)
+    else: # always apply changes
+        for entry in tei_iter(tree.root, 'entry'):
+            changed1 = rm_doubled_senses(entry)
+            changed2 = rm_doubled_quotes(entry)
+            # the processing above might leave empty parent nodes, remove those
+            changed3 = rm_empty_nodes(entry)
+            if changed1 or changed2 or changed3:
+                changed = True
         if args.detect_changes and changed:
             print(("E1: Found duplicated entries or empty XML nodes. Try "
                     "`make rm_duplicates`."))
-            sys.exit(42)
+
+
     if changed:
         output_fn = os.path.join('build', 'tei',
                 dictionary_path.replace('.tei', '-dedup.tei'))
