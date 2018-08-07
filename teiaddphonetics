@@ -37,19 +37,18 @@ if($help)
     $0
 
     This script adds pronunciation information to the headwords of a TEI file.
-    It goes through all <orth> elements and adds <pron> element following them,
-    unless <pron> already exists.  This allows to override the espeak
-    pronunciation.
+    It goes through all <orth> elements and adds a <pron> element after it,
+    unless <pron> already exists.
 
-    It works like 'espeak(-ng) -v de --ipa -q ok'.  A previous version used the
+    This script uses 'espeak(-ng) -v <LANG> --ipa -q ok'.  A previous version used the
     espeak API by means of a modified version of Speech::eSpeak, but the
-    maintainer of that module is unresponsive.  Using the espeak API by means
-    of C::DynaLib (or Python c_types) was considered and even implemented in
-    Python and Rust, but over the course from espeak to espeak-ng the ABI
-    changed, so staying with the command line seems more practical.
+    maintainer of that module is unresponsive. Experiments with the espeak API
+    via C::DynaLib (or Python c_types)  were successful, but due to
+    cross-platform issues and espeak to espeak-ng API issues not further
+    pursuit.
 
-    So we start espeak as a subprocess, connected to us by two pipes.  In this
-    line based mode, espeak reads a line from STDIN and outputs a line on
+    Espeak is started as a subprocess and connected using stdin/stdout. In this
+    line-based mode, espeak reads a line from STDIN and outputs a line on
     STDOUT.  Since espeak doesn't flush stdout, we never get a reply.  To prevent
     this deadlock, we use the 'stdbuf' command, which uses LD_PRELOAD to
     change libc behaviour.  stdbuf is even available on MSYS2.
