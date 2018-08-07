@@ -5,10 +5,11 @@ use warnings;
 use strict;
 use open ':locale';
 use Getopt::Long;
-use Speech::eSpeak 0.5;
 use XML::LibXML;
 use XML::LibXSLT;
 use XML::LibXML::XPathContext;
+# an alternative could be: https://metacpan.org/pod/C::DynaLib
+use IPC::Open2;
 
 my $verbose = 0;
 my $help = 0;
@@ -16,6 +17,7 @@ my $infile = 'fd/eng-ita/eng-ita.tei';
 my $outfile;
 my $inlang;
 my $dryrun = 0;
+my $espeak_path;
 
 GetOptions("verbose" => \$verbose,
   "infile=s" => \$infile,
@@ -23,6 +25,7 @@ GetOptions("verbose" => \$verbose,
   "inlang=s" => \$inlang,
   "help" => \$help,
   "dry-run" => \$dryrun,
+  "espeak-path=s" => \$espeak_path,
   ) or die("Error in command line arguments\n");
 
 if($help)
@@ -35,8 +38,23 @@ if($help)
     unless <pron> already exists.  This allows to override the espeak
     pronunciation.
 
-    It works similar to 'espeak -v de --ipa ok', but uses the espeak
-    API directly.
+    It works like 'espeak(-ng) -v de --ipa -q ok'.  A previous version used the
+    espeak API by means of a modified version of Speech::eSpeak, but the
+    maintainer of that module is unresponsive.  Using the espeak API by means
+    of C::DynaLib (or Python c_types) was considered and even implemented in
+    Python and Rust, but over the course from espeak to espeak-ng the ABI
+    changed, so staying with the command line seems more practical.
+
+    So we start espeak as a subprocess, connected to us by two pipes.  In this
+    line based mode, espeak reads a line from STDIN and outputs a line on
+    STDOUT.  Since espeak doesn't flush stdout, we never get a reply.  To prevent
+    this deadlock, we use the 'stdbuf' command, which uses LD_PRELOAD to
+    change libc behaviour.  stdbuf is even available on MSYS2.
+
+    Another way to talk to espeak-ng in Python:
+
+	import es2ng
+	ipa = esng.g2p ('Hello World!', ipa=2)
 
     Options:
 
@@ -44,12 +62,16 @@ if($help)
 
 		Don't write OUTFILE.
 
+	--espeak-path <FULL-PATH-TO-ESPEAK-BINARY>
+
+		Give full path to espeak(-ng) in case autodetection fails.
+
 	--help
 
 		This help.
 
 	--infile, -i <INFILE>
-		
+
 		Use INFILE as input.
 
 		Example: -i eng-ita.tei
@@ -71,19 +93,22 @@ if($help)
 		Example: -o output.tei
 
 	--verbose
-		
+
 		Say what is going on.
 
 EOT
   exit 0;
 }
 
+$espeak_path ||= `which espeak-ng`;
+$espeak_path ||= `which espeak`;
+chomp $espeak_path;
+
 unless(defined $infile) { say "--infile not given"; exit 1 };
 unless(-r $infile) { say "$infile not readable"; exit 1 };
 $outfile ||= "$infile.withpron";
-
-say "espeak version: ", Speech::eSpeak::espeak_Info(0) if $verbose;
-my $speaker = Speech::eSpeak::new;
+say "Using espeak from '$espeak_path'" if $verbose;
+unless(-x $espeak_path) { say "$espeak_path not executable"; exit 1 };
 
 sub iso639_2T_to_1
 {
@@ -103,7 +128,7 @@ unless(defined $inlang)
 {
   unless($infile =~ /(\w{3})-\w{3}\.tei$/)
   {
-    say "Could not guess input language from $infile.  Please provide --inlang."; 
+    say "Could not guess input language from $infile.  Please provide --inlang.";
     exit 3;
   }
   my $in3 = $1;
@@ -114,27 +139,39 @@ unless(defined $inlang)
     exit 4
   }
 }
-$speaker->language($inlang);
-say "Using language: ", $speaker->language if $verbose;
-unless($speaker->language eq $inlang)
+
+say "Using language: ", $inlang if $verbose;
+say "espeak version: ", `"$espeak_path" --version` if $verbose;
+
+$SIG{PIPE} = sub
 {
-  say "Language not supported.  Add --verbose to see the espeak supported languages.";
-  if($verbose)
-  {
-    say "espeak supported voices/languages:\n";
-    my $voices = Speech::eSpeak::espeak_ListVoices('');
-    foreach my $voice_spec (@{$voices}) {
-      foreach (sort keys %{$voice_spec}) {
-        print $_, '=', $voice_spec->{$_}, ' ';
-      }
-      print "\n";
-    }
-  }
-  exit 2;
-}
+   die "Got SIGPIPE: $!";
+};
+
+my($chld_out, $chld_in);
+# https://github.com/espeak-ng/espeak-ng/pull/536
+#, '--fflush-stdout'
+my @cmd = ('stdbuf', '-o0', $espeak_path, '--ipa', '-v', $inlang, '-q');
+my $pid = open2($chld_out, $chld_in, @cmd);
+die "open2 failed: $!" unless defined $pid;
+say "espeak has PID $pid" if $verbose;
+binmode $chld_in, ':utf8';
+binmode $chld_out, ':utf8';
 
 XML::LibXSLT->register_function("urn:espeak", "ipa",
-	sub { $speaker->ipa(shift); });
+  sub {
+    my $inword = shift;
+    my $count = kill 0, $pid;
+    die "espeak exited" if $count != 1;
+    say "Writing to espeak-ng: ", $inword if $verbose;
+    say $chld_in $inword;
+    say "Will read..." if $verbose;
+    my $ipa = <$chld_out>;
+    $ipa =~ s/^\s+|\s+$//g;# trim
+    chomp($ipa);
+    say "Got from espeak-ng: ", $ipa if $verbose;
+    return $ipa;
+    });
 my $sdoc = XML::LibXML->load_xml(string => <<'EOT');
 <xsl:stylesheet version="1.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -162,5 +199,6 @@ my $stylesheet = $xslt->parse_stylesheet($sdoc);
 print "Transforming $infile to $outfile... " if $verbose;
 my $results = $stylesheet->transform_file($infile);
 $stylesheet->output_file($results, $outfile) unless $dryrun;
+close($chld_in);
 say "done." if $verbose;
 
