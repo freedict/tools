@@ -1,4 +1,7 @@
 #!/usr/bin/perl
+# This script requires the following:
+# Dependencies: libxml, libxslt, and /usr/share/xml/iso-codes/iso_639.xml
+# from iso-codecs
 
 use v5.10;
 use warnings;
