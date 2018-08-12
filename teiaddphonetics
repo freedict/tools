@@ -110,7 +110,14 @@ unless(defined $infile) { say "--infile not given"; exit 1 };
 unless(-r $infile) { say "$infile not readable"; exit 1 };
 $outfile ||= "$infile.withpron";
 say "Using espeak from '$espeak_path'" if $verbose;
-unless(-x $espeak_path) { say "$espeak_path not executable"; exit 1 };
+unless(-x $espeak_path) {
+    if (not length $espeak_path) {
+        say "Espeak(-ng) executable missing"
+    } else {
+        say "$espeak_path not executable";
+    }
+    exit 1
+};
 
 sub iso639_2T_to_1
 {
