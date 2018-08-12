@@ -5,9 +5,7 @@
 
 use v5.10;
 use warnings;
-use strict;
-use open ':locale';
-use Getopt::Long;
+use strict; use open ':locale'; use Getopt::Long;
 use XML::LibXML;
 use XML::LibXSLT;
 use XML::LibXML::XPathContext;
@@ -23,63 +21,53 @@ my $dryrun = 0;
 my $espeak_path;
 
 GetOptions("verbose" => \$verbose,
-  "infile=s" => \$infile,
-  "outfile=s" => \$outfile,
-  "inlang=s" => \$inlang,
-  "help" => \$help,
-  "dry-run" => \$dryrun,
-  "espeak-path=s" => \$espeak_path,
-  ) or die("Error in command line arguments\n");
+"infile=s" => \$infile,
+"outfile=s" => \$outfile,
+"inlang=s" => \$inlang,
+"help" => \$help,
+"dry-run" => \$dryrun,
+"espeak-path=s" => \$espeak_path,
+) or die("Error in command line arguments\n");
 
-if($help)
+if($help || @ARGV == 0)
 {
-  say <<"EOT";
-    $0
+say <<"EOT";
+$0 [OPTIONS]
 
-    This script adds pronunciation information to the headwords of a TEI file.
-    It goes through all <orth> elements and adds a <pron> element after it,
-    unless <pron> already exists.
+This script adds pronunciation information to the headwords of a TEI file.
+It goes through all <orth> elements and adds a <pron> element after it,
+unless <pron> already exists.
 
-    This script uses 'espeak(-ng) -v <LANG> --ipa -q ok'.  A previous version used the
-    espeak API by means of a modified version of Speech::eSpeak, but the
-    maintainer of that module is unresponsive. Experiments with the espeak API
-    via C::DynaLib (or Python c_types)  were successful, but due to
-    cross-platform issues and espeak to espeak-ng API issues not further
-    pursuit.
+This script uses 'espeak(-ng) -v <LANG> --ipa -q ok'.  A previous version used the
+espeak API by means of a modified version of Speech::eSpeak, but the
+maintainer of that module is unresponsive. Experiments with the espeak API
+via C::DynaLib (or Python c_types)  were successful, but due to
+cross-platform issues and espeak to espeak-ng API issues not further
+pursuit.
 
-    Espeak is started as a subprocess and connected using stdin/stdout. In this
-    line-based mode, espeak reads a line from STDIN and outputs a line on
-    STDOUT.  Since espeak doesn't flush stdout, we never get a reply.  To prevent
-    this deadlock, we use the 'stdbuf' command, which uses LD_PRELOAD to
-    change libc behaviour.  stdbuf is even available on MSYS2.
+Espeak is started as a subprocess and connected using stdin/stdout. In this
+line-based mode, espeak reads a line from STDIN and outputs a line on
+STDOUT.  Since espeak doesn't flush stdout, we never get a reply.  To prevent
+this deadlock, we use the 'stdbuf' command, which uses LD_PRELOAD to
+change libc behaviour.  stdbuf is even available on MSYS2.
 
-    Another way to talk to espeak-ng in Python:
-
-	import es2ng
-	ipa = esng.g2p ('Hello World!', ipa=2)
-
-    Options:
+Options:
 
 	--dry-run
-
 		Don't write OUTFILE.
 
 	--espeak-path <FULL-PATH-TO-ESPEAK-BINARY>
-
 		Give full path to espeak(-ng) in case autodetection fails.
 
 	--help
-
 		This help.
 
 	--infile, -i <INFILE>
-
 		Use INFILE as input.
 
 		Example: -i eng-ita.tei
 
 	--inlang, -l <CODE>
-
 		Language of the headwords in INFILE.  The CODE is used to
 		select the speaker language of espeak.  If not given,
 		the basename of INFILE is assumed to have the form la1-la2.tei,
@@ -89,15 +77,12 @@ if($help)
 		Example: -l de
 
 	--outfile, -o <OUTFILE>
-
 		Use OUTFILE for output.  If not given, "INFILE.withpron" is used.
 
 		Example: -o output.tei
 
 	--verbose
-
 		Say what is going on.
-
 EOT
   exit 0;
 }
