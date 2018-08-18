@@ -14,7 +14,7 @@ use IPC::Open2;
 
 my $verbose = 0;
 my $help = 0;
-my $infile = 'fd/eng-ita/eng-ita.tei';
+my $infile;
 my $outfile;
 my $inlang;
 my $dryrun = 0;
@@ -29,9 +29,9 @@ GetOptions("verbose" => \$verbose,
 "espeak-path=s" => \$espeak_path,
 ) or die("Error in command line arguments\n");
 
-if($help || @ARGV == 0)
+if($help)
 {
-say <<"EOT";
+    say <<"EOT";
 $0 [OPTIONS]
 
 This script adds pronunciation information to the headwords of a TEI file.
@@ -91,7 +91,7 @@ $espeak_path ||= `which espeak-ng`;
 $espeak_path ||= `which espeak`;
 chomp $espeak_path;
 
-unless(defined $infile) { say "--infile not given"; exit 1 };
+unless(defined $infile) { say "Error: need to specify input file with --infile"; exit 1 };
 unless(-r $infile) { say "$infile not readable"; exit 1 };
 $outfile ||= "$infile.withpron";
 say "Using espeak from '$espeak_path'" if $verbose;
@@ -118,6 +118,21 @@ sub iso639_2T_to_1
   return $code_1;
 }
 
+sub read_espeak_voices() {
+  my $F;
+  open($F, "$espeak_path --voices|");
+  die "unable to execute espeak $!" unless defined $F;
+  my %voices;
+  while (<$F>) {
+    my $line = $_;
+    $line =~ s/^\s*[0-9]*\s*([a-z]+)\s.*$/$1/g;
+    $line =~ s/\s+$//;
+    # add if a match occured
+    $voices{$line} = 1 if length($line) <= 3;
+  }
+  return %voices;
+}
+
 unless(defined $inlang)
 {
   unless($infile =~ /(\w{3})-\w{3}\.tei$/)
@@ -129,8 +144,11 @@ unless(defined $inlang)
   $inlang = iso639_2T_to_1($in3);
   if(!defined($inlang) or $inlang eq '')
   {
-    say "Failed to find input languge from 3 letter code $in3";
-    exit 4
+    my %espeak_langs = read_espeak_voices();
+    if(!exists($espeak_langs{$in3})) {
+      say "No voice found for input language code $in3";
+      exit 4
+    }
   }
 }
 
