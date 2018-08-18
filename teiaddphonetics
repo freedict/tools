@@ -17,8 +17,52 @@ my $help = 0;
 my $infile;
 my $outfile;
 my $inlang;
+my $supports_lang;
 my $dryrun = 0;
 my $espeak_path;
+
+sub iso639_2T_to_1
+{
+  my $code_2T = shift;
+  my $isofile = '/usr/share/xml/iso-codes/iso_639.xml';
+  die "Missing $isofile (In Debian install package iso-codes)!" unless -r $isofile;
+  my $isodoc = XML::LibXML->load_xml(location => $isofile);
+  my $xpc = XML::LibXML::XPathContext->new($isodoc);
+  my $expr = '/iso_639_entries/iso_639_entry/@iso_639_1_code[ ../@iso_639_2T_code=\'' . $code_2T . '\' ]';
+  say "Evaluating $expr..." if $verbose>1;
+  my $code_1 = $xpc->findvalue($expr);
+  say "Translated '$code_2T' to '$code_1'" if $verbose;
+  return $code_1;
+}
+
+sub read_espeak_voices {
+  my $F;
+  open($F, "$espeak_path --voices|");
+  die "unable to execute espeak $!" unless defined $F;
+  my %voices;
+  while (<$F>) {
+    my $line = $_;
+    $line =~ s/^\s*[0-9]*\s*([a-z]+)\s.*$/$1/g;
+    $line =~ s/\s+$//;
+    # add if a match occured
+    $voices{$line} = 1 if length($line) <= 3;
+  }
+  return %voices;
+}
+
+sub language_exists {
+  my $language = shift;
+  $inlang = iso639_2T_to_1($language);
+  if(!defined($inlang) or $inlang eq '')
+  {
+    my %espeak_langs = read_espeak_voices();
+    if(!exists($espeak_langs{$language}))
+    {
+      return 0;
+    }
+  }
+  return 1;
+}
 
 GetOptions("verbose" => \$verbose,
 "infile=s" => \$infile,
@@ -26,6 +70,7 @@ GetOptions("verbose" => \$verbose,
 "inlang=s" => \$inlang,
 "help" => \$help,
 "dry-run" => \$dryrun,
+"supports-lang=s" => \$supports_lang,
 "espeak-path=s" => \$espeak_path,
 ) or die("Error in command line arguments\n");
 
@@ -81,6 +126,12 @@ Options:
 
 		Example: -o output.tei
 
+	--supports-lang <LANG>
+        Exit with 0 (success) if the language is supported and with 1 otherwise.
+        This supports both 639-2 and 639-3 codes, but is meant to be used with
+        639-3 codes to check whether a dictionary's source language is
+        supported.
+
 	--verbose
 		Say what is going on.
 EOT
@@ -91,10 +142,9 @@ $espeak_path ||= `which espeak-ng`;
 $espeak_path ||= `which espeak`;
 chomp $espeak_path;
 
-unless(defined $infile) { say "Error: need to specify input file with --infile"; exit 1 };
-unless(-r $infile) { say "$infile not readable"; exit 1 };
-$outfile ||= "$infile.withpron";
-say "Using espeak from '$espeak_path'" if $verbose;
+if(!defined $infile && !defined $supports_lang) {
+  say "Error: need to specify input file with --infile"; exit 1
+};
 unless(-x $espeak_path) {
     if (not length $espeak_path) {
         say "Espeak(-ng) executable missing"
@@ -104,34 +154,13 @@ unless(-x $espeak_path) {
     exit 1
 };
 
-sub iso639_2T_to_1
-{
-  my $code_2T = shift;
-  my $isofile = '/usr/share/xml/iso-codes/iso_639.xml';
-  die "Missing $isofile (In Debian install package iso-codes)!" unless -r $isofile;
-  my $isodoc = XML::LibXML->load_xml(location => $isofile);
-  my $xpc = XML::LibXML::XPathContext->new($isodoc);
-  my $expr = '/iso_639_entries/iso_639_entry/@iso_639_1_code[ ../@iso_639_2T_code=\'' . $code_2T . '\' ]';
-  say "Evaluating $expr..." if $verbose>1;
-  my $code_1 = $xpc->findvalue($expr);
-  say "Translated '$code_2T' to '$code_1'" if $verbose;
-  return $code_1;
-}
 
-sub read_espeak_voices() {
-  my $F;
-  open($F, "$espeak_path --voices|");
-  die "unable to execute espeak $!" unless defined $F;
-  my %voices;
-  while (<$F>) {
-    my $line = $_;
-    $line =~ s/^\s*[0-9]*\s*([a-z]+)\s.*$/$1/g;
-    $line =~ s/\s+$//;
-    # add if a match occured
-    $voices{$line} = 1 if length($line) <= 3;
-  }
-  return %voices;
+if(defined $supports_lang) {
+  exit(!language_exists($supports_lang));
 }
+unless(-r $infile) { say "$infile not readable"; exit 1 };
+$outfile ||= "$infile.withpron";
+say "Using espeak from '$espeak_path'" if $verbose;
 
 unless(defined $inlang)
 {
@@ -141,14 +170,9 @@ unless(defined $inlang)
     exit 3;
   }
   my $in3 = $1;
-  $inlang = iso639_2T_to_1($in3);
-  if(!defined($inlang) or $inlang eq '')
-  {
-    my %espeak_langs = read_espeak_voices();
-    if(!exists($espeak_langs{$in3})) {
-      say "No voice found for input language code $in3";
-      exit 4
-    }
+  if (!language_exists($in3)) {
+    say "No voice found for input language code $in3";
+    exit 4
   }
 }
 
