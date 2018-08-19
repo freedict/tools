@@ -127,10 +127,10 @@ Options:
 		Example: -o output.tei
 
 	--supports-lang <LANG>
-        Exit with 0 (success) if the language is supported and with 1 otherwise.
-        This supports both 639-2 and 639-3 codes, but is meant to be used with
-        639-3 codes to check whether a dictionary's source language is
-        supported.
+		Exit with 0 (success) if the language is supported and with 1
+		otherwise. This supports both 639-2 and 639-3 codes, but is
+		meant to be used with 639-3 codes to check whether a
+		dictionary's source language is supported.
 
 	--verbose
 		Say what is going on.

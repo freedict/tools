@@ -13,9 +13,8 @@ NOTE: For the targets `release` and `build`, there are targets called
     one platform.
 endef
 
-
 #######################
-#### set some variables
+#### Common variable definitions
 #######################
 
 # let the tools from $(toolsdir) override tools
@@ -33,9 +32,10 @@ xsldir ?= $(FREEDICT_TOOLS)/xsl
 XMLLINT := /usr/bin/xmllint
 
 dictname ?= $(shell basename "$(shell pwd)")
+source_lang = $(shell echo $(dictname) | sed 's/-.*//g')
 rdictname := $(shell export V=$(dictname); echo $${V:4:3}-$${V:0:3})
 version1 := $(shell sed -e '100q;/<edition>/!d;s/.*<edition>\(.*\)<\/edition>.*/\1/;q'\
-	   $(wildcard $(dictname).tei*) $(dictname)-nophon.tei)
+	   $(wildcard $(dictname).tei))
 version := $(subst $(space),,$(version1))
 
 # these files are included in each of the  platform releases which are *not* a
@@ -48,6 +48,52 @@ DISTFILES_BINARY = $(foreach f, README README.md README.txt README.rst \
 
 PREFIX ?= /usr
 DESTDIR ?= 
+
+################
+# Common Function Definitions
+################
+
+# Helper function to retrieve the release path. We cannot declare the value
+# statically, because it is only required for the deploy target and this is only
+# executed by admins. The first argument is "optional".
+deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-path)/$(1)
+
+# This function assists the release-% rules. It generates the release path for
+# each platform; Arg1: platform
+gen_release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
+	$(findstring slob,$(1)),slob,$(1).tar.xz)
+gen_release_hashpath = $(call gen_release_path,$(1)).sha512
+
+# dictionary source file -- normally just $(dictname).tei, but can be
+# overwritten e.g. by the phonetics generator
+dict_tei_source = $(dictname).tei
+
+#######################
+#### Phonetics import
+#### 
+#### This needs to come before all others, so that the relevant functions are
+#### defined correctly.
+#######################
+
+TEIADDPHONETICS := $(shell which teiaddphonetics 2>/dev/null)
+ifeq ($(TEIADDPHONETICS),)
+TEIADDPHONETICS := $(FREEDICT_TOOLS)/teiaddphonetics
+endif
+
+supported_lang = $(shell $(TEIADDPHONETICS) --supports-lang $(source_lang);echo $$?)
+
+ifeq ($(supported_lang),0) # supported language
+dict_tei_source = build/tei/$(dictname)-phonetics.tei
+
+$(BUILD_DIR)/tei:
+	mkdir -p $@
+
+$(call dict_tei_source): $(dictname).tei | $(BUILD_DIR)/tei
+	$(TEIADDPHONETICS) --infile $< --outfile $@
+endif
+
+
+
 
 ################
 # General targets (default target, maintenance targets)
@@ -83,10 +129,6 @@ clean:: #! clean build files
 	rm -rf build
 	rm -f valid.stamp
 
-# Helper rule to retrieve the release path. We cannot declare the value
-# statically, because it is only required for the deploy target and this is only
-# executed by admins. The first argument is "optional".
-deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-path)/$(1)
 deploy: #! deploy all platforms of a release to the remote file hosting service
 deploy: $(foreach r, $(available_platforms), release-$(r))
 	@MOUNTED=0; \
@@ -123,7 +165,7 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
 	@cat $< | grep orth | \
-	sed -e s:'          <orth>':'':g -e s:'<\/orth>':'':g | sort -f | \
+	sed -e s:'[ ]*<orth>':'':g -e s:'<\/orth>':'':g | sort -f | \
 	uniq -i -d
 
 list-platforms: #! list all available platforms, AKA output formats
@@ -159,13 +201,6 @@ query-%: #! query platform support status; 0=dictd supported, 1=dictd unsupporte
 
 release: #! build releases for all available platforms
 release: $(foreach platform,$(available_platforms),release-$(platform))
-
-# This function is here to assist the release-% rules. It generates the release
-# path for each platform.
-# Arg1: platform
-gen_release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
-	$(findstring slob,$(1)),slob,$(1).tar.xz)
-gen_release_hashpath = $(call gen_release_path,$(1)).sha512
 
 version: #! output current (source) version number
 	@echo $(version)
@@ -210,7 +245,7 @@ validation: $(dictname).tei
 
 BUILD_DICTD=$(BUILD_DIR)/dictd
 
-$(BUILD_DICTD)/$(dictname).c5: $(dictname).tei $(BUILD_DICTD) \
+$(BUILD_DICTD)/$(dictname).c5: $(call dict_tei_source) $(BUILD_DICTD) \
 		$(xsldir)/tei2c5.xsl $(xsldir)/inc/teientry2txt.xsl \
 		$(xsldir)/inc/teiheader2txt.xsl \
 		$(xsldir)/inc/indent.xsl
@@ -353,29 +388,12 @@ clean::
 	dictd2dic.out authorresp.out title.out sourceurl.out
 
 #######################
-#### Phonetics import
-#######################
-
-# ToDo: should be scripted to let eSpeak emit ISO 639-3 codes
-#supported_phonetics ?= $(shell PATH="$(FREEDICT_TOOLS):$(PATH)" teiaddphonetics -li)
-
-la1 := $(shell export V=$(dictname); echo $${V:0:3})
-#la2 := $(shell export V=$(dictname); echo $${V:4:3})
-
-ifeq ($(la1),$(findstring $(la1),$(supported_phonetics)))
-# TEIADDPHONETICS ?= -v
-$(dictname).tei: $(dictname)-nophon.tei
-	teiaddphonetics $(TEIADDPHONETICS) -i $< -ou $@ -mbrdico-path $(MBRDICO_PATH)
-endif
-
-
-#######################
 #### Slob format for the Aard Android  dictionary client
 #######################
 
 build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
-$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(dictname).tei | $(BUILD_DIR)/slob
+$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(call dict_tei_source) | $(BUILD_DIR)/slob
 	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$@,$<)
 
 $(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
