@@ -127,7 +127,7 @@ Options:
 		Example: -o output.tei
 
 	--supports-lang <LANG>
-		Exit with 0 (success) if the language is supported and with 1
+		Exit with 0 (success) if the language is supported and with 2
 		otherwise. This supports both 639-2 and 639-3 codes, but is
 		meant to be used with 639-3 codes to check whether a
 		dictionary's source language is supported.
@@ -156,7 +156,7 @@ unless(-x $espeak_path) {
 
 
 if(defined $supports_lang) {
-  exit(!language_exists($supports_lang));
+  exit(language_exists($supports_lang) ? 0 : 2);
 }
 unless(-r $infile) { say "$infile not readable"; exit 1 };
 $outfile ||= "$infile.withpron";
