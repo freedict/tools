@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+#vim: set expandtab sts=2 ts=2 sw=2 ft=80:
 # This script requires the following:
 # Dependencies: libxml, libxslt, and /usr/share/xml/iso-codes/iso_639.xml
 # from iso-codecs
@@ -52,14 +53,13 @@ sub read_espeak_voices {
 
 sub language_exists {
   my $language = shift;
+  my %espeak_langs = read_espeak_voices();
+  if(exists($espeak_langs{$language})) {
+    return 1;
+  }
   $inlang = iso639_2T_to_1($language);
-  if(!defined($inlang) or $inlang eq '')
-  {
-    my %espeak_langs = read_espeak_voices();
-    if(!exists($espeak_langs{$language}))
-    {
-      return 0;
-    }
+  if(!defined($inlang) || $inlang eq '' || !exists($espeak_langs{$inlang})) {
+    return 0;
   }
   return 1;
 }
