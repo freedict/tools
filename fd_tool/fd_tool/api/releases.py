@@ -3,18 +3,48 @@ here."""
 import distutils.version
 import os
 import re
+import shutil
+import subprocess
+import sys
 
+import semver
+
+from .config import RELEASE_HTTP_TOOL_BASE
 from .dictionary import DownloadFormat
 
 
 class ReleaseError(Exception):
     """This error can occur, when information about a release is gathered. It
     wraps all sorts of ValueErrors and IoErrors."""
-    def __init__(self, *args):
-        super().__init__(*args)
 
 
+def git(cmd):
+    proc = subprocess.Popen(['git'] + cmd, cwd=os.environ['FREEDICT_TOOLS'],
+            stdout=subprocess.PIPE)
+    stdout = proc.communicate()[0].strip()
+    ret = proc.wait()
+    if ret:
+        raise ReleaseError("`git %s` exited with exit code %d" % \
+                (' '.join(cmd), ret))
+    return stdout.decode(sys.getdefaultencoding())
 
+def get_tools_release():
+    """Retrieve the latest FreeDicttools release as a tuple with containing
+    (version, date, downloadlink)."""
+    if not 'FREEDICT_TOOLS' in os.environ or not shutil.which('git'):
+        raise ReleaseError(("Unable to retrieve list of rleases of "
+            "FreeDict tools. Either FREEDICT_TOOLS is unset or git not "
+            "installed."))
+    releases = git(['tag']).split('\n')
+    max_ver = '0.0.0'
+    for tag in releases:
+        max_ver = semver.max_ver(max_ver, tag)
+    if max_ver == '0.0.0':
+        raise ReleaseError("No tools releases found.")
+    date = re.search('^([0-9]{4}-[0-9]{2}-[0-9]{2})',
+            git(['show', '-s', '--pretty=format:%ci'])).groups()[0]
+    return (max_ver, date, '{}/freedict-tools-{}.tar.xz'.format(
+            RELEASE_HTTP_TOOL_BASE, max_ver))
 
 def get_release_info_for_dict(path, version):
     """Retrieve information about the releases of a dictionary."""
@@ -46,7 +76,7 @@ def get_release_info_for_dict(path, version):
             raise FileNotFoundError('expected a sha512 checksum, found nothing',
                     full_path + '.sha512', 'r')
         files[full_path] = (name, format, sha)
-    if len(files) < 1:
+    if not files:
         raise ReleaseError("no downloads available for %s" % path)
     return files
 
@@ -60,7 +90,7 @@ def get_all_downloads(root):
     release_directories = tuple(os.path.join(root, e) for e in os.listdir(root)
             if os.path.isdir(os.path.join(root, e)) and dirpattern.search(e) \
                     and not 'tools' in e.lower())
-    if len(release_directories) < 1:
+    if not release_directories:
         raise ReleaseError("%s: no released dictionary found" % root)
 
     dictionaries_with_release = {} # collect dictionaries which have a release
@@ -112,4 +142,3 @@ def get_latest_version(release_information):
     if not latest:
         raise ReleaseError("No versions found for " % repr(release_information))
     return latest
-
