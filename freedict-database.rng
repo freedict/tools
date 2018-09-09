@@ -5,7 +5,7 @@
     <element name="dictionary">
       <attribute name="name">
         <data type="string"> <!-- three-digit lang code, separated by dash, e.g. deu-ita -->
-	  <param name="pattern">[a-z]{3}-[a-z]{3}</param>
+          <param name="pattern">[a-z]{3}-[a-z]{3}</param>
         </data>
       </attribute>
       <attribute name="headwords">
@@ -59,6 +59,29 @@
           </attribute>
           <attribute name="checksum">
             <text/> <!-- e.g. 3ab5dcf9g7... -->
+          </attribute>
+        </element>
+      </oneOrMore>
+    </element>
+  </oneOrMore>
+  <oneOrMore>
+    <element name="tools">
+      <oneOrMore>
+        <element name="release">
+          <attribute name="date">
+            <data type="date"/> <!-- date in the format 2011-10-01 -->
+          </attribute>
+          <attribute name="URL">
+            <data type="anyURI"/>
+          </attribute>
+          <attribute name="checksum">
+            <text/> <!-- e.g. 3ab5dcf9g7... -->
+          </attribute>
+          <attribute name="version">
+            <data type="string">
+              <param name="pattern">\d+(\.\d+(\.\d+)?)?(-(beta|alpha).*|\+.*)?</param>
+            </data>
+
           </attribute>
         </element>
       </oneOrMore>
