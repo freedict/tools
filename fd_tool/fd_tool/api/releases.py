@@ -49,7 +49,6 @@ def get_tools_release():
 def get_release_info_for_dict(path, version):
     """Retrieve information about the releases of a dictionary."""
     files = {}
-    version = None
     name = None
     for file in os.listdir(path):
         format = DownloadFormat.get_type(file)
@@ -61,7 +60,7 @@ def get_release_info_for_dict(path, version):
         if not version:
             parsed_version = version
         elif parsed_version != version:
-            raise ReleaseError('Version from file "%s" did not match version of directory "%s"' \
+            raise ReleaseError('Version from file name "%s" did not match version of directory "%s"' \
                     % (file, version))
         if not name:
             name = parsed_name
