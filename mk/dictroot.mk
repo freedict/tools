@@ -40,7 +40,7 @@ uninstall:
 
 clean::
 	for DICT in $(DICTS); do \
-		$(MAKE) -C $(DICT); \
+		$(MAKE) -C $$DICT clean; \
 	done
 
 .PHONY: install uninstall api all clean build_all $(DICTS)
