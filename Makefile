@@ -19,7 +19,7 @@ api:
 	$(call mount_or_reuse); \
 		$(call exc_pyscript,fd_api) || sleep 1; \
 		$(call umount_or_keep)
-	@make -C $FREEDICT_TOOLS --no-print-directory api-validation
+	@make -C $(FREEDICT_TOOLS) --no-print-directory api-validation
 
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
 	@$(call exc_pyscript,fd_file_mgr,-a) | tr -d '\n'
