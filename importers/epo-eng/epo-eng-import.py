@@ -112,6 +112,7 @@ def structure_translations(unordered_list):
                         (not unordered_list or unordered_list[0][0] == ChunkType.Comma): # definition
                     translations[-1].append(Definition(chunk[1]))
                 else:
+                    print(',',repr(translations))
                     raise ValueError(("Couldn't parse translations; tokens "
                         "parsed: %s\nCurrent token: %s\nTokens left: %s") % \
                                 (translations,chunk,unordered_list))
@@ -206,7 +207,7 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
         print("Downloading CC unported 3.0 license")
         with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:
             req = req = urllib.request.Request(
-                'https://creativecommons.org/licenses/by-sa/3.0/legalcode',
+                    'https://creativecommons.org/licenses/by/3.0/legalcode.txt',
                 data=None,
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0'
