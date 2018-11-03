@@ -245,7 +245,14 @@
   </xsl:template>
 
   <xsl:template match="tei:def">
-    <xsl:text>&#xa;</xsl:text>
+    <xsl:if test="preceding-sibling::*">
+      <xsl:text>&#xa;</xsl:text>
+      <!-- add indentation depending on sense nesting -->
+      <xsl:call-template name="insert_ntimes">
+        <xsl:with-param name="count" select="count(ancestor::tei:sense)" />
+        <xsl:with-param name="string" value=" " />
+      </xsl:call-template>
+    </xsl:if>
     <xsl:variable name="stuff">
       <xsl:apply-templates select="*|text()"/>
     </xsl:variable>
@@ -462,7 +469,7 @@
    <xsl:value-of select="concat(.,' ')"/>
 </xsl:template>
 
-<xsl:template match=" tei:pos | tei:subc | tei:num | tei:number | tei:gen | tei:iType | tei:gram | tei:case">
+  <xsl:template match=" tei:pos | tei:subc | tei:num | tei:number | tei:gen | tei:iType | tei:gram | tei:case">
     <xsl:choose>
       <xsl:when test="not(parent::tei:gramGrp)">
 		<xsl:value-of select="concat(' ',.)"/>
@@ -471,6 +478,19 @@
 		<xsl:value-of select="."/>
 	  </xsl:otherwise>
     </xsl:choose>
-</xsl:template>
-</xsl:stylesheet>
+  </xsl:template>
 
+  <!-- duplicate given string n times -->
+  <xsl:template name="insert_ntimes">
+    <xsl:param name="count"/>
+    <xsl:param name="string"/>
+
+    <xsl:if test="$count &gt; 0">
+      <xsl:text> </xsl:text><!--<xsl:value-of select="$string" /></xsl:text>-->
+      <xsl:call-template name="insert_ntimes">
+        <xsl:with-param name="count" select="$count - 1"/>
+        <xsl:with-param name="string" select="$string" />
+      </xsl:call-template>
+    </xsl:if>
+  </xsl:template>
+</xsl:stylesheet>
