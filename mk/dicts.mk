@@ -396,6 +396,7 @@ clean::
 build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
 $(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(call dict_tei_source) | $(BUILD_DIR)/slob
+	rm -f $@
 	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$@,$<)
 
 $(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
