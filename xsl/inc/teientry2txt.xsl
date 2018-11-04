@@ -123,7 +123,6 @@
       <xsl:text>)</xsl:text>
     </xsl:if>
 
-
   <!-- allow for empty <pos/>; make it a condition for the presence of angled
        brackets, too the weird "(self::gramGrp or count(tei:pos/text())" means
        "you're either P4 or <pos> in P5 is non-empty" -->
@@ -196,27 +195,31 @@
   </xsl:template>
 
   <xsl:template match="tei:cit"><!--cit can be @trans, @translation, @example, (@colloc) and simple cit (for idiomatic expression)-->
-	<xsl:choose>
-		<xsl:when test="@type = 'trans' or @type = 'translation'">
-<!-- 			<xsl:if test="preceding-sibling::tei:cit[@type='trans']"><xsl:text> ◊ </xsl:text></xsl:if> -->
-			<xsl:if test="not(preceding-sibling::tei:cit[@type='trans']) and parent::tei:cit"><xsl:text> - </xsl:text></xsl:if>
-			<xsl:if test="preceding-sibling::tei:cit[@type='trans']"><xsl:text>, </xsl:text></xsl:if>
-			<xsl:apply-templates/>
-		</xsl:when>
-		<xsl:when test="@type = 'example'">
-			<xsl:text>&#xa;      </xsl:text>	
-			<xsl:apply-templates/>
-		</xsl:when>
-		<xsl:when test="@type ='colloc'">
-			<xsl:text> (</xsl:text>	
-			<xsl:apply-templates/>
-			<xsl:text>) </xsl:text>	
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:apply-templates/>
-			<xsl:text> </xsl:text>
-		</xsl:otherwise>		
-	</xsl:choose>
+    <xsl:choose> <!-- match different cit types (depending on its type attribute) -->
+      <xsl:when test="@type = 'trans' or @type = 'translation'">
+        <xsl:choose> <!-- depending on predecessors, etc., add spacing -->
+          <xsl:when test="not(preceding-sibling::tei:cit[@type='trans']) and parent::tei:cit"><xsl:text> - </xsl:text></xsl:when>
+          <xsl:when test="preceding-sibling::tei:cit[@type='trans']"><xsl:text>, </xsl:text></xsl:when>
+          <!--
+          <xsl:when test="not(preceding-sibling::tei:cit)"><xsl:text> </xsl:text></xsl:when>
+          -->
+        </xsl:choose>
+        <xsl:apply-templates/>
+      </xsl:when>
+      <xsl:when test="@type = 'example'">
+        <xsl:text>&#xa;      </xsl:text>	
+        <xsl:apply-templates/>
+      </xsl:when>
+      <xsl:when test="@type ='colloc'">
+        <xsl:text> (</xsl:text>	
+        <xsl:apply-templates/>
+        <xsl:text>) </xsl:text>	
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:apply-templates/>
+        <xsl:text> </xsl:text>
+      </xsl:otherwise>		
+    </xsl:choose>
   </xsl:template>
 
   <xsl:template match="tei:quote">
