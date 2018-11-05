@@ -45,7 +45,8 @@ with Apkg(output_filename) as apkg:
                 'Forward': ('{{source}}', '{{source}} <hr id=answer> {{target}}'),
             }
         ),
-        first_deck=deck_name
+        first_deck=deck_name,
+        first_note_data=False,
     )
     for source, target in random.sample(entries, 100):
         apkg.add_note({
