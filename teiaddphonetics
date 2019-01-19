@@ -6,7 +6,10 @@
 
 use v5.10;
 use warnings;
-use strict; use open OUT => ':locale'; use Getopt::Long;
+use strict;
+use utf8;
+use open OUT => ':locale';
+use Getopt::Long;
 use XML::LibXML;
 use XML::LibXSLT;
 use XML::LibXML::XPathContext;
@@ -21,6 +24,7 @@ my $inlang;
 my $supports_lang;
 my $dryrun = 0;
 my $espeak_path;
+my $written_words_limit = -1;# unlimited
 
 sub iso639_2T_to_1
 {
@@ -64,7 +68,7 @@ sub language_exists {
   return 1;
 }
 
-GetOptions("verbose" => \$verbose,
+GetOptions("verbose+" => \$verbose,
 "infile=s" => \$infile,
 "outfile=s" => \$outfile,
 "inlang=s" => \$inlang,
@@ -72,6 +76,7 @@ GetOptions("verbose" => \$verbose,
 "dry-run" => \$dryrun,
 "supports-lang=s" => \$supports_lang,
 "espeak-path=s" => \$espeak_path,
+"espeak-count=i" => \$written_words_limit,
 ) or die("Error in command line arguments\n");
 
 if($help)
@@ -100,6 +105,18 @@ Options:
 
 	--dry-run
 		Don't write OUTFILE.
+
+	--espeak-count <NUMBER>
+		Useful to find headwords that translate to multiple lines
+		of IPA output, which will result in an abort in the end.
+
+		Restart espeak(-ng) subprocess every NUMBER of headwords.
+		By default NUMBER is set to -1, meaning not to restart, which
+		is the fastest.  If espeak has generated more lines than
+		headwords given to it, abort with the last headword written.
+		This headword can be used to find the headword that caused more
+		than one line of IPA output, because it can only be up to NUMBER
+		headwords before and including the last written headword.
 
 	--espeak-path <FULL-PATH-TO-ESPEAK-BINARY>
 		Give full path to espeak(-ng) in case autodetection fails.
@@ -133,7 +150,7 @@ Options:
 		dictionary's source language is supported.
 
 	--verbose
-		Say what is going on.
+		Say what is going on. Can be given up to three times.
 EOT
   exit 0;
 }
@@ -184,28 +201,72 @@ $SIG{PIPE} = sub
    die "Got SIGPIPE: $!";
 };
 
-my($chld_out, $chld_in);
-# https://github.com/espeak-ng/espeak-ng/pull/536
-#, '--fflush-stdout'
-my @cmd = ('stdbuf', '-o0', $espeak_path, '--ipa', '-v', $inlang, '-q');
-my $pid = open2($chld_out, $chld_in, @cmd);
-die "open2 failed: $!" unless defined $pid;
-say "espeak has PID $pid" if $verbose;
-binmode $chld_in, ':utf8';
-binmode $chld_out, ':utf8';
+my($pid, $chld_out, $chld_in, $written_words);
+
+sub start_espeak
+{
+  # https://github.com/espeak-ng/espeak-ng/pull/536
+  #, '--fflush-stdout'
+  my @cmd = ('stdbuf', '-o0', $espeak_path, '--ipa', '-v', $inlang, '-q');
+  say "Using cmd: ", join(' ', @cmd) if $verbose >= 2;
+  $pid = open2($chld_out, $chld_in, @cmd);
+  die "open2 failed: $!" unless defined $pid;
+  say "espeak has PID $pid" if $verbose>=3;
+  binmode $chld_in, ':utf8';
+  binmode $chld_out, ':utf8';
+  $written_words = 0;
+}
+
+start_espeak;
+
+my $exitcode = 0;
+
+sub close_espeak
+{
+  close($chld_in);
+  while(!eof($chld_out))
+  { $exitcode = 1; print "Extra line from $espeak_path: ", <$chld_out>; }
+  waitpid($pid, 0);
+  my $child_exit_status = $? >> 8;
+  say "espeak subprocess returned error: $child_exit_status" if $child_exit_status != 0;
+}
 
 XML::LibXSLT->register_function("urn:espeak", "ipa",
   sub {
-    my $inword = shift;
+    my $inword = shift->string_value;
+    # these characters appear in jpn-eng, espeak generates the same, wrong IPA for each of them
+    if($inword =~ /([ＡＢＣＤＯ])/)
+    {
+	say "Skipping headword containing character(s) '$1' espeak-ng cannot handle: '$inword'";
+	return '';# don't generate <pron>
+    }
     my $count = kill 0, $pid;
     die "espeak exited" if $count != 1;
-    say "Writing to espeak-ng: ", $inword if $verbose;
+
+    my $inword_orig = $inword;
+    # ،. from ara-eng
+    $inword =~ s/(, |,\)|\.\.\.|\. |: |; |\.\)|! |\? |\?\)|[．、،.…])/ /g;
+    say "Notice: headword would generate several lines of IPA: Caused by '$1' in '$inword_orig'.  Using '$inword'"
+      if $verbose and $inword ne $inword_orig;
+
+    say "Writing to espeak-ng: ", $inword if $verbose>=2;
     say $chld_in $inword;
-    say "Will read..." if $verbose;
+    $written_words++;
+    say "Will read..." if $verbose>=3;
     my $ipa = <$chld_out>;
     $ipa =~ s/^\s+|\s+$//g;# trim
     chomp($ipa);
-    say "Got from espeak-ng: ", $ipa if $verbose;
+    say "Got from espeak-ng: ", $ipa if $verbose>=2;
+    if($written_words_limit>=1 and $written_words >= $written_words_limit)
+    {
+      close_espeak;
+      if($exitcode != 0)
+      {
+	say "last written word: '$inword'";
+        exit $exitcode
+      }
+      start_espeak;
+    }
     return $ipa;
     });
 my $sdoc = XML::LibXML->load_xml(string => <<'EOT');
@@ -219,7 +280,10 @@ my $sdoc = XML::LibXML->load_xml(string => <<'EOT');
     <xsl:copy>
       <xsl:apply-templates match="@*|node()"/>
     </xsl:copy>
-    <pron xmlns="http://www.tei-c.org/ns/1.0"><xsl:value-of select="espeak:ipa(.)"/></pron>
+    <xsl:variable name="pron" select="espeak:ipa(.)"/>
+    <xsl:if test="$pron != ''">
+      <pron xmlns="http://www.tei-c.org/ns/1.0"><xsl:value-of select="$pron"/></pron>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="@*|node()">
@@ -235,6 +299,7 @@ my $stylesheet = $xslt->parse_stylesheet($sdoc);
 print "Transforming $infile to $outfile... " if $verbose;
 my $results = $stylesheet->transform_file($infile);
 $stylesheet->output_file($results, $outfile) unless $dryrun;
-close($chld_in);
+close_espeak;
 say "done." if $verbose;
+exit $exitcode;
 
