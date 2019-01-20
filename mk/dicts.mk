@@ -284,7 +284,7 @@ release-dictd: $(RELEASE_DIR) $(call gen_release_path,dictd) \
 
 date=$(shell date +%Y-%m-%d)
 
-install-base: $(dictname).dict.dz $(dictname).index
+install-base: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
 	install -d $(DESTDIR)/$(PREFIX)/share/dictd
 	install -m 644 $^ $(DESTDIR)/$(PREFIX)/share/dictd
 
