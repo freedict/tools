@@ -49,7 +49,11 @@ sub read_espeak_voices {
     my $line = $_;
     $line =~ s/^\s*[0-9]*\s*([a-z]+)\s.*$/$1/g;
     $line =~ s/\s+$//;
-    # add if a match occured
+    # add to hash if a match occured
+    if (length($line) >= 3) { # no match for ISO 2 "xx" code, try "xx-yy"
+      $line =~ s/^\s*[0-9]*\s*([a-z]+)-[a-z]+\s.*$/$1/g;
+      $line =~ s/\s+$//;
+    }
     $voices{$line} = 1 if length($line) <= 3;
   }
   return %voices;
