@@ -300,8 +300,9 @@ my $sdoc = XML::LibXML->load_xml(string => <<'EOT');
 EOT
 my $xslt = XML::LibXSLT->new();
 my $stylesheet = $xslt->parse_stylesheet($sdoc);
+my $source = XML::LibXML->load_xml(location => $infile, expand_xinclude => 1);
 print "Transforming $infile to $outfile... " if $verbose;
-my $results = $stylesheet->transform_file($infile);
+my $results = $stylesheet->transform($source);
 $stylesheet->output_file($results, $outfile) unless $dryrun;
 close_espeak;
 say "done." if $verbose;
