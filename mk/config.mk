@@ -10,7 +10,7 @@ SHELL=bash
 
 # `xsltproc' comes with libxml/libxslt, see xmlsoft.org
 XSLTPROCESSOR ?= xsltproc
-XSLTPROCESSORARGS ?= --novalid --xinclude
+XSLTPROCESSORARGS += --novalid --xinclude
 
 DICTFMTFLAGS ?= --utf8
 # set default value
