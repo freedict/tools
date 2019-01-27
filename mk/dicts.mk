@@ -20,6 +20,8 @@ endef
 # let the tools from $(toolsdir) override tools
 # from /usr/bin
 PATH := $(FREEDICT_TOOLS):$(PATH)
+# add path to current TEI file to the list of locations searched for XSL
+# includes and XML meta files
 
 ifeq ($(origin UNSUPPORTED_PLATFORMS), undefined)
 UNSUPPORTED_PLATFORMS = evolutionary
@@ -28,10 +30,11 @@ endif
 
 available_platforms := src dictd slob
 
+dictname ?= $(shell basename "$(shell pwd)")
 xsldir ?= $(FREEDICT_TOOLS)/xsl
 XMLLINT := /usr/bin/xmllint
+XSLTPROCESSORARGS += --path $(abspath $(dictname).tei)
 
-dictname ?= $(shell basename "$(shell pwd)")
 source_lang = $(shell echo $(dictname) | sed 's/-.*//g')
 rdictname := $(shell export V=$(dictname); echo $${V:4:3}-$${V:0:3})
 version1 := $(shell sed -e '100q;/<edition>/!d;s/.*<edition>\(.*\)<\/edition>.*/\1/;q'\
