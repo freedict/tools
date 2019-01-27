@@ -80,9 +80,12 @@ ifeq ($(TEIADDPHONETICS),)
 TEIADDPHONETICS := $(FREEDICT_TOOLS)/teiaddphonetics
 endif
 
-supported_lang = $(shell $(TEIADDPHONETICS) --supports-lang $(source_lang);echo $$?)
+# dictionary authors may set `supported_phonetics_lang = 2` and skip the check;
+# this should only be used in circumstances where the build system fails to work
+# with the generated phonetics
+supported_phonetics_lang ?= $(shell $(TEIADDPHONETICS) --supports-lang $(source_lang);echo $$?)
 
-ifeq ($(supported_lang),0) # supported language
+ifeq ($(supported_phonetics_lang),0) # supported language
 dict_tei_source = build/tei/$(dictname)-phonetics.tei
 
 $(BUILD_DIR)/tei:
@@ -90,7 +93,7 @@ $(BUILD_DIR)/tei:
 
 $(call dict_tei_source): $(dictname).tei | $(BUILD_DIR)/tei
 	$(TEIADDPHONETICS) --infile $< --outfile $@
-else ifeq ($(shell echo '$(supported_lang)' |tr -d '[:space:]'|tail -c 1),1)
+else ifeq ($(shell echo '$(supported_phonetics_lang)' |tr -d '[:space:]'|tail -c 1),1)
 dict_tei_source = $(error Espeak or espeak-ng not installed, please install it and proceed.)
 endif
 
