@@ -249,7 +249,7 @@ XML::LibXSLT->register_function("urn:espeak", "ipa",
 
     my $inword_orig = $inword;
     # ،. from ara-eng
-    $inword =~ s/(, |,\)|\.\.\.|\. |: |; |\.\)|! |\? |\?\)|[．、،.…])/ /g;
+    $inword =~ s/(, |,\)|\.\.\.|\. |: |; |\.\)|! |!\)|\? |\?\)|[．、،.…])/ /g;
     say "Notice: headword would generate several lines of IPA: Caused by '$1' in '$inword_orig'.  Using '$inword'"
       if $verbose and $inword ne $inword_orig;
 
