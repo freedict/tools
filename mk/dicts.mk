@@ -91,9 +91,6 @@ $(BUILD_DIR)/tei:
 $(call dict_tei_source): $(dictname).tei | $(BUILD_DIR)/tei
 	$(TEIADDPHONETICS) --infile $< --outfile $@
 else ifeq ($(shell echo '$(supported_lang)' |tr -d '[:space:]'|tail -c 1),1)
-foo:
-	echo '$(supported_lang:%1=%k1)'
-	echo x$(shell echo '$(supported_lang)' |tail -c 1)x
 dict_tei_source = $(error Espeak or espeak-ng not installed, please install it and proceed.)
 endif
 
