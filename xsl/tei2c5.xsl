@@ -18,7 +18,6 @@
   <xsl:strip-space elements="*"/>
 
   <xsl:param name="dictname"/>
-  <xsl:variable name="stylesheet-main_svnid">$Id$</xsl:variable>
 
   <!-- "main()" function -->
   <xsl:template match="/">
