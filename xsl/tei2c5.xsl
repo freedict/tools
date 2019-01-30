@@ -17,6 +17,7 @@
 
   <xsl:strip-space elements="*"/>
 
+  <xsl:param name="teifilename"/>
   <xsl:variable name="stylesheet-main_svnid">$Id$</xsl:variable>
 
   <!-- "main()" function -->
@@ -91,8 +92,8 @@
     <xsl:apply-templates select="."/>
 
     <xsl:text>&#x0A;</xsl:text>
-    <xsl:if test="position() mod 1000 = 0">
-      <xsl:message>Processed <xsl:value-of select="position()"/> of <xsl:value-of select="last()"/> entries (<xsl:value-of select="round(position()*100 div last())"/>%).</xsl:message>
+    <xsl:if test="position() mod 5000 = 0">
+      <xsl:message><xsl:value-of select="$teifilename"/>: Processed <xsl:value-of select="position()"/> of <xsl:value-of select="last()"/> entries (<xsl:value-of select="round(position()*100 div last())"/>%).</xsl:message>
     </xsl:if>
   </xsl:template>
 
