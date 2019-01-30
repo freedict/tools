@@ -33,7 +33,8 @@ available_platforms := src dictd slob
 dictname ?= $(shell basename "$(shell pwd)")
 xsldir ?= $(FREEDICT_TOOLS)/xsl
 XMLLINT := /usr/bin/xmllint
-XSLTPROCESSORARGS += --path $(abspath $(dictname).tei)
+XSLTPROCESSORARGS += $(strip --stringparam dictname $(dictname) \
+					 --path $(dir $(abspath $(dictname).tei)))
 
 source_lang = $(shell echo $(dictname) | sed 's/-.*//g')
 rdictname := $(shell export V=$(dictname); echo $${V:4:3}-$${V:0:3})
@@ -254,7 +255,7 @@ $(BUILD_DICTD)/$(dictname).c5: $(call dict_tei_source) $(BUILD_DICTD) \
 		$(xsldir)/tei2c5.xsl $(xsldir)/inc/teientry2txt.xsl \
 		$(xsldir)/inc/teiheader2txt.xsl \
 		$(xsldir)/inc/indent.xsl
-	$(XSLTPROCESSOR) $(XSLTPROCESSORARGS) --stringparam dictname $(dictname) $(xsldir)/tei2c5.xsl $< >$@
+	$(XSLTPROCESSOR) $(XSLTPROCESSORARGS) $(xsldir)/tei2c5.xsl $< >$@
 
 
 build-dictd: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
