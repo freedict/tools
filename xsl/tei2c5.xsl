@@ -91,6 +91,9 @@
     <xsl:apply-templates select="."/>
 
     <xsl:text>&#x0A;</xsl:text>
+    <xsl:if test="position() mod 1000 = 0">
+      <xsl:message>Processed <xsl:value-of select="position()"/> of <xsl:value-of select="last()"/> entries (<xsl:value-of select="round(position()*100 div last())"/>%).</xsl:message>
+    </xsl:if>
   </xsl:template>
 
 <xd:doc>There is nothing special about the '=' characters, it's just a piece of quasi-aesthetic pseudomagic.</xd:doc>
