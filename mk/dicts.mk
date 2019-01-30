@@ -254,7 +254,7 @@ $(BUILD_DICTD)/$(dictname).c5: $(call dict_tei_source) $(BUILD_DICTD) \
 		$(xsldir)/tei2c5.xsl $(xsldir)/inc/teientry2txt.xsl \
 		$(xsldir)/inc/teiheader2txt.xsl \
 		$(xsldir)/inc/indent.xsl
-	$(XSLTPROCESSOR) $(XSLTPROCESSORARGS) --stringparam teifilename "$(notdir $<)" $(xsldir)/tei2c5.xsl $< >$@
+	$(XSLTPROCESSOR) $(XSLTPROCESSORARGS) --stringparam dictname $(dictname) $(xsldir)/tei2c5.xsl $< >$@
 
 
 build-dictd: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
