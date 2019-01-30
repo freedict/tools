@@ -7,7 +7,7 @@ include $(FREEDICT_TOOLS)/mk/config.mk
 
 # this shows that this makefile include may only be used for a directory
 # containing many dictionaries
-DICTS=$(shell find . -maxdepth 1 -name '???-???' -printf "%P ")
+DICTS=$(shell find . -maxdepth 1 -name '???-???' -printf "%P\n"|sort|xargs echo)
 
 # Calls default target for each dictionary module.
 # Note: This is a conflict if you wanted to call
