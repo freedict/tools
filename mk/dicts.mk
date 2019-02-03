@@ -170,9 +170,10 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
-	@cat $< | grep orth | \
-	sed -e s:'[ ]*<orth>':'':g -e s:'<\/orth>':'':g | sort -f | \
-	uniq -i -d
+	@export HOMS="`cat $< | grep orth | sed -e s:'[ ]*<orth>':'':g -e s:'<\/orth>':'':g | sort -f | uniq -i -d`"; \
+		if [ -n "$$HOMS" ]; then \
+			echo "Found `echo "$$HOMS"|wc -l` homographs"; \
+			echo "$$HOMS" | tr '\n' ',' | sed 's/,/, /g' | fold -s; fi
 
 list-platforms: #! list all available platforms, AKA output formats
 	@echo -n $(available_platforms)
@@ -235,7 +236,7 @@ report-duplicates: $(dictname).tei
 		(if [ "${EXIT}" = "y" ]; then exit 1; fi)
 
 qa: #! execute quality assurance helpers, use make explain E='NUM' if an error occurs
-qa: report-duplicates validation
+qa: report-duplicates validation | has-venv
 
 rm_duplicates: #! remove duplicated entries and empty XML nodes and present a diff of the changes
 rm_duplicates: $(dictname).tei
