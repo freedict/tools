@@ -19,15 +19,15 @@ moment.
 You should have at least the following tools installed, to build the
 dictionaries: make, xsltproc, tar, gzip, dictzip, dictfmt
 
-For proper use of all our tools, Perl, Python > 3.4, Git and a XML-capable
-editor are required. Furthermore we require the perl packages libxml-libxml and
-libxml-libxslt.
+For proper use of all our tools, Perl, Espeak(-ng), Python > 3.4, Git and a
+XML-capable editor are required. Furthermore we require the perl packages
+libxml-libxml and libxml-libxslt.
 
 #### Debian/Ubuntu Dependencies
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-    sudo apt-get install make unzip xsltproc libxml-libxml-perl libxml-libxslt-perl python3 python3-icu python-virtualenv git
+    sudo apt-get install make unzip xsltproc libxml-libxml-perl libxml-libxslt-perl python3 python3-icu python-virtualenv espeak-ng git
 
 #### Windows
 
