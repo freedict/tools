@@ -225,6 +225,12 @@ describe: #! `make describe E=<CODE>` explains CODE, as printed by `make qa`
 			echo "No such error code."; \
 		fi
 
+has_venv = $(if $(wildcard $(VIRTUAL_ENV)),,has-venv)
+has-venv:
+	@echo "No python virtual environment found (possibly causing the errors above)."; \
+		echo "Read $$FREEDICT_TOOLS/README or execute  "; \
+		echo 'make -C $$FREEDICT_TOOLS mk_venv-help'
+
 # This is a makefile-internal rule. It detects problems (duplicated entries or
 # empty nodes) within TEI files and prints a warning, if appropriate. By default
 # it does not fail when an issue is encountered to allow the continuation of
@@ -236,7 +242,7 @@ report-duplicates: $(dictname).tei
 		(if [ "${EXIT}" = "y" ]; then exit 1; fi)
 
 qa: #! execute quality assurance helpers, use make explain E='NUM' if an error occurs
-qa: report-duplicates validation | has-venv
+qa: report-duplicates validation | $(call has_venv)
 
 rm_duplicates: #! remove duplicated entries and empty XML nodes and present a diff of the changes
 rm_duplicates: $(dictname).tei
