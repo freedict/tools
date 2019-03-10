@@ -27,7 +27,7 @@ libxml-libxml and libxml-libxslt.
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-    sudo apt-get install make unzip xsltproc libxml-libxml-perl libxml-libxslt-perl python3 python3-icu python-virtualenv espeak-ng git
+    sudo apt-get install make unzip xsltproc libxml-libxml-perl libxml-libxslt-perl python3 python3-icu virtualenv python3-virtualenv espeak-ng git
 
 #### Windows
 
