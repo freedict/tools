@@ -27,7 +27,6 @@ api-path: #! print the output directory to the generated API file (read from con
 	@$(call get_api_path)
 
 api-validation: #! validate the freedict-database.xml against its RNG schema
-	@echo Hi $(call get_api_path)
 	xmllint --noout --relaxng freedict-database.rng $(shell $(call get_api_path))/freedict-database.xml
 
 
