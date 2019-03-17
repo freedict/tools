@@ -64,28 +64,5 @@
       </oneOrMore>
     </element>
   </oneOrMore>
-  <oneOrMore>
-    <element name="tools">
-      <oneOrMore>
-        <element name="release">
-          <attribute name="date">
-            <data type="date"/> <!-- date in the format 2011-10-01 -->
-          </attribute>
-          <attribute name="URL">
-            <data type="anyURI"/>
-          </attribute>
-          <attribute name="checksum">
-            <text/> <!-- e.g. 3ab5dcf9g7... -->
-          </attribute>
-          <attribute name="version">
-            <data type="string">
-              <param name="pattern">\d+(\.\d+(\.\d+)?)?(-(beta|alpha).*|\+.*)?</param>
-            </data>
-
-          </attribute>
-        </element>
-      </oneOrMore>
-    </element>
-  </oneOrMore>
   <text/>
 </element>
