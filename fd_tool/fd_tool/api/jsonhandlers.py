@@ -2,7 +2,7 @@
 
 import json
 
-def write_freedict_database(path, dicts):
+def write_freedict_database(path, dicts, tools):
     """Write a freedict database to ''path`` in JSON format."""
     serialized = []
     for dictionary in dicts:
@@ -23,6 +23,7 @@ def write_freedict_database(path, dicts):
                 'checksum': release.hash,
             })
         serialized.append(essence)
+    serialized.append({'software': {'tools': tools}})
     with open(path, 'w', encoding='utf-8') as fhandle:
         json.dump(serialized, fhandle, indent=2, sort_keys=True)
 

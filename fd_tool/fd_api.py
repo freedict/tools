@@ -104,15 +104,16 @@ def main_body(args):
         # remove dictionaries without download links
         dictionaries = sorted((d for d in dictionaries if d.get_downloads() != []),
             key=lambda entry: entry.get_name())
+        tools = releases.get_latest_tools_release()
         api_path = config.get_path(conf['DEFAULT'], key='api_output_path')
         xml_path = os.path.join(api_path, 'freedict-database.xml')
         json_path = os.path.join(api_path, 'freedict-database.json')
         if not os.path.exists(api_path):
             os.makedirs(os.path.dirname(api_path))
         print("Writing XML API file to",xml_path)
-        xmlhandlers.write_freedict_database(xml_path, dictionaries)
+        xmlhandlers.write_freedict_database(xml_path, dictionaries, tools)
         print("Writing JSON API file to",json_path)
-        jsonhandlers.write_freedict_database(json_path, dictionaries)
+        jsonhandlers.write_freedict_database(json_path, dictionaries, tools)
 
     # if the files had been mounted with sshfs, it's a good idea to give it some
     # time to synchronize its state, otherwise umounting fails

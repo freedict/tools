@@ -1,17 +1,25 @@
 """``parsers'' fetching all information about downloadable releases belong in
 here."""
+
+from datetime import datetime
 import distutils.version
+import hashlib
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import urllib.request
 
 import semver
 
 from .config import RELEASE_HTTP_TOOL_BASE
 from .dictionary import DownloadFormat
 
+# relative to github.com/freedict/
+TOOLS_REPO = 'tools'
+USER_AGENT = 'Friendly FreeDict Helper'
 
 class ReleaseError(Exception):
     """This error can occur, when information about a release is gathered. It
@@ -141,3 +149,32 @@ def get_latest_version(release_information):
     if not latest:
         raise ReleaseError("No versions found for " % repr(release_information))
     return latest
+
+def github_request(path):
+    """Make a GitHub API request and return aJSON object."""
+    url = "https://api.github.com/{}".format(path)
+    request_headers = {'User-Agent': USER_AGENT}
+    request = urllib.request.Request(url, headers=request_headers)
+    with urllib.request.urlopen(request) as f:
+        return json.loads(f.read().decode('UTF-8'))
+
+def get_latest_tools_release():
+    latest = {'name': '0.0.0'}
+    for tag in github_request("repos/freedict/{}/tags".format(TOOLS_REPO)):
+        latest = max(latest, tag, key=lambda t: t['name'])
+    if latest['name'] == '0.0.0':
+        raise ValueError("could not find a release for FreeDict tools")
+    commit_url = latest['commit']['url']
+    api_suffix = commit_url[commit_url.find('.com/') + 5:]
+    commit_meta = github_request(api_suffix)['commit']['committer']
+    # validate format
+    date = datetime.strptime(commit_meta['date'].split('T')[0], '%Y-%m-%d')
+    date = date.strftime('%Y-%m-%d')
+    request = urllib.request.Request(latest['tarball_url'],
+            headers={'User-Agent': USER_AGENT})
+    with urllib.request.urlopen(request) as f:
+        checksum = hashlib.sha512(f.read()).hexdigest()
+    return {'version': latest['name'],
+        'date': date,
+        'URL': latest['tarball_url'],
+        'checksum': checksum}

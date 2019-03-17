@@ -39,10 +39,11 @@ def istag(elem, name):
     """Tag comparison ignoring xml namespaces."""
     return elem.tag.endswith(name)
 
-def create_node(tag, attrs):
+def create_node(tag, attrs=None):
     """Create ET.Element node with specified tag and attributes."""
     e = ET.Element(tag)
-    e.attrib = attrs.copy()
+    if attrs:
+        e.attrib = attrs.copy()
     return e
 
 
@@ -99,10 +100,14 @@ def indent(elem, level=0, more_sibs=False):
             if more_sibs:
                 elem.tail += '  '
 
-def write_freedict_database(path, dicts):
+def write_freedict_database(path, dicts, tools):
     """Write a freedict database to ''path``."""
     root = ET.Element('FreeDictDatabase')
     root.extend([dictionary2xml(n) for n in dicts])
+    sw_node = create_node('software')
+    tools_node = create_node('tools', tools)
+    sw_node.append(tools_node)
+    root.append(sw_node)
     indent(root)
     tree = ET.ElementTree()
     #pylint: disable=protected-access
