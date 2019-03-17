@@ -64,9 +64,9 @@
       </oneOrMore>
     </element>
   </oneOrMore>
-  <element name="tools">
+  <element name="software">
     <oneOrMore>
-      <element name="release">
+      <element name="tools">
         <attribute name="date">
           <data type="date"/>
         </attribute>
