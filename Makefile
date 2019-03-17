@@ -104,6 +104,14 @@ mk_venv: #! initialise a new (Python) virtual environment; use mk_venv-help for 
 		echo '`virtualenv` not found, please install it and try again.'; exit 10; \
 		fi
 	@virtualenv -q -p $(PYTHON) ${P}
+	@if [ -z "$(ICU_VERSION)" ]; then \
+		if ! command -v pkg-config; then \
+			echo "Environment variable ICU_VERSION unset and 'pkg-config' not found.";  \
+			echo "Please set ICU_VERSION to the version of libicu installed on your system."; \
+			exit 127; \
+		fi; \
+		export ICU_VERSION=`pkg-config --modversion icu-i18n`; \
+	fi; \
 	source ${P}/bin/activate; pip install -r requirements.txt
 	@if [ "$(FREEDICTRC)" = "" ]; then \
 		echo "You don't have a FreeDict configuration yet. Please create one, "; \
