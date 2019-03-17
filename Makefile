@@ -88,6 +88,10 @@ free to do so. The mk_venv command will make sure that the virtual environment
 is created at the correct place; use "P=/some/path" to specify the path.
 Example:
     make mk_venv P=../fd-venv
+NOTE: If you have not pkg-config on your system, you need to manually set the
+	environment variable ICU_VERSION to the version of libicu on your system.
+	This is due to some internal restructuring of the libicu library that we
+	depend on.
 After installation, you will be asked whether the virtual environment should be
 added to the FreeDict configuration. This is generally a good idea, because this
 means that the FreeDict build system will take care of all the required steps.
