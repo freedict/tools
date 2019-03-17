@@ -5,7 +5,7 @@ semver==2.8.1
 #latest master; if you read this when 2.3 is out already, please remove this and
 #the notice
 #PyICU>=2.2
--e git://github.com/ovalhub/pyicu#egg=pyicu
+-e git://github.com/ovalhub/pyicu@3614198d130273ec4acc029bd7ded083e6309224#egg=pyicu
 ankisync==0.1.6.3
 -e git://github.com/itkach/slob.git#egg=slob
 -e git://github.com/itkach/tei2slob.git#egg=tei2slob
