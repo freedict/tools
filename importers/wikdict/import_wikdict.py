@@ -57,7 +57,8 @@ def get_fd_api():
         from urllib.request import urlopen
         with urlopen('https://freedict.org/freedict-database.json') as u:
             js = json.loads(u.read().decode('utf-8'))
-    return js
+    # strip all non-dictionary nodes (e.g. 'software'
+    return [node for node in js if 'name' in node]
 
 
 class LinkExtractor(html.parser.HTMLParser):
