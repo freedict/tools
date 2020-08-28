@@ -1,0 +1,20 @@
+Quotes
+
+<">
+
+Special cases:
+ * '<">'
+ * '1/4"'
+
+
+<'>
+
+Examples:
+ * "'Zur Aktivierung klicken'"
+ * "'Die Qual der Wahl. Ich kann mich nicht entscheiden, welches ich nehmen soll.'"
+
+Problem:
+ * Most <'> are apostrophs.
+
+Solution:
+ ? Analogous to '/' (left <'>, strong <'>, ...)?

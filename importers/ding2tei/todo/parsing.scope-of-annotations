@@ -1,0 +1,28 @@
+Scope of annotations
+====================
+
+ - ex.: "obligatorisch; verpflichtend {adj}; Pflicht...; Zwangs... :: compulsory"
+   - Probably, "{adj}" is supposed to apply to both of the first two adjectives.
+ ? assume that a generic part of speech annotation (e.g. "{adj}") applies to
+   all preceding units in that group.
+   - seems to fit quite well
+   - TODO: more rigorous searching (e.g. try to find counterexamples with
+     (capitalised) nouns or expressions composed of several words; also search
+     for conflicting annotations)
+     - conflicting annotations should also be detected in the main program
+   - Module Language.Ding.Enrich
+ - Is there a point in per-group annotations ?
+ - Any annotation following a group / prefix-set annotation is also a group /
+   prefix-set annotation.  This applies for both <[]> and <{}> annotations,
+   which may interact in this regard.
+   - Note that conversely, an annotation preceding a unit-level annotation
+     must also be a unit-level annotation.  There should be some rules to
+     solve corresponding conflicts.
+   ? <()>-annotations relevant here?
+   - probable counterexample: "überrannt; überlastet {adj} (WWW-Server) [comp.]"
+ - Repeated annotations indicate that these do not form part of a prefix set.
+   - Ex.: "accusation; plaint [Br.] [jur.]; libel [Sc.] [jur.]"
+
+See also:
+ * doc/ding.annotation.*
+ * todo/enrich.annotation.transferral

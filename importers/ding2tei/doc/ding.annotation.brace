@@ -1,0 +1,50 @@
+Classification of brace (<{}>) annotations
+==========================================
+
+ * Grammar
+   * Gender: {n} {f} {m}
+     . implies singular, noun
+   * Multiplicity: {n,f,m,sing} {pl}
+     . {sing} is rare
+       . Does not imply noun.
+     * {pl}
+       . Applies to units (by exemplary observation)
+         . Counter-ex.: "Abbieger {pl}; Abbiegenden {pl}; Abbiegende"
+           - Transferral to preceding units would not help here.
+       * Note: Plural and non-plural forms may be in the same group, in the
+               case where a singular form represents a multitude of elements.
+       . Does not imply noun.
+         . Ex.: "exit ... {sing}; exeunt ... {pl}"
+         . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
+         . Ex.: "Wir freuen uns über euer/Ihr {pl} zahlreiches Erscheinen."
+         . Ex.: "that; those {pl}"
+  * Verbs: {v} {vi} {vt} {vr} (in-, transitive, reflexive)
+  * {adj}
+  * {adv}
+  * {pron}
+    . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
+      . In this case, applies to group.
+    - Further investigation required.
+  * {num}
+    . Mostly annotated to numbers.
+      . Counterex: "jedermann; alle ohne Unterschied {pron} {num}"
+      . Counterex: "beide {pron} {num}"
+  * {Quantifikator}
+    . Occurs only once.
+    ? Equivalent to {num}?  (TODO)
+  * ...
+
+
+Specialties
+-----------
+
+ * Further annotation
+   . Ex.: "{adj, usually not used before a noun}"
+   - TODO: More investigation required.
+
+
+See also
+--------
+
+ * tools/results/braceexps.*
+   . Full list of all brace expressions.

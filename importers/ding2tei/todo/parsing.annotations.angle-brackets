@@ -1,0 +1,49 @@
+Annotations in angle brackets
+=============================
+
+According to the outdated Ding spec [0], they indicate wrong, old forms of the
+same word/expression.
+
+In practice:
+ a) alternative (valid) form / synonym
+    * Ex.: "Supplemental Restraint System /SRS/ <air bag>"
+    * Ex.: "Acethylen {n} [chem.] <Azetylen>"
+      * In fact, "Acethylen" seems to be a misspelling of the other.
+    * Ex.: "Ausrichtung {f} (nach) <Harmonisierung>"
+ b) corresponding singular form
+    * Ex.: "Lurche {pl} (Amphibia) (zoologische Klasse) [zool.] <Lurch>"
+    * quite frequent
+ c) wrong form
+    * Ex.: "occurrence <occurrance>"
+    * rare
+    * difficult to distinguish from a) in particular.
+
+
+Ideas
+-----
+
+ * When the main word is annotated with {pl}, do some pl~sing correspondence
+   testing (see todo/enrich.link-plural-form).
+   * Careful, not to match obsolete an obsolete form (small edit distance!).
+
+
+Issue 1): plural "s"
+--------------------
+
+Ex.: "<nuclear scientist>s"
+
+
+Special cases
+-------------
+
+ * "Geschütze {pl} [mil.] <Artillerie>"
+   * Synonym?  Singular? (not grammatically!)  Both?
+ * <>-annotation applies to group / first unit.
+   * "Binsen {pl}; Simsen {pl} (Juncus) (botanische Gattung) [bot.] <Binse>"
+   * "Chrysanthemen {pl}; Margeriten {pl} (Chrysanthemum) (botanische Gattung) [bot.] <Chrysantheme>"
+   * "digitization; digitizing; digitisation; digitising [Br.] <digitalization> <digitalisation>"
+   - not actually a special case.  Rather, shows that <.> in fact applies to
+     groups (TODO).
+
+
+[0] http://dict.tu-chemnitz.de/doc/syntax.html

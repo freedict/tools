@@ -1,0 +1,10 @@
+<usg>
+=====
+
+. Created (mostly?) from []-annotations.
+- Differentiate, as described in the TEI Lex-0 doc:
+  * https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html#index.xml-body.1_div.7_div.2
+? Usage of the @norm attribute?
+  . Standardization of <usg> values, e.g. "ugs." ~ "colloquial".
+  - See example:
+    * https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html#index.xml-body.1_div.7_div.1

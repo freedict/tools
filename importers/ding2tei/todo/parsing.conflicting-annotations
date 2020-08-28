@@ -1,0 +1,16 @@
+Conflicting annotations
+=======================
+
+Ex.: "einwandfrei {adj} {adv}"
+
+Does TEI allow such?
+ . In a way: superEntry/form with several superEntry/entry and different
+   superEntry/entry/gramGrp
+
+? divide into two entries?
+  - treat like "einwandfrei {adj} | einwandfrei {adv}"
+  ? Which Step?
+    ? Ding -> AST
+    ? AST -> TEI
+
+? See also: https://hal.inria.fr/hal-01757108/document : 2.1 (end)

@@ -1,0 +1,5 @@
+Are tabs permitted ?
+ - there is exactly one in the devel version of de-en.txt
+   (none in version 1.8.1)
+
+Adjust AlexScanner.x accordingly.

@@ -1,0 +1,10 @@
+Haddock markup TODO
+===================
+
+See: https://haskell-haddock.readthedocs.io/en/latest/markup.html
+
+* module description
+* top-level / exported functions (partially done)
+  - arguments
+* top-level / exported datatypes (partially done)
+  - arguments

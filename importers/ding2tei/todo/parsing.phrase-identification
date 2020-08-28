@@ -1,0 +1,6 @@
+It would be nice to identify phrases or other non-trivial expression, such that
+they may be considered examples for associated keywords, and not keywords
+themselves.
+
+? Test for supsequence match.
+? Require a certain number of words.

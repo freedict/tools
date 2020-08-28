@@ -1,0 +1,19 @@
+Grammar
+-------
+
+See `src/Language/Ding/HappyParser.y` for a grammar of the Ding source.
+
+The naming chosen in the grammer shall be used in all documentation, in
+particular *line*, *entry*, *group*, *unit*.
+
+In short:
+ - The dictionary is composed of lines.
+ - A line is composed of similar entries.
+ - An entry is composed of a two groups, one for the German and one for the
+   English part, which may be refered to as the left and the right group,
+   respectively.
+ - A group is composed of units which share a common translation.
+   - It is usual for these units to be either a) synonyous or b) equal except
+     for (annotated) gender or multiplicity.
+ - A unit is a single word, expression or phrase that can be considered a key
+   in the dictionary.

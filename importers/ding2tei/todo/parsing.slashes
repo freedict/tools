@@ -1,0 +1,46 @@
+Parsing of single slashes
+=========================
+
+Issue 1): Recognizing the scope of weak slashes
+-----------------------------------------------
+
+Examples.
+ * "(mit jdm. / mit etw.)"
+ * "| Auslandsdeutsche / Auslandsfranzosen ::"
+ * "Kein / Keine [Ös.] Ausschank"
+   * Converted to strong slash in preprocessing
+   * There are many more similar occurences.
+ * "| über dem / überm [ugs.] Durchschnitt |"
+
+
+Issue 2): partial words
+-----------------------
+
+Examples:
+ * "An-/Durchbohren"
+ * "Jugendstil-/Kunst" (before preprocessing: "Jugendstil- [Kunst]")
+
+
+Remainder (single slashes)
+--------------------------
+
+Not to be confused with slash-enclosed annotations.
+
+examples
+ - "auf/in etw. surfen"
+ - "eine Droge, die schnell süchtig macht / von der man schnell abhängig wird"
+
+subcategory pronouns
+ - "er/sie surft"
+
+
+Resolving the problems:
+ ? keep a state for the current preceding spaces (Bool possibly suffices)
+ ? match different entities depending on the availability of preceding or
+   succeding space / separator.
+
+
+See also
+--------
+
+ * doc/syntax.slashes

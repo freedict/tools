@@ -1,0 +1,14 @@
+https://dict.tu-chemnitz.de/doc/syntax.html
+ - ...
+ - "Zusatzangaben"
+   - ...
+   - "~"
+     - sometimes a space is succeeding
+     - sometimes annotated ("[...]")
+       - seems to relate to the "~" annotated word
+ - "Alternative Schreibweisen"
+   - "-!-"  not occuring
+     - devel: occuring twice, in one line (between "<>")
+   - "--"   occuring in one line, twice (in "<...>" context)
+    - in the devel version: occuring in another line (also between "<>")
+   - "-+-"  not occuring

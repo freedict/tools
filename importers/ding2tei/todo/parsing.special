@@ -1,0 +1,5 @@
+If "/ <special> /" should be allowed for all special characters, the class
+of special characters needs to be expanded.
+
+In the current dictionary (v. 1.8.1), there is only "%" besides the common
+special characters.

@@ -1,0 +1,20 @@
+Coding style
+============
+
+Basis:
+- https://github.com/tibbe/haskell-style-guide/blob/master/haskell-style.md
+- https://haskell-haddock.readthedocs.io/en/latest/markup.html
+
+
+Deviation / exceptions
+----------------------
+
+Line length: max. 79 chars
+
+Indentation:
+ - generally: 2 spaces
+ - `where', `deriving': 1 space
+
+Blank lines:
+ - There may be more than one in succession, if it improves structure or
+   readability.

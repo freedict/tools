@@ -1,0 +1,30 @@
+Bracket (<[]>) annotations
+==========================
+
+General
+-------
+
+? Differentiate German and English side in Parsing
+ - match language-specific keywords (e.g. "[ugs.]")
+
+- Get an overview of all annotations, using sed, as done with the brace
+  annotations.
+
+
+Scope
+-----
+
+ . Some annotations apply to units.
+   . ex.: "[Am.]", "[Ös.]"
+ . Others usually (?) to groups, potentially to prefixes of them.
+   . ex.: "[cook.]"
+ . Some refer to part of a unit only, usually a word.
+   . Usually indicates the annotations being an optional alternative form,
+     which currently is to be converted to a slash-alternative in the
+     preprocessing.
+     . Potential Counterex. "reddish [log.] sucker"
+       (No idea what [log.] means here.)
+
+
+---
+"[only plural]"

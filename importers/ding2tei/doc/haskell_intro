@@ -1,0 +1,48 @@
+A very small crash course into Haskell, to allow for a basic understanding of
+(hopefully) most of the code.
+
+Think of everything as a mathematical function or simple value (a function with
+zero arguments).
+The whole program is one complex function, composed of smaller ones.
+
+There are also `data' definitions though, these can be considered classes in
+the mathematical sense and are similar to C-structs.
+
+
+Further notes
+- Nesting & indentation
+  - nesting is (usually) achieved via indentation, like in Python.
+  - spaces are used for indentation
+  - line continuations require nothing but further indentation
+
+- Functions
+  - Functions take one argument.
+  - No parantheses are (normally) required (e.g., 'sqrt 2').
+  - The class of functions from A to B is written as `A -> B'.
+  - Frequently, there are functions of type `A -> (B -> C)', also written as
+    `A -> B -> C' (`->' is right-associative).  Such functions are usually
+    to be understood as taking two arguments (of type A and B).
+    - This is possible due to the isomorphism between `A -> (B -> C)'` and
+      `A x B -> C'.
+    - This can easily be generalized for an arbitrary number of arguments.
+  - It is quite common that arguments to functions are functions themselves.
+
+Function composition
+- `f . g' is the function that maps `x' to `f(g(x))'.
+
+- Type annotations
+  - Types may be annotated as follows: `value :: type'.
+
+- Syntactic sugar
+  - `$'
+		- Usually, one can think of everything on the current nesting level after
+      (and before) `$' as enclosed in parantheses.
+      - e.g.: (2 + (sqrt (2 + 3))) == (2 + (sqrt $ 2 + 2))
+      - multiple `$': (f $ g $ h) = (f (g (h)))
+      - More precisely: `$' is a right associative operator with lowest
+        precedence.
+    - (`$' is in fact not syntactic sugar, but the identity function)
+
+
+See also:
+- https://wiki.haskell.org/How_to_read_Haskell

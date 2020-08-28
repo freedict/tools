@@ -1,0 +1,4 @@
+Lexer (Alex) - choice of wrapper
+- posn: allows for better error messages
+- monad, monadUserState
+  - might simplify whitespace handling

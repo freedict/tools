@@ -1,0 +1,154 @@
+Syntax & Semantic of '/'
+========================
+
+Notes:
+ * This is all by observation and human interpretation.
+   * There are helpful tools though (in particular grep and sed).
+      
+
+Definitions
+-----------
+
+word: [[:alpha:]] | abbrev "."
+abbrev: "etw" | "so" | "sb" | "sth" | ...
+
+special: "(" | ")" | ";" | ...
+
+lFree: "(" | "{" | "[" | "<" | " "
+rFree: ")" | "}" | "]" | ">" | " " | interpunctiuation
+rFreeExceptDots: rFree
+ - excluding triple dots ("...")
+ - examples:
+   - positive: ". "
+   - negative: "..."
+
+interpunctuation: "." | "," | ":" | "!" | "?" | ";" | ...
+ - interpunctuation, that does not require preceding space.
+
+Notes:
+ * In AlexScanner, instead of [[:alpha:]], a much larger character set is used.
+   * <`- TODO
+ * Words in a more general sense, such as usable for '<>', should usually not
+   contain a terminating '.'.
+ * TODO: `word' may probably contain other chars, such as '-', '_'.
+ * TODO: Abbreviations may contain several '.', e.g. "r.-k.".
+
+
+Alternative for single words (strong slashes)
+---------------------------------------------
+
+No spacing.
+
+single_alt: word ("/" word)+
+
+
+Alternative for strong-slashed expressions (double slashes)
+-----------------------------------------------------------
+
+No spacing.
+
+double_alt: single_alt ("//" single_alt)+
+
+Note: In terms of binding sthrength, double slashes are between strong and
+      medium slashes.
+
+
+Alternative for groups of words (weak slashes)
+----------------------------------------------
+
+Has spacing.
+
+group_alt: expression (" "+ "/" " "+ expression)+
+expression: ?
+
+Notes:
+ * Identifying the matching expressions is hard.
+   * A work for linguists, probably - or a potentially existing library.
+   * One might try to guess at least in certain cases.
+   * <`- TODO
+
+
+Enclosing an abbreviation (or several) (opening and closing slashes)
+--------------------------------------------------------------------
+
+No spacing.
+Surrounded by free context.
+
+encl_abbrev: lFree < "/" wordList "."? "/" > rFreeExceptDots
+           | lFree < "/" wordList "."? "/" "s"? > rFree
+wordList: word (";" " "* word)*
+
+Notes:
+ * A terminating "s" signifies plural.
+   * Currently, it is only recognized for single slash-enclosed words (i.e., no
+     <;> separators).  This is to allow for catching plural abbreviations at
+     the lexer stage.  Simply lexing "/s", potentially with a certain context,
+     does not suffice, since there are many valid other occurences of "/s".
+ * Infrequently, a "," is used instead of ";".
+   * I consider this as to be fixed at the preprocessor stage.
+     * <`- TODO
+       * Note that "," is probably easier to parse.
+         * In the current implementation (Alex + Happy), this is not the case,
+           since there are distinguished tokens for opening and closing slashes
+           in this context.
+       * Note that in other contexts (<{}>), a "," means "or" while a ";"
+         means "and".
+
+
+Enclosing an abbreviation containing slashes
+--------------------------------------------
+
+Spacing.
+Surrounded by free context.
+
+encl_abbrev_sl: lFree < "/ " swords " /" > rFree
+swords: sword ("," " "? sword)*
+sword: word ("/" word)+
+ - syntax equal to single_alt, semantics different.
+
+Notes:
+ * This is parsed at the lexer stage to avoid later ambiguity.
+ * Wherever the encl_abbrev_sl rule matches, it is hence prefered.
+
+
+Enclosing a special char
+------------------------
+
+Spacing.
+Surrounded by spacing or separators (context).
+
+encl_special: lFree < "/" " "+ special " "+ "/" > rFree
+
+Notes:
+ * This is parsed at the lexer stage to avoid later ambiguity.
+ * Wherever the encl_abbrev_sl rule matches, it is hence prefered.
+
+
+Enclosing a smiley
+------------------
+
+Spacing.
+Surrounded by spacing or separators (context).
+
+encl_smiley: lFree < "/" " "+ smiley " "+ "/" > rFree
+smiley: ... (TODO)
+
+Notes:
+ * In the original Ding source, smileys are not enclosed in slashes.
+   * The enclosing is added in the preprocessor.
+ * Very similar to "Enclosing a special char".
+ * See also there.
+
+
+Test cases
+----------
+
+* "Abendrot Schönwetterbot, Morgenrot Schlechtwetter droht. (Bauernregel) :: Red sky at night shepherd's [Br.]/sailor's [Am.] delight, red sky in the morning shepherd's [Br.]/sailor's [Am.] warning. (weather saying)"
+
+
+Exceptions
+----------
+
+* "AC/DC"  -- TODO
+  * In 2 of 3 present occurences, this can be transformed to "/ AC/DC /".
+  * Bad occurence: "AC/DC converters"

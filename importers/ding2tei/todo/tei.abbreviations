@@ -1,0 +1,11 @@
+Ex. from the TEI docs:
+
+<entry>
+ <form type="abbrev">
+  <orth>MTBF</orth>
+ </form>
+ <form type="full">
+  <lbl>abbreviation for</lbl>
+  <orth>mean time between failures</orth>
+ </form>
+</entry>

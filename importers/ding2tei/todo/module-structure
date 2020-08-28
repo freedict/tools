@@ -1,0 +1,18 @@
+Proposed structure
+==================
+
+Data.NatLang.Grammar
+Data.NatLang.Grammar.PartOfSpeech (currently Language.Ding.Grammar)
+Data.NatLang.Grammar.Flection
+Data.NatLang.Semantic.Domain (e.g., [cook.])
+
+Language.Ding.Token
+Language.Ding.Syntax
+Language.Ding.HappyParser
+Language.Ding.AlexScanner
+Language.Ding.Pretty ?
+Language.Ding.ToTEI ?
+
+Language.TEI[.Dictionary].Syntax
+Language.TEI[.Dictionary].Pretty
+...

@@ -1,0 +1,54 @@
+Conversion process
+==================
+
+The conversion happens in several steps.
+
+
+Preprocessing
+-------------
+
+This is done with `sed' scripts, located in `src/preprocess'.
+
+
+Ding -> Ding AST
+----------------
+
+Convert the textual Ding source into a Haskell data structure, staying close
+to the syntax of the Ding source.
+
+This is subdivided into two steps, lexing and parsing.
+
+Some information from the source may be dropped here, if it is not intended
+to be used.
+
+
+Enrichment of the Ding AST
+--------------------------
+
+Enrich the Ding AST with some information, in particular annotations, inferred
+from other parts of the AST.
+
+
+Ding AST -> TEI AST
+-------------------
+
+Transform the Ding AST to a data structure that more closely resembles the
+TEI[-Lex0] format.
+
+The TEI AST shall be limited in expressiveness in comparison to the full
+potential of TEI (for dictionaries), only information that is extracted from
+the Ding needs to be representable.
+
+The conversion shall be done towards both a deu-eng and a eng-deu target.
+Note that the Ding AST is symmetrical in nature, so this should not be
+difficult.
+
+Since several headwords per entry seem to be disencouraged in the FreeDict
+project, groups on the respective keyword side have to be split here, thereby
+creating multiple entries with different keys but identical values.
+
+
+TEI AST -> TEI XML
+----------------------------------------
+
+Finally convert the TEI AST to TEI XML.

@@ -1,0 +1,21 @@
+syntax: '<>'
+semantic: surrounding words interchangeable
+
+possible solutions
+ - ignore
+ - Alex: separate by WS (i.e., identify words)
+   - consider chars [-_']
+   - potential special case: "(n)" suffix on one of the words
+
+problem: sometimes, its not a single word, but instead for example a composed
+noun - ex. "a child"
+
+problem: combination with "/"
+ . ex. "to tuck in / tuck up [Br.] <> a child (in bed)"
+ - "/" needs good heuristics
+
+attention: annotations
+ - ex. "to tuck in / tuck up [Br.] <> a child (in bed)"
+
+Note: <> is apparently only on the english side.
+ - If a de->en dictionary is sufficient for now, it can be probably ignored.

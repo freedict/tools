@@ -1,0 +1,11 @@
+Annotations between <()>.
+
+? In longer expressions / phrases, just keep them as part of the string.
+  - longer expressions are unlikely to be found by exact search.
+
+? Use <lbl> in the TEI output?
+  ? In some contexts only?
+
+Problem: scope of annotation (sometimes whole group, sometimes just the unit)
+ - scope of whole group usually only, when after that whole group
+   ? preferably after any other annotation?

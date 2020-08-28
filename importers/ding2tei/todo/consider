@@ -1,0 +1,48 @@
+Write a proper TEI library for Haskell.
+
+Identification of the grammatical gender of words annotated as plural
+ - Note: The annotation is mostly on the german side, so I focus on that.
+ - If, separated by <|> (or also <;>?), there is a noun (with annotated gender)
+   that is a prefix of the plural word in question, transfer the gender.
+   - also allow for conversion to umlauts (e.g. "Blatt" ~ "Blätter").
+   - does not catch certain loanwords (e.g. "Forum" ~ "Foren" (or "Fora" - not
+     contained in the Ding))
+     - Use some regexes to figure out classes of words with such special plural
+       form.  (Just match for significant common prefixes allowing umlauts and
+       possibly other small diversions - possibly only where no maximal
+       matching prefix is found)  -- use sed (or else HappyParser.y)
+     - see also: https://de.wikipedia.org/wiki/Plural#Spezielle_Pluralformen_von_Fremdw%C3%B6rtern
+
+Identification of german nouns by Capitalisation
+ - useful mostly for {pl} annotation, which may also be given for other POS
+   - use regexes ?  -- difficult due to sentences and loan-doublewords.
+
+Add stuff that I stumble upon
+ - different sedfile
+ - examples
+   - "Fora" as plural of "Forum"
+
+Separate sedfiles
+ - categories
+   - typos (in regular words)
+   - incorrect formatting
+   - incorrect annotations
+   - ...
+ - problem: categories overlap at times
+
+Reversing routine(s)
+ - AST -> Ding
+ - TEI -> AST ?
+   - rather obligatory when writing a proper TEI library
+     - and probably not much extra work
+
+Identify flected forms
+ - remove pronouns, exclamation marks
+
+Generalize `mergeWs' (in `AlexScanner') somehow.
+ - Note: The usage of `foldr' does not really make it better.
+ - `Either' is probably to be used to do generalization upon.
+ - alternative: a `foldr' with a lookahead of 1.
+
+Consider exportable intermediate language (XML?) that allows several keys per
+entry.

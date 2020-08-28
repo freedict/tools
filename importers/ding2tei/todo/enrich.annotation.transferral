@@ -1,0 +1,56 @@
+Annotation transferral & inferral
+=================================
+
+Try to copy some annotation from the (richer annotated) German side to the
+English side.
+ - Better maybe: move the annotation to the level of the `Pair'.
+ - problem: <;> separated synonyms (may have different annotations)
+   - only keep those that are (assumed to be) impossibly different
+   - also copy between such synonyms ?
+ - see also *scope of annotations*
+   - only transfer annotations that match the whole left group ?
+   - only transfer annotations where the right group is composed of only one
+     unit ?
+     - alternatively: some restrictions
+       - only alphabetic chars ?
+       - only single word (depending on the annotation ?) ?
+ - {v*}
+   - drop transitivity information ("{vi}"/"{vt}") ?
+   - keep reflexivity ("{vr}") ?
+ - {n,f,m}
+   - transform to: is a noun
+   - also: is singular ?
+     - counterexample: "Schere" ~ "scissors" (plurale tantum)
+ - {pl} ?
+   - transform to: is a noun ?
+     - counterexamples:
+       - "exeunt ... {pl}"
+       - "that; those {pl}"
+       -> further conditions necessary
+ - {adj}, {adv}
+ - {no pl}
+   - probably drop
+   - transform to: is a noun ?
+
+Transfer annotations within <|> separeted groups
+ - {n,f,m,pl,no pl}: no
+   - ex.: "ökologische/biologische Landwirtschaft {f}; ökologisch wirtschaftende Betriebe [agr.]"
+ - ...
+ - {pron}
+   . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
+   - Seems difficult.
+
+Infer annotations from auxiliary words like
+ . "jdm.", "jdn.", ...
+   - See also preprocess/*.sed
+
+Grammatical gender of words in plural
+ - often only {pl} annotated
+ - infer from possibly accompanying singular form ?
+
+
+See also
+--------
+
+ * todo/parsing.scope-of-annotations
+ * doc/ding.annotation.*

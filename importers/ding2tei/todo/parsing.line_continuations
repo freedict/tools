@@ -1,0 +1,5 @@
+Parsing of lines starting with WS
+ - mean some kind of line continuation
+ - If the links between groups in a line are ignored, a line continuation can
+   be ignored.
+ - See https://dict.tu-chemnitz.de/doc/syntax.html

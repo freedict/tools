@@ -1,0 +1,30 @@
+There are in general two kinds of brace annotations.
+
+a) part of speech
+ . mostly on the german side
+ . refer to either units or a prefix of units in a group
+
+b) conjugated forms of verbs
+ . apparently exclusively on the English side
+ . Format: { simple-past ; participle }
+   - both parts can be subdivided into a comma-separated list of alternatives
+ ? Ignore them?
+   - They are not consistently available and probably better obtained from
+     some other source, together with much more grammar data.
+ - Use the fact that they appear only on the English side.
+
+Differentiation
+ . Keyword <;> does not suffice - ex.: "{prp; +Gen.}".
+ - Identify keywords such as "prp"
+   - If the whole brace expression can be parsed as a grammar annotation, it
+     very likely is one, otherwise assume conjugated forms.
+     - Issue a warning on partial grammar keyword matches.
+       . e.g. "{prp; +Genn}"
+ ? Use the fact that conjugated forms only appear for verbs.
+   . Information usually not trivial to obtain - verb annotation is usually
+     only on the german side.
+
+{pl} on non-nouns
+ - can this be encoded in TEI ?
+ - Can nouns be distinguished from non-nouns ?
+   - heuristic: german nouns are usually capitalised

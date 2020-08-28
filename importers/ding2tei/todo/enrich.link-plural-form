@@ -1,0 +1,72 @@
+Linking singular and plural forms
+=================================
+
+* Differently gendered forms (m, f) of the same word seem to be always in the
+  same group, often the only two.
+
+* Corresponding plural forms are usually, when available, in the second group,
+  provided that the singular forms are in the first group.
+  * Often, there are only these two groups.
+
+
+Problem: several (synonymous) units in a group.
+ - Ex.: "Abbieger {m}; Abbiegende {m,f}; Abbiegender [auto] | Abbieger {pl}; Abbiegenden {pl}; Abbiegende"
+ - In this case, the plural forms follow in the same order.
+   - Unsure whether to rely on that.
+     - Further investigation required.
+ - Note that in the above example, there could also be added "Abbiegerin {f}"
+   between the first and second unit of the first group.
+   - Further, "Abbiegerinnen {f,pl}" (likely with only {pl} annotated) could
+     be annotated, but it does not need to be (since the male plural is
+     considered by some to be usable as a genderless one).
+
+
+Techniques to verify/identify semantic link
+-------------------------------------------
+
+ * German
+   * f ~ m
+   	 - Usually, ${x}in ~ ${x}
+   	   . Does not apply to many foreign, imported words.
+   	     * Note: Not all relations need to be caught.
+   	 - prefix match [of a certain (relative) length] (heuristic)
+   	 - edit distance
+   * sing/n/m/f ~ pl
+     - potential conversion of vocals to umlauts
+       . Ex.: "Garten" ~ "Gärten"
+     - suffixes (different ones)
+       . Ex.: "Birne" ~ "Birnen"
+       . Ex.: "Brot" ~ "Brote"
+     - combination of the above two
+       . Ex.: "Wort" ~ "Wörter" (or "Worte")
+   * n ~ f/m
+     ? Does this exist?
+ * English
+   * Note: annotations are mostly to be infered from the german side.
+   * sing ~ pl
+     - suffix "s"
+ * Both sides
+   - If X translates to Y, and Xs to Ys, and Xs is the plural of X, Ys is
+     likely to be a plural of Y.
+     - This is not certain though.  There may be a different translation for
+       a plural form, it may actually be a singular form.
+       - In that case, there is a semantic relation between Y and Ys, where
+         Ys means several of Y, but not a grammatical relation.
+       - Hence, this must only serve as a hint, further verification is
+         required, e.g. Y being a prefix of Ys or a certain maximal edit
+         distance between Y and Ys.
+
+
+Specialties
+-----------
+
+ * {sing} and {pl} do not need to refer to nouns.
+   . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
+   . Ex.: "Wir freuen uns über euer/Ihr {pl} zahlreiches Erscheinen."
+   . Ex.: "that; those {pl}"
+
+
+See also
+--------
+
+ * doc/ding.annotation.brace

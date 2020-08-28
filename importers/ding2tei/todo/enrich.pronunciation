@@ -1,0 +1,8 @@
+The Ding does not appear to contain information on pronunciation.
+
+It might be a good idea to extract such information from elsewhere, in
+particular espeak-ng, which is already used by the Freedict project.
+
+ ? How is this done in FreeDict, as of now?
+   - If as manipulation of TEI data - there is no need to do anything.
+   - Otherwise: It should probably be done as a manipulation of TEI data.

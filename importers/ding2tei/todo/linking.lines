@@ -1,0 +1,23 @@
+How to link units in groups and groups in lines with one another
+================================================================
+
+Note: Revise the following with consideration of the TEI Lex-0 documentation.
+
+
+The basic means for this in TEI is the <xr> tag.
+
+There are several types.
+
+Unless (likely difficult) means to identify the type of relation are used,
+stick to the general <xr type="see">.  This should most likely be used to link
+groups in a line.
+
+For units in a group, <xr type="syn"> (synonym) might be more appropriate,
+though their actual relation is that they translate to a common set of words.
+In particular one might argue that "Bäckerin" and "Bäcker" are not synonyms.
+One might also argue otherwise in this particular case.  Since, most likely
+these words are annotated with "{f}" and "{m}", respectively, one could use
+that data to make an exception.
+
+See:
+* https://github.com/freedict/fd-dictionaries/wiki/FreeDict-HOWTO-%E2%80%93-Writing-Text-Encoding-Initiative-XML-Files

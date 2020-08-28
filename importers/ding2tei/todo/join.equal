@@ -1,0 +1,8 @@
+Join identical headwords
+========================
+
+When a word w occurs in several lines or groups in a line, the final TEI XML
+should probably hold all definitions in on place, in several `<gramGrp>`s.
+
+If the units in a group are not considered synonyms (generally), one might
+also want to separate those into `<gramGrp>`s.

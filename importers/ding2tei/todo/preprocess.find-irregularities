@@ -1,0 +1,14 @@
+Ding irregularities & misspellings
+==================================
+
+How to find?
+- Regexes for assumed possible errors
+- Errors upon parsing
+
+See
+- todo/parsing.misc
+- src/preprocess/*.sed
+
+Examples
+ - () instead of {}:
+   - '\([^{]{0,10}\b(adj|adv|prp|n|m|f|...)\b' (`less' regex)

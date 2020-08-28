@@ -1,0 +1,7 @@
+/dingsrc/
+/ding2tei
+/util/results/
+*.o
+*.hi
+/src/Language/Ding/AlexScanner.hs
+/src/Language/Ding/HappyParser.hs

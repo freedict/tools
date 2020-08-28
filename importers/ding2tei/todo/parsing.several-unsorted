@@ -1,0 +1,94 @@
+#
+> Abbrucharbeiter {m} | Abbrucharbeiter {pl} :: wrecker [Am.] | wreckers
+
+- [Am.] annotation applies to both sigular and plural
+- singular and plural separated by <|> (often <;> I believe).
+- recognise german plurals using some grammar checker // external source plus {pl}
+
+#
+
+Consider [alt] -> specifies alternate spelling (e.g., using <ß>)
+ . usual case: units common_unit alt_unit units
+ ? maybe do nontheless some comparison (least edit distance?)
+
+# {,;} - english side
+
+to leap {leaped, leapt; leaped, leapt} (to a place) | leaping | leaped; leapt | leaps | leaped; lept | to leap to safety
+Vergnügungsfahrt {f}; Spritztour {f} | eine Spritztour machen :: joyride | to joyride {joyrode; joyridden}
+
+-- apparently only on the english side (with this semantic)
+-- <;> separates simple past, pefect
+-- <,> separates alternatives for the same time
+
+edge case(s):
+- see preprocess/*.sed
+- embedded "[...]" and "(...)"
+  - e.g.: "{bet, betted [Br.] (rarely used); bet, betted [Br.](rarely used)}"
+
+#
+
+(edge) cases:
+- {prp; wo? +Dat.; wohin? +Akk.}
+- {prp; wohin?, bis wann? +Akk.}
+- {prp; wann? +Dat.}
+- {pron interrog}
+- {Quantifikator}
+- {prp; wohin? +Akk.}
+- {+Gen./bei}
+- {prp +Dat.}
+  - many like this (usually there is a semicolon in between)
+- {ppron pl}
+- {adj.}
+- {relativ}
+  - always right after {pron}
+  - Convert to {pron relativ} (similar to {pron interrog} ?
+- {vi/vt}
+  - preprocessor; done
+- {vt;vi}
+  - should be: {vt,vi}
+  - preprocessor; done
+- {idiom}
+- {sing}
+- {num}
+- (+Gen/ über etw.)
+- ({f} [Ös.])
+- ({n} [Ös.])
+- "deadlocked {adj, usually not used before a noun}"
+- "ausgenommen {prp; + Fall des jeweiligen Bezugsworts}"
+- {prep.}
+	- occurs once
+	- should be without dot ?
+
+# (...)
+
+"(+ {adj})"
+"(Kfz: {n} /RI/)"
+"(f Buddhist structure)"
+ - f =~ famous ?
+
+- common sematics
+  - a) explanation
+    - "versenkt eingelassen (mit glatter Oberfläche)"
+    - "eingerollt {adj} (Blatt)"
+  - b) context (similar to <[]>-annotations)
+    - "Arbeitslampe {f} (Beleuchtungstechnik)"
+  - c) possible continuation / interjection
+    - "(beidseitig) eingespannt"
+  - mixture
+    - "to own (up) to (having done) sth. (old-fashioned)"
+  - TODO: Does the location w.r.t <{}>-annotations matter ?
+
+#
+
+"Tiffany (Seidengaze f) [textil.]"
+ - f -> {f} ?
+   - applying to which ?  Both ?
+"Sakko {n} ({m} [Schw.]);"
+
+"...(n)" -- plural or so
+
+"Adress rechnung {f} [comp.]"
+
+"die Meinigen / die meinigen {pl}" et al. (same line)
+ - Plural related to both
+ - Semantics of </> ?

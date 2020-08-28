@@ -1,0 +1,8 @@
+Choose Ding version  (1.8.1 vs. devel)
+ - or allow both
+   - split preprocess/*.sed files
+
+Some words have disappeared in the devel version of the Ding
+- ex.: "Aggregationsreagenz" (and surrounding)
+- The web version of the Ding seems to be based on a third version of the Ding
+  - has "Aggregationsreagens" (final "s", not "z")

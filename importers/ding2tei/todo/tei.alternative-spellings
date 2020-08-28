@@ -1,0 +1,13 @@
+? Use a separate <form> or <orth>?
+  - Ask at Freedict first.
+
+For different US/UK spellings (or similar):
+ - ex. from TEI doc
+     <form>
+      <orth>colour</orth>
+      <form>
+       <usg type="geo">US</usg>
+       <orth>color</orth>
+      </form>
+     </form>
+    - https://www.tei-c.org/release/doc/tei-p5-doc/en/html/DI.html : 9.3.5.2

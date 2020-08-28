@@ -1,0 +1,5 @@
+Happy debugging
+===============
+
+$ happy -i HappyParser.y
+$ $EDITOR HappyParser.info

@@ -1,0 +1,20 @@
+Assuming a Pretty instance for Syntax.Dict, it should hold that
+
+  (parse . scan . pretty)
+
+is the identity on Syntax.Dict.
+
+
+A slightly weaker condition is that
+
+  (pretty . parse . scan)
+
+is idempotent on valid textual dictionaries (those that parse.scan does not
+emit an error for).
+
+
+For testing, one shall either use the idempotence condition or
+
+  (parse . scan . pretty . parse . scan) x = (parse . scan) x
+
+for valid textual dictionaries x.

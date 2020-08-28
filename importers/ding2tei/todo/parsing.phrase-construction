@@ -1,0 +1,107 @@
+Phrase construction
+===================
+
+Currently, in building a phrase (i.e., expression), I use the Token monoid.
+
+It would be nice to be able to keep potentially dropped parts.
+ - "a {b} c d {e}" -> Token _ "a b c d", Token _ OBrace, ...
+ ? Really?
+
+
+Suggestion: Use a type like the following (1):
+
+  data Expression = SimpleExp Token
+                  | ComposedExp  Token SpecialExp Expression
+                  | ComposedExpR Token SpecialExp
+                  | ComposedExpL       SpecialExp Expression
+
+  data SpecialExp = HiddenExp Token
+                  | MultiExp (Multi Expression)
+                  | SwitchExp Token Token
+
+  data Multi a = Single a
+               | Multi  a [a] (Multi a)
+               | MultiR a [a]
+               | MultiL   [a] (Multi a)
+
+  data Exp a b = Single a
+               | Exp    a b (Exp a b)
+               | ExpR   a b
+               | ExpL     b (Exp a b)
+
+  data Expression' = Exp Token SpecialExp
+  data Multi' a    = Exp a [a]
+
+Problem: The list-like structure makes the monoid operation inefficient.
+ - Note that most Expression's will be SimpleExp's.
+ - Even otherwise: Its still only linear-time list concatenation.
+
+
+Porentially better (2):
+
+  data Exp a b = Single a
+               | Exp    (Exp a b) b (Exp a b)
+               | ExpR   (Exp a b) b
+               | ExpL             b (Exp a b)
+
+Drawback: There are several trees that represent the same data.
+
+
+Another option (3):
+
+  data Expression = [ExpUnit]   -- or  NonEmpty ExpUnit
+  data ExpElement = SimpleExp Token
+                  | HiddenExp Expression
+                  | MultiExp (Multi Expression)
+                  | SwitchExp Token Token
+
+- simple
+- most Expression's will be [SimpleExp $ Token _]
+
+
+Yet Another Option (4):
+
+  data Expression = SimpleExp   Token
+                  | HiddenExp   Expression
+                  | MultiExp    [Expression]
+                  | SwitchExp   Token Token
+                  | ComposedExp Expression Expression
+
+- simple and compact
+- still amiguous (SimpleExp "abc def" ~ ComposedExp (SE "abc") (SE "def"))
+
+
+Next Option -- drops HiddenExp (5):
+
+  newtype Expression = Expression [Token]
+
+  switchExp e f = Expression [a <> b, b <> a]
+  simpleExp e   = Expression [e]
+
+  instance Semigroup Expression where
+    Expression toks1 <> Expression toks2 = Expression $
+      [ tok1 <> tok2 | tok1 <- toks1, tok2 <- toks2 ]
+
+- instead of hidden exp, there could be an annotation of the whole expression
+  including the hidden parts.
+- Duplicates data (There will be some sharing though).
+- Loss of information.
+  - Probably OK for the source side of the resulting TEI dictionary.
+  - The target side would be blown up (in case of many multi-exps).
+
+
+Questions:
+ - Prohibit totally hidden expressions on the type level?
+ - In which context would such composed expressions be allowed?
+ - Is agressive splitting desirable at all?
+   - Non-trivial expressions are not expected to be found by exact match
+     anyways, in the resulting dictionary.
+   - Units like "etw./jdn. meiden" should probably be treated differently
+     (extract prefix into annotation).
+   - Units like "meiden/vermeiden" should not occur at all.
+
+Considerations:
+ - Simply use option (3) or similar and do not join SimpleExp's.
+   - Does complicate things everywhere but on the unit level.
+ - Only do this at the unit level.
+   - potentially also in between <()>.

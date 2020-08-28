@@ -1,0 +1,14 @@
+The (seemingly) simplest way is to just annotate grammar in both the Ding and
+TEI AST by means of lists of single grammar annotations.
+
+It may however be considered advantageous to at some point store a set of
+grammar information in a tree, annotated to any single element that may be
+annotated with grammar information.
+The potential benefit of this approach lies therin, that no contradictory
+grammar information can be stored.
+
+* Note however, that in both the Ding and TEI, grammar is annotated in lists.
+* Note also, that the seemingly contradictory annotation {m,f} is possible, if
+  a headword can have both genders.
+  * One might argue though that such annotations should be treated special
+    anyways.  (to be found out how to represent in TEI)

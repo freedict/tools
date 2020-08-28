@@ -1,0 +1,12 @@
+No, no intro here.  Just links.
+
+manpage: sed(1)
+ - Should suffice to understand the given (short) scripts.
+
+good tutorial: https://www.grymoire.com/Unix/Sed.html
+ - Read to write fancy scripts in the Turing complete sed-language yourself.
+
+Notes:
+ - I use and assume GNU sed.
+   - Other sed implementations may not work with the given scripts (but likely
+     will).

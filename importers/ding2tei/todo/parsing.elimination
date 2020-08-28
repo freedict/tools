@@ -1,0 +1,23 @@
+Elimination of certain parts of the input
+=========================================
+
+Ex.: "Der Apfel {m} ist grün" -> "Der Apfel ist grün"
+ . not yet decided whether such a case in particular should be handled like
+   this.
+
+If it is to be done, it remains the question which spacing to keep.
+ ? Remove the spacing preceding the removed element.
+   . Matches the idea of a removed element becoming a neutral element, since
+     spacing is stored as an attribute of the succeding token.
+   . Works fine with commata.
+     . ex.: "Der Apfel {m}, der ..."
+   . This makes sense for removed postfix annotations.
+   . Prefix annotations may be problematic, iff the annotation is not at the
+     very beginning of a unit, i.e. inline.
+     . ex. "..., (grüne) Äpfel"
+     ? I cannot think of a case where this causes a single space being swapped
+       for an empty string.
+ ? Remove the spacing succeding the removed element.
+   . Conversely to the former.
+ ? Just assume a single space.
+   . Usually breaks with commata.

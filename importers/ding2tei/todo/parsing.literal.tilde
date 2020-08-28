@@ -1,0 +1,5 @@
+<~> signifies a succeeding reference to another entry.
+
+Parsing this requires either
+ a) splitting by word at the lexer stage, or
+ b) identifying "~<word>" as lexeme at the lexer stage.

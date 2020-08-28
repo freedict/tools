@@ -1,0 +1,18 @@
+Handling of annotations on phrases / composed expressions (in particular gender
+annotations)
+ - a) allow only to apply to whole expression (and ditch any inner annotation)
+ - b) allow only inner annotations ("word {annot} word")
+   - How to represent in the TEI data?  (TODO: inform on whether it is possible
+     to label parts of entries -- I highly doubt so.)
+ - c) allow both
+ - problems:
+   - How to distinguish inner annotations at the end from annotations applying
+     to the whole?
+   - Many annotations are incorrectly placed (in particular, annotations
+     applying to a true inner part are placed at the end).
+   - solutions:
+     - Manually check annotations inside expressions and after expressions
+       composed of more than one word.
+
+What about [Br.] et al.?
+ - ex.: "to tuck in / tuck up [Br.] <> a child (in bed)"

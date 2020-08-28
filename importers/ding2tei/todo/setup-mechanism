@@ -1,0 +1,9 @@
+Installation / Compilation / Setup mechanism
+- options:
+  - Cabal
+    - recommended by (seemingly all) Haskell people
+    - probably does not (easily) allow for non-Haskell parts
+      - restrict to only the Haskell part
+  - Makefile
+  - Shell script
+    - Combine the execution of sed scripts and the compiled Haskell program

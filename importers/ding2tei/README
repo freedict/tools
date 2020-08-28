@@ -1,0 +1,100 @@
+ding2tei-haskell
+================
+
+A program to convert the Ding [0] dictionary into the TEI [1] format, to be
+used within the FreeDict project [2].
+
+IMPORTANT: This program is written as part of a Bachelor's thesis.  Please
+refrain from giving me any advice on the programming part.  In particular,
+please do not publish any modifications of my code.  This will no longer be
+of concern once the bachelor's thesis is submitted (september or october 2020).
+
+This program is still under development and not yet able to perform its task.
+
+
+Dependencies
+------------
+
+* Haskell
+  * base
+  * containers (Data.Map.Strict)
+  * [safe] (Safe.Exact.zipWithExact; might be used later)
+* Happy
+* Alex
+
+
+Locale
+------
+
+Use a UTF-8 locale, or else some things might produce unexpected results or
+even fail.  In particular, do not use the C locale.
+
+
+Obtain the data
+---------------
+
+The Ding source can be obtained here:
+
+ https://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en/
+
+Currently this program targets version 1.8.1.  Expect things to fail with other
+versions.
+
+Store the uncompressed file at:
+
+ dingsrc/de-en.txt
+
+
+How to build
+------------
+
+$ cd src
+
+$ alex Language/Ding/AlexScanner.x
+$ happy Language/Ding/HappyParser.y
+
+$ ghc -Wall -O2 Main -o ../ding2tei
+
+
+How to run
+----------
+
+Note: The program currently allocates a lot of memory, around 2.6 GiB, when
+      applied to the full Ding source.
+
+$ src/preprocess/main.sed < dingsrc/de-en.txt > dingsrc/de-en.txt.preprocessed
+$ ding2tei <(src/preprocess/drop.sed < dingsrc/de-en.txt.preprocessed)
+
+
+How to test (manually)
+----------------------
+
+$ ghci src/Test.hs
+>> parse $ scan "some dictionary data"
+>> parse $ scan $ header ++ example1
+>> tailParse "filename" nInitialLinesDropped
+
+
+Licensing
+---------
+
+ding2tei-haskell is distributed under the GNU Affero General Public License
+(AGPL), version 3 or later.
+
+See the license headers in the source files and the license itself (file
+COPYING) for details.
+
+
+Author
+------
+
+ding2tei-haskell is written by Einhard Leichtfuß.
+Feel free to contact me by e-mail to <alguien@respiranto.de>.
+
+
+References
+----------
+
+[0] https://www-user.tu-chemnitz.de/~fri/ding/
+[1] https://tei-c.org/
+[2] https://freedict.org/

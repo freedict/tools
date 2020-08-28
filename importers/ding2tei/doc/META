@@ -1,0 +1,108 @@
+How stuff is documented
+=======================
+
+License
+-------
+
+Even though not explicitly specified, all documentation is provided under the
+same license as the code it applies to.  This is currently the Affero GNU
+Public License, version 3 or later.  See the license headers in the source
+files and the license itself (file COPYING) for details.
+
+
+Modularisation
+--------------
+
+Documentation may be found in:
+
+ * Code
+   * General
+     * A common license header is to be placed at the head of any non-trivial
+       source file.
+   * Haskell
+     * Haskell code should be enriched with Haddock documentation, ideally at
+       least each exported function and datatype (et al.) of a module.
+     * Modules should be split into a hierarchichal structure.
+   * Sed
+
+ * Explicit documentation files
+   * General
+     * Documentation should be split into several usually small files,
+       according to the discussed topic.
+     * Files should be named in a hierarchical manner, using dots (<.>) as
+       separators.  E.g. "syntax.slashes".
+       * Note: This convention might change later towards using directories
+               as a means to reflect hierarchy.
+   * doc/
+     * Contains any documentation on the how and why.  It contrasts to in-code
+       documentation by adressing the more abstract issues.
+     * Its files should be well structured, as desribed later.
+     * It should contain only few questions and TODO annotations.
+   * todo/
+     * Contains documentation on steps that remain to be taken and problems
+       that remain to be solved.  It does in particular allow for the
+       discussion of options and stating of questions.
+     * A file's structure requires less strictness to allow for the likely
+       frequent additions, changes and restructuring.
+     * Files in todo/ should end up in doc/ when all is done.
+       * If what was done, seems unworthy of documentation, it may be moved to
+         todo/done/ or the bin.
+       * It may be a good idea to split off parts of a todo file into a file
+         under doc/.
+
+
+Syntax & Semantic
+-----------------
+
+ * Applying to all documentation:
+   * Things should be usually specified in hierarchical lists, like in this
+     file.
+     * There are valid exceptions, e.g. detailed explanations in doc/.
+   * Lists may use any special char as bullet point.  In particular, these
+     may be mixed.
+     * The semantic of particular bullet point characters should be specified
+       here.
+     * Indentation: Like in this file.
+       * <?> Question, uncertainty.
+       * <.> Fact.
+       * <-> Common.
+         * Annotates a point that has the prevalent meaning in the context.
+           * E.g., in todo files, this indicates a thing to be done.
+         * May also be used as generic bullet point.
+       * '>' Quote.
+       * </> Filename.
+       * <*> Generic.
+   * Prefer full phrases.
+   * Use terminating periods (<.>).
+   * 79 character limit.
+   * Emphasis
+     * Use '<' and '>', or paired <'> to highlight single characters.
+     * use <`> and <'> in this order to highlight single words, e.g.
+       identifiers.
+     * Use paired <"> to highlight examples of data or code (excluding single
+       elements, e.g. identifiers).
+
+ * Applying to separate documentation primarily:
+   * Headings should be underlined using `=' and `-' for primary and secondary
+     headings, respectively.
+     * Third level headings are a sign of a too large documentation file (like        this).
+
+ * Applying to separate documentation only:
+   * A file should begin with a primary heading, roughly corresponding to the
+     file name.
+
+ * Applying to in-code documentation mostly:
+   * Notes should be typeset as either "Note: <note>", or "Notes:" followed
+     by an indented list.  See above for the format of a list.
+
+ * Applying to in-code documentation only:
+   * Documentation must not be within the same comment section as the license
+     header.  (This excludes a small statement at the top of that header.)
+
+
+Final notes
+-----------
+
+ * This is not Markdown syntax.
+ * This is quite incomplete.
+ * The present documentation does not adhere very closely to the above rules.

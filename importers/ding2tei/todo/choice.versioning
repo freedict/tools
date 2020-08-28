@@ -1,0 +1,12 @@
+Versioning
+ - current freedict-deu-eng versions are ahead of the Ding version
+ - option: <ding_version>-fd<fdversion> (like Debian)
+ - Is it guaranteed, that a named version does nerver change ?
+   - One site says version 1.8, 2014-08-18, but provides version 1.8.1,
+     2016-09-06.
+     - https://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en/
+   - Consider to use the provided date as (part of) version.
+ - The download providing only the dictionary data does not have the version
+   in its name.
+   - Consider to suggest downloading the full Ding source (incl. a frontend
+     program).

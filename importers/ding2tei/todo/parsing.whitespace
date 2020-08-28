@@ -1,0 +1,4 @@
+Currently, all whitespace except for \n is considered equivalent.
+
+Consider to change this to only allow ' ' as regular whitespace.
+ - Use $printable for the remainder.

@@ -1,0 +1,30 @@
+How to represent lines in the TEI output
+========================================
+
+- Create two dictionaries, one for each direction (de->en, en->de).
+
+Let one direction be fixed.
+
+? Group Ding groups in a <superEntry>?
+  - No.  They do not function as "a single unit".
+
+? For each line, separate by the source language's keywords.
+  . "a; b :: c; d" -> "a :: c; d", "b :: c, d"
+    - similar for <|>
+  ? Group units of a group in a <superEntry>?
+    . They do funtion as "a single unit", so ok.
+  - Group homographs using <hom>.
+
+? Group new (more numerous) lines by homographs on the source side.
+  ? Group in a <superEntry> with <entry type="hom"> children.
+  ? Group in <sense>s instead.
+    - Do not use <hom> here.
+  - see https://www.tei-c.org/release/doc/tei-p5-doc/en/html/DI.html
+    - 9.1, 9.2.1
+
+? Are all translation units in the same group considered synonymous?
+  - Otherwise: Use separate <sense> entries.
+
+? Use sortKey's?
+
+See also: todo/linking.lines
