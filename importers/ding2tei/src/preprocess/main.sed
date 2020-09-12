@@ -1,6 +1,6 @@
 #!/usr/bin/env -S sed -Ef
 #
-# main.sed - fix some irregularities in the Ding source
+# preprocess/main.sed - fix some irregularities in the Ding source
 #
 # Copyright 2020 Einhard Leichtfuß
 #
@@ -108,10 +108,17 @@ s`\<(die Summe) \+ Gen (\[math\.\])`\1 \{+Gen.\} \2`
 # There is exactly one occurence of each of <,>, </>, <;>.
 # I decide to use <,>, as between genders (same meaning of the separator: or).
 # Note however the frequent use of "{prop; ...}" (meaning: and).
-# It might be considered most consistent to use <,> as separator for all
-# grammar annotations, to contrast them to annotated verb conjugations. (TODO)
+# Note that using <,> for all grammar annotations is not an option, since
+# `+<case>' annotations may be further annotated with interogative pronouns,
+# where <,> is used as a separator.
+# One might instead consider to make <;> the default.  This is what the pretty-
+# printer curretly does.  Alternatively, one would have to allow <,> (and </>)
+# only for certain subsets of annotations (in practice: v.*, {m,n,f,pl}).
 s`\{(vi)/(vt)\}`\{\1,\2\}`g
-s`\{(vt)\;(vi)\}`\{\1,\2\}`g
+s`\{(vt)\; *(vi)\}`\{\1,\2\}`g
+
+s`\{(adj)\.\}`{\1}`g
+s`\{prep\.\}`{prp}`g
 
 
 ## [] -> {}
@@ -122,6 +129,16 @@ s`\[kein Plural\]`\{no pl\}`g
 # Note: {no sing} never occurs, it is infered from {no pl} and {sing}.
 s`\[only plural\]`{no sing}`g
 s`\[no singular\]`{no sing}`g
+
+s`(entsprechend etw\.) \[Dativ\]`\1 {+Dat.}`g
+
+s`\[im Genitiv\]`{Gen.}`g
+
+
+## [] -> ()
+
+# TODO: Consider to catch this in the parser.
+s`\((rarely used|rare)\)`[rare]`g
 
 
 ## []-annotations
@@ -161,6 +178,9 @@ s`\[(French) for (a female singer, especially in a nightclub)\]`[\1] (\2)`
 
 s`\[(formal)/(Am\.)\]`[\1, \2]`g
 
+# The only place where the separator is not a comma.
+s`\[(archaic)\; (academic)\]`[\1, \2]`g
+
 
 ## Annotated conjugated forms
 
@@ -176,6 +196,20 @@ s`\{(swung) \((swang \[obs\.\])\)\; (swung)\}`\{\1, \2\; \3\}`g
 # In this particular case it is also unclear (from the syntax only), which
 # forms the [archaic]-annotations applies to.
 s`\{(work)\; (worked)\} \{(wrought)\; (wrought) (\[archaic\])\}`\{\1, \3 \5; \2, \4 \5\}`
+
+# <;> -> <,>
+s`\{(besought, beseeched)\; (besought)\; (beseeched)\}`{\1\; \2, \3}`g
+s`\{(awoke, awaked)\; (awoken)\; (awaked)\}`{\1\; \2, \3}`g
+s`\{(pleaded)\; (pled \[coll\.\])\; (pleaded)\; (pled \[coll\.\])\}`{\1, \2; \3, \4}`g
+s`\{(undergirded, undergirt)\; (undergirded)\; (undergirt)\}`{\1\; \2, \3}`g
+
+# See: https://en.wiktionary.org/wiki/durst#English // 2020-09-09 00:34:20 CEST
+s`\{(dared)\; (durst( \[obs\.\])?)\; (dared)\}`{\1, \2\; \4}`g
+
+# <,> -> <;>
+s`\{(hung), (hung)\}`{\1; \2}`g
+s`\{(strung), (strung)\}`{\1; \2}`g
+s`\{(kenned), (kent)\}`{\1; \2}`g
 
 
 ## Simple typos
@@ -211,17 +245,23 @@ s`\<i(Buche)\>`\1`g
 
 s`/(Jun\.\; jun\.)\; (Jnr)\; (Jr),/`/\1\; \2.\; \3./`g
 
+# Only on English side a misspelling (though on the german side it likely
+# should be capitalized).
+s`( :: .*)\<ressources\>`\1resources`g
+
 s`\[Nordestdt\.\]`[Nordosttdt.]`g
 s`\[(Nordt\.|Norddtd\.|norddt\.|Nordddt\.)\]`[Norddt.]`g
 s`\[Süddtd\.\]`[Süddt.]`g
 
+s`\(teiweise\) (Änderung)\>`(teilweise) \1`g
+
 
 # Superfluous <.> (if necessary, decided by count that the dotless variant is
 # correct).
-s`\[(sport|print|auto|slang|art|dated)\.\]`[\1]`g
+s`\[(sport|print|auto|slang|dated)\.\]`[\1]`g
 
 # Missing <.>
-s`\[(ugs|cook|naut|photo|econ|coll|humor|adm|fig|stud|fin|ornith|meteo|geh|zool|textil|techn|pol|envir|bot|telco|statist|soc|sci|poet|mil|med|ling|hist|aviat|chem)\]`[\1.]`g
+s`\[(ugs|cook|naut|photo|econ|coll|humor|adm|fig|stud|fin|ornith|meteo|geh|zool|textil|techn|pol|envir|bot|telco|statist|soc|sci|poet|mil|med|ling|hist|aviat|chem|zool|adm|biochem)\]`[\1.]`g
 
 # Superfluous < > before <.>.
 s`\[(soc) \.\]`[\1.]`g
@@ -231,7 +271,6 @@ s`\[(soc) \.\]`[\1.]`g
 s`\[rel.\]`\[relig.]`g
 s`\[texil\]`[textil]`g
 s`\[environ\.\]`[envir.]`g
-s`\[archeol\.\]`[arch.]`g
 s`\[TM\]`[tm]`g
 s`\[(technical|tech\.)\]`[techn.]`g
 s`\[stone\]`[min.]`g
@@ -240,9 +279,11 @@ s`\[sl\.\]`[slang]`g
 s`\[milit\.\]`[mil.]`g
 s`\[hum\.\]`[humor.]`g
 s`\[gramm\.\]`[ling.]`g
-s`\[geo\.\]`[geogr.]`g
 s`\[finan\.\]`[fin.]`g
 s`\[bio\.\]`[biol.]`g
+
+# Not geogr. !
+s`\<(Isogeotherme \{f\} ([A-Za-z ]+)) \[geo\.\]`\1 [geol.]`g
 
 # This looks like [lit.], but it is not (infered from context).
 # TODO: Consider to make literary its own annotation (i.e, do not "fix")?
@@ -256,6 +297,10 @@ s`\[bichem\.\]`[biochem.]`g
 s`\[colcoll\.\]`[coll.]`g
 s`\[const\.\]`[constr.]`g
 
+# Note that the 'or' is converted in alter.sed.
+s`\[(geh\.|formal) or humorous\]`[\1 or humor.]`g
+s`\[(formal)/humorous\]`[\1/humor.]`g
+
 # Replacing value does not occur.  Adapt to common naming scheme.
 s`\[arabisch\]`[Arab.]`g
 
@@ -266,6 +311,9 @@ s`\[(ugs\.) (schnelles Auto)\]`[\1] (\2)`g
 s`\[(übtr\.) für (eine große, schlanke Person)\]`[\1] (\2)`g
 s`\[(pej\.) für (Mittäter\; Gefolge)\]`[\1] (\2)`g
 s`\[(obs\.) für (Küster, Kirchendiener)\]`[\1] (\2)`g
+
+# Doubled [art], one of the with a superfluous <.>.
+s`\[art\.\] (\[art\])`\1`g
 
 
 ## Abbreviations missing terminal <.>
@@ -288,10 +336,22 @@ s`\[Abk\. M\./M\]`/M.; M/`g
 # Missing colon.
 s`\[Abk\. (M\.\/M)\]`/ \1 /`g
 
+s`(^|:: *)(\[sic\])`\1/\2/`g
+
+s`\<(signed) /(sgd),/`\1 /\2./`g
+
 
 ## Misplaced {}-annotations
 
 s`(\(Kfz:) \{n\} (/AND/\))`\1 \2`
+
+# Guessing a little here.
+s`/in \{prp\} \./`/in prp./`g
+
+
+## Misplaced <::>
+
+s`^(Hadaikum \{n\}\; Präarchaikum \{n\} \(Äon\) \[geol\.\]) (Hadean\; Pre-Archaean \[Br\.\]\; Pre-Archean \[Am\.\]) :: (\(eon\))$`\1 :: \2 \3`g
 
 
 ## Qustionably placed //-annotations
@@ -302,6 +362,15 @@ s`^(der Ältere)\; (Senior) /(d\.Ä\.); (Sen\.)/`\1 /\3/\; \2 /\4/`
 ## <...>
 
 s`< (\[mus\.\]) >`\1`g
+
+# The only "<>"-annotation syntactically clearly on a unit level.
+# Since semantically wrong, fix as follows.
+# See https://en.wiktionary.org/wiki/delt // 2020-09-06 20:39:00 CEST
+s`\<(to deal) \{(dealt)\; (dealt)\} <(delt)>`\1 {\2; \3, \4 [archaic]}`g
+
+# There is one single occurence of an `s' after "<>".  I see no reason for it.
+# Also, the first english form should be in plural, too.
+s`(Atomforscher \{pl\}\; Atomforscherinnen \{pl\}) :: (.*) \| (atomic scientist) <(nuclear scientist)>s$`\1 :: \2 \| \3s <\4s>`
 
 
 ## Missing entries
@@ -347,10 +416,12 @@ s`"(The Hunchback of Notre-Dame), (1831)`"\1", \2`g
 
 ## [/ -> ,]
 
-# TODO: reconsider / solve at parser level.
-s`\[(obs\.)/(humor\.)\]`[\1, \2]`g
-s`\[(humor\.)/(pej\.)\]`[\1, \2]`g
-s`\[(formal)/(humorous)\]`[\1, \2\]`g
+# TODO: reconsider
+#  - Note that the below listed do not catch some </> that are elsewhere
+#    processed or created.
+#s`\[(obs\.)/(humor\.)\]`[\1, \2]`g
+#s`\[(humor\.)/(pej\.)\]`[\1, \2]`g
+#s`\[(formal)/(humorous)\]`[\1, \2\]`g
 
 
 ## [.] -> /
@@ -364,8 +435,16 @@ s`\<(pitch) \[(plunge)\]`\1/\2`g
 s`\<(spheroidal) (jointing) \[(parting)\]`\1 \2/\3`g
 s`\<(acial) \[(optic)\] (angle)`\1/\2 \3`g
 s`\<(tight) \[(close)\] (sand)`\1/\2 \3`g
+s`\<(cutting) \[(coal-cutter)\] (chain)`\1/\2 \3`g
+
+# TODO: This is now really ugly.
+s`\<(post) \[(nach|after)\]`\1/\2`g
+s`\<(scrivere) \[(schreiben|writing)\]`\1/\2`g
 
 s`\<(Jugendstil-) \[(Kunst)\]`\1/\2`g
+
+# Ugly.
+s`\(\[(im Preis)\] (enthalten)\)`((\1) \2)`g
 
 
 ## [.] -> (.)
@@ -375,12 +454,34 @@ s`\<(Jugendstil-) \[(Kunst)\]`\1/\2`g
 
 s`\<(eine Schar) \[(Personen)\]`\1 (\2)`g
 s`\<(a clutch of) \[(persons)\]`\1 (\2)`g
+s`\<(entlangrumpeln) \[(mit einem Fahrzeug)\]`\1 (\2)`g
 
 # Unsure; possibly better translated to a slashed alternative.
 s`\<(Brazilian) \[(optical)\] (pebble)\>`\1 (\2) \3`g
 
 s`\<(to guzzle sth\.) \[(drink)\]`\1 (\2)`g
 s`\<(to stitch) \[(book)\]`\1 (\2)`g
+
+# Description.  Should become a <note>.
+s`\[(ejecta\; discharges)\]`(\1)`g
+s`\<(Sauerkohl \{m\}) \[(in einigen Regionen alternativer Begriff zu Sauerkraut)\]`\1 (\2)`g
+s`\<(übertreffen \{vt\}) \[(in Geschwindigkeit oder Leistung)\]`\1 (\2)`g
+s`\<(listicle) \[(list + article)\]`\1 (\2)`g
+s`\<(eine Portion) \[(Mengenangabe)\]`\1 (\2)`g
+
+# Racist.  TODO: Consider to annotate somehow.
+s`\<(Zehn kleine Negerlein) \[(ein Kinderreim)\]`\1 (\2)`g
+s`\<(Ten Little Indians) \[(a children's rhyme)\]`\1 (\2)`g
+
+
+## Parenthese removal
+# TODO: ? Solve in parser?
+s`\; \((Abnutzung durch Reibung)\) (\[techn\.\]) ::`\; \1 \2 ::`g
+
+
+## Superfluous <;>
+s`\; *$``
+s`\<(Verzögerungszeit \{f\})\; (\[electr\.\])`\1 \2`g
 
 
 ## Slashes
@@ -523,11 +624,19 @@ s`\<(note)\;\; (/N\.B\.\; NB/)`\1; nota bene [archaic] \2`
 # slash, dot
 s`\<(to look forward to sth\.)/ (to expect sth\.)\.`\1 / \2`g
 
+# <;> -> <,>  ;  typo: see https://en.wiktionary.org/wiki/gird#Verb // 2020-09-03 00:47:30 CEST
+s`\{(girded\, girt)\; (girded)\; git\}`{\1\; \2, girt}`g
+
 
 ## Wrong location of grammar annotation in phrase
 
 s`\<(miteinander ins) (Bett) (gehen) (\{m\})`\1 \2 \4 \3`
 # - Questionable.  See (1) below.
+
+# Note: One might consider this syntactically correct with the semantics of an
+#       annotation applying to the whole unit.  This is just a corner case
+#       though.
+s`:: (\{vt\}) (to pick) (a quarrel)\>`:: \2 \1 \3`
 
 
 ## Missing <;>
@@ -538,6 +647,12 @@ s`(Beide Schriftstücke sind online verfügbar\.) (Diese Schriftstücke sind bei
 ## Unbalanced parentheses
 
 s`(to make a decision \(up\)on the documents before the court)\)`\1`
+
+
+## Misc syntax errors
+
+s`:: <> \|`:: |`g
+
 
 
 ## Further seemingly incorrect entries (TODO):
@@ -617,8 +732,38 @@ s`(to make a decision \(up\)on the documents before the court)\)`\1`
 #/sw, s/w/ .* /B&W, b&w, B/W/
 #Ver­brau­cher­zen­t­ra­le {f} [tm] :: consumer advice centre [Br.]
 # - a bunch of \u00AD contained (soft hyphens)
-#PS (lat. Postskriptum - post [nach] + scrivere [schreiben]) :: ps (Lat. postscript - post [after] + scrivere [writing])
+#   - Could be used to infer hyphenation.
 # - []
+#eine Abschrift beglaubigen {vt} [adm.] :: to certify; to attest; to exemplify [Am.] a copy
+# ? prefixes in ()?
+# ? During enrichment: Decuduce from {vt} or "to", that something is a collocate
+#(formal)
+#to get (oneself; sth.) to safety
+#scanning | scanne$
+#/s. and s.c./
+#leise; ruhig; still {adj} | leiser; ruhiger; stiller | am leisesten; am ruhigsten; am stillsten
+#name-dropping <name-drop> <name--dropping <namedrop>> <name--dropping <name drop>>
+
+# Hard to identify collocations (the part after the parens)
+#  pressure (on sb.) to adapt/adjust
+#  to mumble (away) to oneself
+
+# Infer participle information
+#  kollokieren; nebeneinanderstehen {vi} [ling.] | kollokierend; nebeneinanderstehend | kollokiert; nebeneinandergestanden :: to collocate | collocating | collocated
+
+# <-> - annotations (<-> likely always surrounded by whitespace)
+#  PS (lat. Postskriptum - post [nach] + scrivere [schreiben]) :: ps (Lat. postscript - post [after] + scrivere [writing])
+
+
+# Found when searching for units that contain a /./-expression:
+#		Gesellschaft (des) bürgerlichen Rechts /GbR/; /GdbR/, BGB-Gesellschaft
+#		emergency medical treatment room; emergency room [Am.] /e.r./; /ER/
+#		 - questionable
+#		Saint ...; /St/ [Br.]; /St./ [Am.]
+#		 - questionable
+#		cash with order /CWO/; /c.w.o./; cash in advance /CIA/
+#		ante meridiem /a.m./; /am/
+#		later; later on; /L8R/ [comp.]
 
 
 # TODO: - '([A-Za-z]+ ){2}\{(m|f|n)\} *(\;|\|)'

@@ -2,5 +2,37 @@ It would be nice to identify phrases or other non-trivial expression, such that
 they may be considered examples for associated keywords, and not keywords
 themselves.
 
-? Test for supsequence match.
-? Require a certain number of words.
+? Test for supsequence match (should be delimited by whitespace or similar).
+  * Potential counterexamples:
+    . "etw. unterlassen {vt} [adm.] | etw. zu unterlassen haben [jur.]"
+    . "Adel" ~ "niederer Adel"
+    . "tongue" ~ "little tongue" ~ "Zünglein"
+  ? require a certain maximum number of words in the key unit?
+  * Note that capitalization may change.
+? Require a certain minimum number of words in the examined unit.
+* positive signs
+  ? a comma
+  ? a period (at the end?)
+
+? Which side should match?
+  ? Any?
+  ? Both?
+  ? The side that currently is the "key"-side?
+  ? The side that currently is the "value"-side?
+
+Obstacles
+ * plural form / form of different gender (m/f)
+   * Simple heuristics should do.
+ * Inflected verbs
+   * Note: Ideally, a lot of inflected forms are to be imprted from the
+           Wiktionary in the future.  (There is ongoing work from Karl Bartel.)
+     * This would however be accessible in TEI, so t is either to be parsed
+       separately or merged post translation.
+   * Note: Sometimes inflected forms are listed individually.  (TODO)
+   * Some regular forms could likely be caught with a heuristic.
+     * Unsure, if worth the effort.
+   ? Ignore?
+   * special Ex.: "ausreizen" ~ "... reizt ... aus ..."
+
+ * Plural forms
+   * Take care not to match "Menschen" as an example for "Mensch".

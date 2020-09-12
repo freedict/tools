@@ -1,0 +1,11 @@
+See also todo/enrich.from-prefixes
+
+Ex.: "sein {vi} | seiend | gewesen | ich bin | ..."
+ - "ich bin": identify prefix
+ - participles: difficult (unless maybe for regular verbs)
+   - TODO: investigate further
+
+Ex.: "to be {...} | ... | you are; you're"
+ - problem: "you're"
+ - solution: retain original, but additionally extract inflected forms.
+   - i.e.: "be | you are; you're" -> "be" (infl: "are") | "you are; you're"

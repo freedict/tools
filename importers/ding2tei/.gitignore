@@ -4,4 +4,5 @@
 *.o
 *.hi
 /src/Language/Ding/AlexScanner.hs
-/src/Language/Ding/HappyParser.hs
+/src/Language/Ding/Parser/Line.hs
+/src/Language/Ding/Parser/Line.info

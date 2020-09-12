@@ -85,7 +85,8 @@ Syntax & Semantic
  * Applying to separate documentation primarily:
    * Headings should be underlined using `=' and `-' for primary and secondary
      headings, respectively.
-     * Third level headings are a sign of a too large documentation file (like        this).
+     * Third level headings are a sign of a too large documentation file (like
+       this).
 
  * Applying to separate documentation only:
    * A file should begin with a primary heading, roughly corresponding to the

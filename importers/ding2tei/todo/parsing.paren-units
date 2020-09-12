@@ -1,0 +1,39 @@
+Units containing only <()> and annots
+=====================================
+
+Some units do not contain a main part (not enclosed by any kind of bracket).
+
+They are always starting with a <()> part.
+
+Meanings:
+ a) suffix annotation to all former units in the group
+ b) first <()> part contains the headword - usually (always?) in the context
+    of botanics or zoology (latin names).
+    * Usually (always?) last unit in group.
+   * Any further annotations tend to apply to the whole group / list of
+      preceding units.
+
+Resolving (for now):
+ * Any non-initial unit of this kind is considered of type a)
+ * Any initial unit of this kind is dropped.
+ * See Language/Ding/HappyParser.y
+   and Language/Ding/Partial/PartialSuffixUnit.hs
+
+Examples:
+
+Anfälligkeit {f}; Empfänglichkeit {f}; Empfindlichkeit {f}; (für etw.); Neigung (zu etw.) | Alterungsanfälligkeit {f}; Alterungsempfindlichkeit {f}; Alterungsneigung {f} | Verkokungsneigung {f} | Korrosionsanfälligkeit {f}; Korrosionsneigung {f} | Rissanfälligkeit {f} | Flockenempfindlichkeit {f}; Flockenneigung {f} (Metallurgie) | Stoßempfindlichkeit {f} | Schweißrissempfindlichkeit {f} :: susceptibility (to sth.) | susceptibility to aging | susceptiblity to coking | susceptibility to corrosion | susceptibility to cracking/fissuring | susceptiblity to flakes (metallurgy) | susceptibility to shocks | susceptibility to weld cracking
+Basispapier {n}; Basisinstrument {n}; Basiswert {n}; Bezugswert {n}; (eines Wertpapiers) [fin.] :: underlying asset; underlying (of a security)
+Duchgangshöhe {f}; (Fußgänger); Durchfahrtshöhe {f} (Brücke, Unterführung) [auto] :: headroom; headway (bridge, unterpass)
+Einspruch/Beschwerde einlegen; Einspruch erheben [Ös.]; berufen [Ös.]; rekurrieren [Schw.]; appellieren [Schw.]; (gegen) (bei) | Einspruch/Beschwerde einlegend; Einspruch erhebend; berufend; rekurrierend; appellierend | Einspruch/Beschwerde eingelegt; Einspruch erhoben; berufen; rekurriert; appellieren | gegen eine Entscheidung Einspruch erheben; eine Entscheidung beeinspruchen [Ös.] :: to appeal (against) (to) | appealing | appealed | to appeal against a decision
+Feigwarze {f}; Feuchtwarze {f}; Kondylom {n}; (Condyloma) [med.] | Feigwarzen {pl}; Feuchtwarzen {pl}; Kondylome {pl} | Feigwarzen der Harnröhre :: genital wart; venereal wart; condyloma | genital warts; venereal warts; condylomas | urethral condylomata
+Gänseblümchen {pl}; Marienblümchen {pl}; Tausendschönchen {pl}; Maßliebchen {pl}; (Bellis) (botanische Gattung) [bot.] :: daisies; bellis (botanical genus)
+Ginkgo-Gewächse {pl}; Ginko-Gewächse {pl}; (Ginkgoaceae) (botanische Familie) [bot.]
+
+
+(Amblypomacentrus breviceps) [zool.] :: saddle damsel
+(Amphiprion leucokranos) [zool.] :: white cap (anemone) clown
+(Amphiprion tricinctus) [zool.] :: three stripe (anemone) clown
+
+(Anthelia spp.) oder (Cespitularia spp.) [zool.] :: waving polyp
+
+-- see also the subsequent lines in the Ding.

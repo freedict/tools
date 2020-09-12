@@ -1,0 +1,2 @@
+Consider not to store the amount of spacing, but rather whether there was any
+(boolean).

@@ -1,0 +1,9 @@
+Options (that are valid FreeDict TEI):
+ * superEntry/entry
+ * superEntry/entry/sense
+ * entry/sense
+ * entry/sense/sense
+
+See also:
+ * Language/TEI/Syntax/Body.hs
+ * https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html#nested-entries-vs-multiple-senses

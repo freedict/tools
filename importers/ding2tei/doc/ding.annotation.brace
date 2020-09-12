@@ -4,7 +4,7 @@ Classification of brace (<{}>) annotations
  * Grammar
    * Gender: {n} {f} {m}
      . implies singular, noun
-   * Multiplicity: {n,f,m,sing} {pl}
+   * Multiplicity: {n,f,m,sing} {pl} {no pl} {no sing}
      . {sing} is rare
        . Does not imply noun.
      * {pl}
@@ -18,21 +18,26 @@ Classification of brace (<{}>) annotations
          . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
          . Ex.: "Wir freuen uns über euer/Ihr {pl} zahlreiches Erscheinen."
          . Ex.: "that; those {pl}"
-  * Verbs: {v} {vi} {vt} {vr} (in-, transitive, reflexive)
-  * {adj}
-  * {adv}
-  * {pron}
-    . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
-      . In this case, applies to group.
-    - Further investigation required.
-  * {num}
-    . Mostly annotated to numbers.
-      . Counterex: "jedermann; alle ohne Unterschied {pron} {num}"
-      . Counterex: "beide {pron} {num}"
-  * {Quantifikator}
-    . Occurs only once.
-    ? Equivalent to {num}?  (TODO)
-  * ...
+     * {no pl}
+       . implies singular, noun
+     * {no sing}
+       . implies plural, noun
+   * {no sing}
+   * Verbs: {v} {vi} {vt} {vr} (in-, transitive, reflexive)
+   * {adj}
+   * {adv}
+   * {pron}
+     . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
+       . In this case, applies to group.
+     - Further investigation required.
+   * {num}
+     . Mostly annotated to numbers.
+       . Counterex: "jedermann; alle ohne Unterschied {pron} {num}"
+       . Counterex: "beide {pron} {num}"
+   * {Quantifikator}
+     . Occurs only once.
+     ? Equivalent to {num}?  (TODO)
+   * ...
 
 
 Specialties

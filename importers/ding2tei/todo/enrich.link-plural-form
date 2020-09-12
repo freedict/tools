@@ -30,6 +30,8 @@ Techniques to verify/identify semantic link
    	   . Does not apply to many foreign, imported words.
    	     * Note: Not all relations need to be caught.
    	 - prefix match [of a certain (relative) length] (heuristic)
+     - potential conversion of vocals to umlauts
+       . Ex.: "Graf" ~ "Gräfin", "Arzt" ~ "Ärztin"
    	 - edit distance
    * sing/n/m/f ~ pl
      - potential conversion of vocals to umlauts

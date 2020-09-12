@@ -22,20 +22,26 @@
 
 module Test () where
 
+import App.Ding2TEI
 import Language.Ding.AlexScanner (scan)
-import Language.Ding.HappyParser (parse)
+import Language.Ding.Parser (parse)
+import Language.Ding.Parser.Header (parseHeader)
+import Language.Ding.Parser.Line (parseLine)
+import Language.Ding.Pretty
 import Language.Ding.Syntax
 import Language.Ding.Token
+import Language.TEI.Syntax.Body
+import Language.TEI.ToXML
 
 -- | For testing purposes, parse all but the first `n' lines.
---   A header is preprended, so make sure `n' is large enough so that the
---   original header is removed.
+--   Useful to identify several syntax errors in succession (avoids re-parsing
+--   the known-good part).
+--   A header is prepended.  Make sure to at least drop the header.
 tailParse :: String -> Int -> IO ()
 tailParse fileName n = do
   input <- readFile fileName
-  let str = unlines $ drop n $ lines input
-  let Dict _ ls = parse $ scan $ header ++ str
-  putStrLn $ show $ length ls
+  let ding = parse $ scan $ header ++ (unlines $ drop n $ lines input)
+  putStrLn $ show $ length $ show ding
 
 header :: String
 header = unlines
@@ -63,4 +69,4 @@ example3 = unlines
   , "(Schaden; Mangel) beheben; (Missstand) abstellen; abhelfen; in Ordnung bringen :: to remedy "
   ]   -- from https://dict.tu-chemnitz.de/doc/syntax.html
 
--- vi: ts=2 sw=2 et
+-- vi: ft=haskell ts=2 sw=2 et

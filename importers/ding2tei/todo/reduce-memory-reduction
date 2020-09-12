@@ -1,0 +1,34 @@
+Currently, 2.6 GiB are taken up by parsing the Ding source (which is 20 MiB
+in size).
+
+-- Now (2020-09-11): 3.4 GiB
+
+This huge memory usage probably is due to something in the Happy-generated
+code.
+
+The usage can likely be drastically be reduced by having Happy only parse
+single lines.
+
+This requires parsing the header separately, though (which should not be
+difficult).
+
+Testing with restricted memory:
+$ ulimit -S -d #N_KB
+* result: restricting to below 2.6 GiB crashes the program.
+
+
+Testing repeated inspection:
+
+> putStrLn $ show $ length ls
+> threadDelay $ 20 * 1000 * 1000
+> putStrLn $ show $ length $ show ls
+
+* second counting finishes fast
+* no memory reduction after first counting done noticeable.
+
+
+Results of improvement (scan & parse by line)
+ * scan&parse time: 20s -> 13s
+ * scan time: 4s -> 10s  (likely I did something wrong in measuring)
+ * memory usage: 2.6 GiB -> 2.7 MiB
+   * Note: lazyness and garbage collection have a huge impact here

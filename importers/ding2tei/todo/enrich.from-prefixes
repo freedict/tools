@@ -1,0 +1,50 @@
+Ex.: "von etw. absehen {vi}"
+Ex.: "etw. unterlassen {vt} [adm.]"
+Ex.: "etw. zu unterlassen haben [jur.]"
+  - potentially not a headword, but a phrase,
+    see todo/parsing.phrase-identification
+Ex.: "sein Revier markieren {vt} [zool.]"
+Ex.: "ich bin"
+  - also: link to "sein" as inflected form. (see todo/enrich.inflected-forms)
+Ex.: "ich bin nicht"
+  - This one should be considered a phrase, no dropping required.
+Ex.: "you are; you're"
+  - Second form does not permit dropping anything
+Ex.: "jdm. nicht gehorchen"
+  - "nicht" is not to be dropped.
+Ex.: "in Geschwindigkeit oder Leistung"
+
+ * Drop some prefixes.
+   ? Which?
+   * Only when possible for all elements of group and translation group.
+ * Infer information from prefixes.
+
+TODO: Identify important first words (count, shortness)
+      - the same for second, third words
+      - the same for the first n words (n <= ?)
+
+Counterex.: "von Adel sein"
+ * "von" alone would likely not be considered a proper prefix to be made into
+   a collocation annotation.
+
+Similarly: suffixes
+ . potential counterexample: "on {prp; +Dat.} jdm./etw. (Ursprung)"
+ . potential counterexample: "to hit on sb." (do not drop the "on" ?)
+ . potential counterexample: "to hit {hit; hit} off" ~ "sich gut verstehen"
+ . special case: "to stave {staved, stove; staved, stove} off <> sth."
+ . special case: "to hit {hit; hit} off"
+ . Ex.: "losziehen {vi} gegen"
+ . Ex.: "to hit out at sb."
+
+
+Potential counterexamles:
+ . "in einigen Regionen alternativer Begriff zu Sauerkraut"
+
+
+Possible problem: creation of duplicates inside a single group
+--------------------------------------------------------------
+
+ * Note: This may in theory also happen before stripping any prefix/suffix.
+ * Consider: "to eat; eat" (invented example)
+ ? Consider this an error?
+ ? Merge.

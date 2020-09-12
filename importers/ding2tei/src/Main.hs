@@ -22,24 +22,38 @@
 
 module Main (main) where
 
-
 import Control.Monad (when)
 import System.Environment (getArgs)
 import System.Exit (die)
 
+import App.Ding2TEI (ding2tei)
 import Language.Ding.AlexScanner (scan)
-import Language.Ding.HappyParser (parse)
-import Language.Ding.Syntax (Dict(..))
+import Language.Ding.Parser (parse)
+import Language.TEI.ToXML (prettyTEI)
+import Language.TEI.ToXML.ValidateChar (validateString)
+
+
+-- Notes:
+--  * The input file should be newline terminated, even though in most cases
+--    it will not matter.
+--    * One might consider adding a final newline, if there is none.
+--    * Alex needs terminating whitespace, since the end of input  is not
+--      treated as '\n' in right context (unlike the beginning of input).
+--      (The whitespace in right context is needed to differentiate different
+--      kinds of slashes.)
 
 
 main :: IO ()
 main = do
   args <- getArgs
-  when (null args) $ die "Error: Missing argument (filename)"
-  let fileName = head args
-  input <- readFile fileName
-  let Dict _ ls = parse $ scan input
-  putStrLn $ show $ length ls
+  when (length args /= 2) $ die "Syntax: ding2tei <in_file> <out_file>"
+
+  let [inFile, outFile] = args
+  input <- readFile inFile
+
+  let ding = parse $ scan $ validateString input
+  let tei = ding2tei ding
+  writeFile outFile $ prettyTEI tei
 
 
 -- vi: ts=2 sw=2 et

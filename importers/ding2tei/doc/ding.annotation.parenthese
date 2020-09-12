@@ -1,0 +1,93 @@
+Expressions within parentheses
+==============================
+
+ * in headword units
+   * prefix location
+     a) a collocate
+        . Ex.: "(steuerliche) Abschreibung"
+        . most frequent / all
+     b) an optional prefix (not being a collocate)
+        * Both versions (w/ and w/o prefix) share the same meaning
+        ? Do such exist?
+        ? Necessary to differentiate from collocates?
+     ? Just assume a)?
+   * suffix location
+     a) a collocate
+        . Ex.: "(von etw.)", "outflow (from / to)"
+        . Ex.: "Abfangen {n} (von Sendungen, Nachrichten etc.)"
+          - w/o "von", could be considered c)
+          - Note keyword "von"
+        . Ex.: "interception (of aircraft)"
+          - Note keyword "of"
+        . Ex.: "Lehne {f} [Süddt.] [Ös.] [Schw.] (eines Hügels) [geogr.]"
+          - Note article in genitive
+        * Seems to usually be indicated by a keyword like "from"
+          * Other common keywords might also be of interest (e.g., "etw.")
+     b) an optional suffix (not being a collocate)
+        ? Existing?
+     c) a description of / annotation on the whole unit (<note>)
+        . Ex.: "Start {m} (Rakete, Raumschiff)"
+        . Ex.: "Sinken {n} (Temperatur...)"
+        . Ex.: "Abfalluran {n} (Kerntechnik)"
+          . Similar to <[]>-usages (frequently the case).
+     - TODO: Investigate on frequent initial words -- keywords
+     - Use keywords to distinguish
+       ? per language keywords?
+       - include (ex.): "durch", "von", "vom", "für", "an"
+       - include genitive articles
+       ? include relative pronouns?
+         - https://de.wikipedia.org/wiki/Relativpronomen
+         * Many.
+       - ambiguous ex.: "die", "der" (relative pronoun / nominative article)
+         - Ex.: "(der DDR)"
+           - usage as rel.pron. seems more frequent
+         - Ex.: "(der wichtigste Bestandteil von etw.)"
+           ? Change in preprocessing to "wichtigster ..."?
+             * Work.
+       ? Just rely on investigation?
+         * Frequency, shortness of occuring initial words.
+   * infix location
+     * Infrequent.
+     . Ex.: "loose (sharp) tongue"
+       * Might be considered an example for tongue.
+     . Ex.: "to get (down) to work"
+     ? Consider a phrase otherwise?  (TODO)
+     ? Include as literal?
+   * special: unit only contains (.*) plus other annotations
+     . Ex.: "(Abnutzung durch Reibung) [techn.]"
+       - Currently fixed in the preprocessor (removed <()>)
+     ? Always just remove the parentheses?
+     - TODO: Analyze frequency / further investigation.
+   * prefix and suffix location (distinct annotations)
+     . Ex.: "(obere) Abschlussleiste {f} (einer Täfelung)"
+     ? two collocations?  (TODO)
+       * Likely confusing.
+   * special: Two succeding <()>-exprs
+     . Ex.: "Absetzen {n} (von etw.) (Vorgang)"
+       ? If suffix, require different kind (a/b/c)?
+         ? Otherwise: Error?
+       - TODO: Investigate further.
+ * in phrase units
+   ? Include verbatim?
+
+
+ * Slashes
+   . Ex.: "(water/steam) separation system"
+   ? Assume weak slashes to have maximal scope?
+   ? Encode as two collocations?
+     ? Or a single one, contatining the slash?
+
+ * Semicola
+   . Ex.: "(Wasserspeicher; Lagertank)"
+
+Problem: distinction of phrases and headwords happens after the parsing step.
+ * When separating <()> during parsing, the spacing information is lost.
+   * <()> must be identified in the parser, since it may contain <;> (i.a.).
+   * Spacing must be reproduced, when an annotation is to be merged back with
+     the text.
+   ? Just assume single separating space (and none after <(> / before <)>)?
+     * Likely correct in most cases.
+     * Possibly an improvement on potentially awkward spacing in the Ding.
+   ? Keep spacing information?
+
+See also: todo/parsing.literal.etw

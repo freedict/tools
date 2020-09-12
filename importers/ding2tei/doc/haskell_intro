@@ -35,7 +35,7 @@ Function composition
 
 - Syntactic sugar
   - `$'
-		- Usually, one can think of everything on the current nesting level after
+    - Usually, one can think of everything on the current nesting level after
       (and before) `$' as enclosed in parantheses.
       - e.g.: (2 + (sqrt (2 + 3))) == (2 + (sqrt $ 2 + 2))
       - multiple `$': (f $ g $ h) = (f (g (h)))
@@ -43,6 +43,16 @@ Function composition
         precedence.
     - (`$' is in fact not syntactic sugar, but the identity function)
 
+- Documentation / Troubleshooting
+  - Use Hoogle (sic!) [0] !
+  - Haskell Wiki [1]
+  - Many more resources: [2]
+
 
 See also:
-- https://wiki.haskell.org/How_to_read_Haskell
+ - https://wiki.haskell.org/How_to_read_Haskell
+
+References:
+ [0] https://hoogle.haskell.org/
+ [1] https://wiki.haskell.org/
+ [2] https://www.haskell.org/documentation/

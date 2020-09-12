@@ -19,9 +19,16 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
-module Language.Ding.Syntax.Usage () where
+module Language.Ding.Syntax.Usage
+  ( stringToUsage
+  ) where
 
---
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
+
+import Data.NatLang.Usage
+
 -- Notes:
 --  * The lists below have been created with the help of
 --     util/results/bracketexps.
@@ -29,17 +36,24 @@ module Language.Ding.Syntax.Usage () where
 --    been determined by searching examples in the Ding and infering from there
 --    on (if not obvious).  In some cases, Wikipedia or the Wiktionary were of
 --    help.
---  * See the TEI Lex-0 documentation for <usg> types.
---    * https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html#index.xml-body.1_div.7_div.2
---  * See also the Wikipedia on Varieties and Registers (contains a list).
---    * https://en.wikipedia.org/wiki/Variety_(linguistics)
---    * https://en.wikipedia.org/wiki/Register_(sociolinguistics)
---
+--  * See also Data/NatLang/Usage.hs and the notes there.
 
-data Variety = Dialect String
-             | Register String
 
-data Domain = Domain String
+stringToUsage :: String -> Usage
+stringToUsage s = Usage (fromMaybe Hint $ Map.lookup s usageMap) s
+
+
+-- TODO: ? differentiate languages (English vs. German annotations)
+usageMap :: Map String UsageType
+usageMap = Map.fromList $
+     map (flip (,) Regional) (germanRegions ++ englishRegions)
+  ++ map (flip (,) Time) times
+  ++ map (flip (,) Domain) domains
+  ++ map (flip (,) Register) registers
+  ++ map (flip (,) Style) styles
+  ++ map (flip (,) Preference) preferences
+  ++ map (flip (,) Acceptability) acceptabilities
+  ++ map (flip (,) Language) foreignLanguages
 
 
 -- TODO:
@@ -63,26 +77,21 @@ data Domain = Domain String
 --  - "log"
 --  - "especially Am."
 --  - "academic" ~ "sci"? | register?
+--  - "literary"
 --  - ...
 
--- TODO: Consider to separate different languages (French, Latin, ...).
--- | Dialects (of English and German) and languages, as annotated in the Ding.
-dialects :: [String]
-dialects =
-  [ "Br."
-  , "Am."
-  , "Ös."
+-- | Regions where German is spoken (in a particular way).
+--   Sometimes expressed as the corresponding dialect.
+germanRegions :: [String]
+germanRegions =
+  [ "Ös."
   , "Schw."
   , "Dt."
   , "Bayr."
   , "Norddt."
   , "Süddt."
-  , "Austr."
   , "Mitteldt."
   , "BW"          -- Not sure what dialect this refers to (Baden-Württemberg?).
-  , "Sc."
-  , "NZ"
-  , "Ir."
   , "Westdt."
   , "Ostdt."
   , "Mittelwestdt."
@@ -90,17 +99,12 @@ dialects =
   , "Südtirol"
   , "Nordwestdt."
   , "Mittelostdt."
-  , "Can."
   , "Südwestdt."
   , "Lie."
-  , "Northern English"
   , "Westös."
   , "Lux."
-  , "In."
   , "Berlin"
-  , "South Africa"
   , "Tirol"
-  , "French"
   , "Wien"
   , "Ostös."
   , "Oberdt."
@@ -108,17 +112,49 @@ dialects =
   , "Sächs."
   , "Pfalz"
   , "Ostmitteldt."
-  , "Ital."
   , "Hessen"
-  , "Welch"
   , "Vbg."        -- Vorarlbergisch
   , "Südostös."
-  , "SE Asia"
   , "Schwäb."
   , "Rheinl."
-  , "Northern Irish"
-  , "Lat."
   , "DDR"
+  ]
+
+-- | Regions where English is spoken (in a particular way).
+--   Sometimes expressed as the corresponding dialect.
+englishRegions :: [String]
+englishRegions =
+  [ "Br."
+  , "Am."
+  , "Austr."
+  , "Sc."
+  , "NZ"
+  , "Ir."
+  , "Can."
+  , "In."
+  , "South Africa"
+  , "Welch"
+  , "SE Asia"
+  , "Northern English"
+  , "Northern Irish"
+  ]
+
+-- | Languages being neither a dialect of German nor of English.
+foreignLanguages :: [String]
+foreignLanguages =
+  [ "French"
+  , "Ital."
+  , "Lat."
+  ]
+
+
+times :: [String]
+times =
+  [ "archaic"
+  , "altertümelnd"    -- ~archaic
+  , "altertümlich"    -- ~archaic
+  , "dated"
+  -- ...
   ]
 
 -- See https://en.wikipedia.org/wiki/Register_(sociolinguistics)
@@ -141,6 +177,26 @@ registers =
   -- TODO: more
   ]
 
+styles :: [String]
+styles =
+  [ "fig."
+  , "lit."
+  -- ...
+  ]
+
+-- - TEI doc: "preference level (‘chiefly’, ‘usually’, etc.)"
+-- - TEI Lex-0: -> frequency: ex.: rare, occas.
+preferences :: [String]
+preferences = []
+
+-- No further description in TEI doc.
+acceptabilities :: [String]
+acceptabilities = []
+  
+
+-- TODO: Not used.
+--  - This is a TEI Lex-0 category, that is not among the suggested ones for
+--    TEI.
 -- Maps to <usg type="textType"/> in TEI Lex-0.
 textTypes :: [String]
 textTypes =
@@ -213,6 +269,7 @@ domains =
   , "Reitsport"
   , "Radsport"
   , "cycling"
+  , "archeol."    -- different from "arch."
   ]
 
 -- vi: ts=2 sw=2 et

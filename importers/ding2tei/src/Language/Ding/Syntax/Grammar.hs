@@ -21,15 +21,11 @@
 
 
 module Language.Ding.Syntax.Grammar
-  ( GrammarAnnotation(..)
-  , GrammaticalNumber(..)
-  , SingulareTantum(..)
-  , PluraleTantum(..)
-  , PartOfSpeech(..)
-  , VerbType(..)
-  , Gender(..)
-  , grammarMap
+  ( grammarMap
   , grammarMapRev
+  , caseMapRev
+  , posMapRev
+  , interrogProns
   ) where
 
 
@@ -42,108 +38,47 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Tuple (swap)
 
-
--- Note: The only annotated colloc-POS is "{+conj}".
-data GrammarAnnotation = GramNum GrammaticalNumber
-                       | POS PartOfSpeech
-                       | CollocCase [InterrogPron] Case
-                         -- ^ case of collocating word
-                       | CollocPOS PartOfSpeech
- deriving (Show, Eq, Ord)
+import Data.NatLang.Grammar
 
 
-data GrammaticalNumber = Singular (Maybe SingulareTantum)
-                       | Plural (Maybe PluraleTantum)
- deriving (Show, Eq, Ord)
-
--- | A singulare tantum is a word that occurs only in the singular form
-data SingulareTantum = SingulareTantum
- deriving (Show, Eq, Ord)
-
--- Note: There is no single annotation for pluralia tantum.
--- | A plurale tantum is a word that occurs only in the plural form
-data PluraleTantum = PluraleTantum
- deriving (Show, Eq, Ord)
-
-
-data PartOfSpeech = Verb (Maybe VerbType)
-                  | Noun Gender
-                  | Adjective
-                  | Adverb
-                  | Proposition             -- often accompanied by +Gen/+Dat
-                                            --  -> TODO
-                  | Conjugation
-                  | Article
-                  | PersonalPronoun GrammaticalNumber
-                                            -- TODO: NoPlural is impossible
-                  | Numeral
- deriving (Show, Eq, Ord)
-
-
-data VerbType = Transitive
-              | Intransitive
-              | Reflexive
- deriving (Show, Eq, Ord)
-
-
-data Gender = Feminine
-            | Masculine
-            | Neuter
- deriving (Show, Eq, Ord)
-
-
--- | Grammatical case.  Only those listed that appear in annotations in the
---   Ding.
-data Case = Genitive
-          | Accusative
-          | Dative
- deriving (Show, Eq, Ord)
-
-
-data InterrogPron = InterrogPron String
- deriving (Show, Eq, Ord)
-
-interrogProns :: Set String
-interrogProns = Set.fromList
-  [ "wo?"
-  , "wohin?"
-  , "wann?"
-  , "bis wann?"
-  ]
+-- Notes:
+--  * It would be more efficient to directly write functions instead of
+--    relying on maps (dictionaries), since the former can do pattern matching.
+--    * A similar effect could possibly be obtained by using tries (sic!).
+--    * The rationale behing the current state is to avoid duplication (of
+--      semantics in the code) - One might easily forget to update one of the
+--      two functions on a change.
 
 
 -- Note: Most grammar annotations occur only on the german side.
--- | map from brace-enclosed keys to `GrammarAnnotation's
-grammarMap :: Map String GrammarAnnotation
+-- | map from brace-enclosed keys to `GramLexCategory's
+grammarMap :: Map String GramLexCategory
 grammarMap = Map.fromList grammarListMap
 
--- | map from GrammarAnnotation's to their string representation
-grammarMapRev :: Map GrammarAnnotation String
+-- | map from `GramLexCategory's to their string representation
+--   This map is partial.  Collocation information (`CollocCase',
+--   `CollocPOS') are not in the domain.
+--   -- TODO: Add this information to where this map is used.
+grammarMapRev :: Map GramLexCategory String
 grammarMapRev = Map.fromList $ map swap grammarListMap
 
-grammarListMap :: [(String, GrammarAnnotation)]
+-- Does not contain CollocCase and CollocPOS.  These are parsed differently.
+-- In particular, they are not identified in the scanner.
+grammarListMap :: [(String, GramLexCategory)]
 grammarListMap =
-  [ ("sing"     , GramNum $ Singular Nothing)     -- rare
-  , ("pl"       , GramNum $ Plural Nothing)
-  , ("no pl"    , GramNum $ Singular $ Just SingulareTantum)  -- rare
-  , ("no sing"  , GramNum $ Plural   $ Just PluraleTantum)    -- rare
-  , ("v"        , POS $ Verb Nothing)
-  , ("vt"       , POS $ Verb $ Just Transitive)
-  , ("vi"       , POS $ Verb $ Just Intransitive)
-  , ("vr"       , POS $ Verb $ Just Reflexive)
-  , ("f"        , POS $ Noun Feminine)
-  , ("m"        , POS $ Noun Masculine)
-  , ("n"        , POS $ Noun Neuter)
-  , ("adj"      , POS Adjective)
-  , ("adv"      , POS Adverb)
-  , ("prp"      , POS Proposition)
-  , ("conj"     , POS Conjugation)
-  , ("art"      , POS Article)                    -- rare
-  , ("ppron"    , POS $ PersonalPronoun $ Singular Nothing) -- rare
-  , ("ppron pl" , POS $ PersonalPronoun $ Plural Nothing)   -- rare
-  , ("num"      , POS Numeral)
+  [ ("f"             , Gender Feminine)   -- implies noun, sg
+  , ("m"             , Gender Masculine)  -- implies noun, sg
+  , ("n"             , Gender Neuter)     -- implies noun, sg
+  , ("sing"          , Number Singular)   -- rare
+  , ("pl"            , Number Plural)
+  , ("no pl"         , SingulareTantum)   -- rare; implies noun, sg
+  , ("no sing"       , PluraleTantum)     -- rare; implies noun, pl
   ]
+    ++ map (\ (s, pos) -> (s, PartOfSpeech pos)) posListMap
+    ++ map (\ (s, cas) -> (s, Case cas)) caseListMap        -- rare
 
+
+-- Not yet used (TODO: remove?).
 -- | map from a case's abbreviated string represenation to Case
 caseMap :: Map String Case
 caseMap = Map.fromList caseListMap
@@ -159,5 +94,39 @@ caseListMap =
   , ("Akk.", Accusative)
   , ("Dat.", Dative)
   ]
+
+
+posMapRev :: Map PartOfSpeech String
+posMapRev = Map.fromList $ map swap posListMap
+
+-- Needed separately, because also occuring as `CollocCase'.
+posListMap :: [(String, PartOfSpeech)]
+posListMap =
+  [ ("v"             , Verb [])
+  , ("vt"            , Verb [Transitive])
+  , ("vi"            , Verb [Intransitive])
+  , ("vr"            , Verb [Reflexive])
+  , ("adj"           , Adjective)
+  , ("adv"           , Adverb)
+  , ("prp"           , Preposition)
+  , ("conj"          , Conjunction)
+  , ("art"           , Article)                     -- rare
+  , ("pron"          , Pronoun [])
+  , ("ppron"         , Pronoun [Personal])       -- rare
+  , ("pron interrog" , Pronoun [Interrogative])  -- rare
+  , ("pron relativ"  , Pronoun [Relative])       -- rare
+  , ("num"           , Numeral)
+  , ("interj"        , Interjection)
+  ]
+
+
+interrogProns :: Set String
+interrogProns = Set.fromList
+  [ "wo?"
+  , "wohin?"
+  , "wann?"
+  , "bis wann?"
+  ]
+
 
 -- vi: ts=2 sw=2 et

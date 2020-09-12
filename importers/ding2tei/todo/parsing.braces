@@ -1,13 +1,15 @@
 There are in general two kinds of brace annotations.
 
-a) part of speech
+a) grammar annotation (e.g. part of speech)
  . mostly on the german side
  . refer to either units or a prefix of units in a group
 
 b) conjugated forms of verbs
  . apparently exclusively on the English side
  . Format: { simple-past ; participle }
-   - both parts can be subdivided into a comma-separated list of alternatives
+   . both parts can be subdivided into a comma-separated list of alternatives
+   . each single alternative can be annotated with <[]> and/or <()>.
+     - TODO
  ? Ignore them?
    - They are not consistently available and probably better obtained from
      some other source, together with much more grammar data.
@@ -26,5 +28,25 @@ Differentiation
 
 {pl} on non-nouns
  - can this be encoded in TEI ?
+   - Of course: Just like everything else.
  - Can nouns be distinguished from non-nouns ?
    - heuristic: german nouns are usually capitalised
+
+Separators (grammar annotations):
+ . {prp; +Dat.; +Gen.; +Akk.} - always separeted by <;>.
+   . Often {prp; +(Dat|Gen|Akk).}.
+   . {wo?, wann?, wohin?, bis wann? +(Akk|Dat|Akk).}
+ . {vt, vi} - <,>, <;>, </>.
+   . Currently transformed in preprocessor to <,>.
+ . {m,n,f,pl} - <,>
+ . {adj} - separated from textual info by <,> once.
+ . all others: only occuring alone.
+
+Special cases:
+ . "{adj, usually not used before a noun}"
+ . "{prp; + Fall des jeweiligen Bezugsworts}"
+ . "{+Gen./bei}", "{prp; +Dat. / von jdm./etw.}"
+ . "{idiom}"
+ . "{Quantifikator}"
+ . "{prp; +Gen.; +Dat. [ugs.]}"  -- <[]>
+   ? Cannot be represented in TEI?

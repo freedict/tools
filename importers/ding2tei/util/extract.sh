@@ -21,7 +21,7 @@
 #
 
 dingfile=../dingsrc/de-en.txt.preprocessed
-types=( {brace,bracket,dot,switch}exps nonalpha )
+types=( {brace,bracket,paren,dot,switch}exps nonalpha )
 
 dir="$(dirname "$(realpath "$0")")"
 outdir="${dir}/results"

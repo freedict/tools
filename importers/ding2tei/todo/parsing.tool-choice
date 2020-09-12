@@ -1,4 +1,4 @@
 Parser - choice of library / tool
 - Options
-  - Happy (parser generator, like yacc, LR-parsing)
+  - Happy (parser generator, like yacc, LALR-parsing)
   - (Mega-)Parsec (Parser combinator, LL-parsing)

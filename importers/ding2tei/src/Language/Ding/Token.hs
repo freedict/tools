@@ -22,32 +22,26 @@
 
 module Language.Ding.Token
  ( Token(..)
- , HeaderPrefix(..)
  , Position(..)
  , Atom(..)
- , Keyword(..)
+ , tokenToString
  ) where
 
 import qualified Data.Map.Strict as Map
 
-import Text.ShowEssential (ShowEssential, showEssential)
-import Language.Ding.Syntax.Grammar (GrammarAnnotation, grammarMapRev)
+import Data.NatLang.Grammar (GramLexCategory)
+import Language.Ding.Syntax.Grammar (grammarMapRev)
 
-
--- | Any keyword, excluding separators like <::>.
-data Keyword = GramKW GrammarAnnotation
-             -- ...
-             | MultiKW String -- ^ Keyword with different potential semantics
- deriving Show
 
 
 -- | Token, as produced by the lexer.  Annotated with any directly preceding
 --   whitespace and the position in the input.
-data Token = Token
-               String     -- ^ Preceding whitespace.
-               Position
-               Atom
-           | Empty        -- ^ Neutral element in the monoid.
+data Token
+  = Token
+      String     -- ^ Preceding whitespace.
+      Position
+      Atom
+  | EmptyToken   -- ^ Neutral element in the monoid.
  deriving Show
 
 
@@ -63,76 +57,93 @@ data Position = Position Int Int
 
 -- | The essential part of a `Token'.
 data Atom = NL
-          | LineCont
-          | WeakSlash
-          | StrongSlash
-          | OSlash
-          | CSlash
---          | OBrace
---          | CBrace
---          | OParen
---          | CParen
---          | OBracket
---          | CBracket
---          | OAngle
---          | CAngle
---          | Semi
---          | Vert
---          | ...
+          | LangSep       -- ^ "::"
+          | Vert
+          | Semi
+          | Comma
+          | Tilde
+          | Plus
+          | Wordswitch    -- ^ "<>"
+          | StrongSlash   -- ^ see `Language.Ding.AlexScanner'
+          | WeakSlash     -- ^ see `Language.Ding.AlexScanner'
+          | DoubleSlash
+
+          | OBrace
+          | CBrace
+          | OBracket
+          | CBracket
+          | OParen
+          | CParen
+          | OAngle
+          | CAngle
+          | OSlash        -- ^ see `Language.Ding.AlexScanner'
+          | CSlash        -- ^ see `Language.Ding.AlexScanner'
+
           | SlashSpecial String
           | Smiley String
-          | SlashExp String
-          | SlashExpPlural String
-          | Separator String    -- <,>, <|>, <::>, ...
-          | Keyword Keyword
-          | HeaderPrefix HeaderPrefix
-          | URL String
+          | AbbrevWithSlash String
+          | AbbrevPlural String
+          | GramKW GramLexCategory
+          | IntPronKW String
+          -- | KW_multi      -- ^ several semantics, depending on context
           | Text String
+
+          | HeaderLine String
  deriving Show
 
 
-data HeaderPrefix = VersionPref
-                  | CopyrightPref
-                  | LicensePref
-                  | URLPref
- deriving Show
+-- | Convert a token back to the string it represents excluding potential
+--   delimiters and dropping the annotated preceding whitespace.  Uses
+--   `atomToString'.
+tokenToString :: Token -> String
+tokenToString (Token _ _ atom) = atomToString atom
+tokenToString EmptyToken       = ""
 
 
-instance ShowEssential Token where
-
-  showEssential (Token _ _ atom) = showEssential atom
-  showEssential Empty            = ""
-
-
+-- Note: Due to the loss of information on the kinds of slashes, the below
+--       function should not used in a Show instance.
 -- TODO: link this with a future Pretty instance.
-instance ShowEssential Atom where
 
-  showEssential NL                 = "\n"
-  showEssential LineCont           = "\n  "
-  showEssential WeakSlash          = "/"
-  showEssential StrongSlash        = "/"
-  showEssential OSlash             = "/"
-  showEssential CSlash             = "/"
-  showEssential (SlashSpecial s)   = s   -- pretty: "/ " ++ s ++ " /"
-  showEssential (Smiley s)         = s   -- pretty: "/ " ++ s ++ " /"
-  showEssential (SlashExp s)       = s   -- pretty: "/ " ++ s ++ " /"
-  showEssential (SlashExpPlural s) = s   -- pretty: "/" ++ s ++ "/s"
-  showEssential (Separator s)      = s
+-- | Convert an atom back to the string that it represents, excluding any
+--   delimiters (</>).
+--   This function is not injective, in particular the distinction of different
+--   kinds of slashes is lost.
+atomToString :: Atom -> String
+atomToString NL                  = "\n"
+atomToString LangSep             = "::"
+atomToString Vert                = "|"
+atomToString Semi                = ";"
+atomToString Comma               = ","
+atomToString Tilde               = "~"
+atomToString Plus                = "+"
+atomToString Wordswitch          = "<>"
+atomToString StrongSlash         = "/"
+atomToString WeakSlash           = "/"
+atomToString DoubleSlash         = "//"
 
-  -- TODO: refine for further keyword types and decompose.
-  showEssential (Keyword kw)       =
-    case kw of
-      GramKW kw' -> 
-        case Map.lookup kw' grammarMapRev of
-          Just s  -> s
-          Nothing ->
-            error "Language.Ding.Token: " ++ (show kw) ++ " not in map."
-      MultiKW kw' -> kw'
-  showEssential (HeaderPrefix _) =
-    error "Language.Ding.Token: A header prefix token does not have a"
-      ++ " useful string representation."
-  showEssential (URL url)        = url
-  showEssential (Text t)         = t
+atomToString OBrace              = "{"
+atomToString CBrace              = "}"
+atomToString OBracket            = "["
+atomToString CBracket            = "]"
+atomToString OParen              = "("
+atomToString CParen              = ")"
+atomToString OAngle              = "<"
+atomToString CAngle              = ">"
+atomToString OSlash              = "/"
+atomToString CSlash              = "/"
+
+atomToString (SlashSpecial s)    = s   -- pretty: "/ " ++ s ++ " /"
+atomToString (Smiley s)          = s   -- pretty: "/ " ++ s ++ " /"
+atomToString (AbbrevWithSlash s) = s   -- pretty: "/ " ++ s ++ " /"
+atomToString (AbbrevPlural s)    = s   -- pretty: "/" ++ s ++ "/s"
+atomToString (GramKW gram)       =
+  case Map.lookup gram grammarMapRev of
+    Just s  -> s
+    Nothing -> error "Language.Ding.Token: " ++ (show gram) ++ " not in map."
+atomToString (IntPronKW pron)    = pron
+atomToString (Text t)            = t
+
+atomToString (HeaderLine l)      = l
 
 
 -- All tokens have a string representation, which, together with the preceding
@@ -143,21 +154,21 @@ instance Semigroup Token where
 
   -- Join two tokens by concatenating their string representations, with the
   -- correct whitespace in between.
-  (Token ws1 pos1 tok1) <> (Token ws2 _ tok2) =
-    Token ws1 pos1 (Text $ showEssential tok1 ++ ws2 ++ showEssential tok2)
+  (Token ws1 pos1 atom1) <> (Token ws2 _ atom2) =
+    Token ws1 pos1 (Text $ atomToString atom1 ++ ws2 ++ atomToString atom2)
 
-  -- Empty is supposed to be a neutral element.  Note that this means that
-  -- `Empty <> tok' retains the whitespace from `tok'.  See also
+  -- EmptyToken is supposed to be a neutral element.  Note that this means that
+  -- `EmptyToken <> tok' retains the whitespace from `tok'.  See also
   -- todo/parsing.elimination.
-  Empty <> tok = tok
-  tok <> Empty = tok
+  EmptyToken <> tok = tok
+  tok <> EmptyToken = tok
 
 
 instance Monoid Token where
 
   -- The unit in the token monoid is the empty 'Text' with no preceding white-
   -- space.
-  mempty = Empty
+  mempty = EmptyToken
 
 
 -- vi: ts=2 sw=2 et

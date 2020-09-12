@@ -15,7 +15,8 @@ In practice:
     * quite frequent
  c) wrong form
     * Ex.: "occurrence <occurrance>"
-    * rare
+    * Ex.: "I love you. /ILU/ <I love u>"
+    * seemingly rare
     * difficult to distinguish from a) in particular.
 
 
@@ -30,7 +31,8 @@ Ideas
 Issue 1): plural "s"
 --------------------
 
-Ex.: "<nuclear scientist>s"
+only Ex.: "<nuclear scientist>s"
+ - fixed in preprocessor (see there)
 
 
 Special cases
@@ -44,6 +46,9 @@ Special cases
    * "digitization; digitizing; digitisation; digitising [Br.] <digitalization> <digitalisation>"
    - not actually a special case.  Rather, shows that <.> in fact applies to
      groups (TODO).
+ * "hoar <hoarier; hoariest>",
+   "to clepe {clept; clept} [obs.] <ycleped, yclept>"
+   * Besides the semicolon: None of the above categories matches.
 
 
 [0] http://dict.tu-chemnitz.de/doc/syntax.html

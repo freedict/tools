@@ -17,8 +17,10 @@ Dependencies
 
 * Haskell
   * base
-  * containers (Data.Map.Strict)
-  * [safe] (Safe.Exact.zipWithExact; might be used later)
+  * containers (Data.Map, Data.Set)
+  * transformers (Control.Monad.Trans.State)
+  * pretty (Text.PrettyPrint)
+  * haskell-xml (Text.XML.Light)
 * Happy
 * Alex
 
@@ -51,26 +53,26 @@ How to build
 $ cd src
 
 $ alex Language/Ding/AlexScanner.x
-$ happy Language/Ding/HappyParser.y
+$ happy Language/Ding/Parser/Line.y
 
-$ ghc -Wall -O2 Main -o ../ding2tei
+$ ghc -Wall -O2 -XRecursiveDo Main -o ../ding2tei
 
 
 How to run
 ----------
 
-Note: The program currently allocates a lot of memory, around 2.6 GiB, when
+Note: The program currently allocates a lot of memory, around 3.5 GiB, when
       applied to the full Ding source.
 
-$ src/preprocess/main.sed < dingsrc/de-en.txt > dingsrc/de-en.txt.preprocessed
-$ ding2tei <(src/preprocess/drop.sed < dingsrc/de-en.txt.preprocessed)
+$ src/preprocess/all.sh < dingsrc/de-en.txt > dingsrc/de-en.txt.preprocessed
+$ ding2tei dingsrc/de-en.txt.preprocessed deu-eng.tei
 
 
 How to test (manually)
 ----------------------
 
 $ ghci src/Test.hs
->> parse $ scan "some dictionary data"
+>> parseLine $ scan "some dictionary :: line\n"
 >> parse $ scan $ header ++ example1
 >> tailParse "filename" nInitialLinesDropped
 
@@ -81,8 +83,17 @@ Licensing
 ding2tei-haskell is distributed under the GNU Affero General Public License
 (AGPL), version 3 or later.
 
-See the license headers in the source files and the license itself (file
-COPYING) for details.
+See the license headers in the source files and the license itself for details
+(should be supplied with this program under the name COPYING).
+
+The Ding source is licensed under the GNU General Public License (GPL), version
+2 or later.  In the context of this program, version 3 of the license should be
+considered, since it allows combining with the AGPLv3.  (Likely, later versions
+will also allow combining.)
+
+The combination of the Ding dictionary and this program form a combined work,
+the resulting TEI dictionary is an "object form" of this combined work, in
+terms of both the GPL and AGPL.
 
 
 Author

@@ -5,7 +5,10 @@ Annotations between <()>.
 
 ? Use <lbl> in the TEI output?
   ? In some contexts only?
+  - No.
 
 Problem: scope of annotation (sometimes whole group, sometimes just the unit)
  - scope of whole group usually only, when after that whole group
    ? preferably after any other annotation?
+
+? Consider some of them as <usg> instead of <note>?

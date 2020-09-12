@@ -31,8 +31,9 @@
 module Language.Ding.AlexScanner (scan, AlexPosn) where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
-import Language.Ding.Syntax.Grammar (grammarMap)
+import Language.Ding.Syntax.Grammar (grammarMap, interrogProns)
 import Language.Ding.Token
 }
 
@@ -59,20 +60,17 @@ $anyBracket = [ $anyLeftBracket $anyRightBracket ]
 -- Note that <:> is only included to avoid matching <::> as part of @text.
 -- Some characters, in particular all single colons have to be merged with
 -- their surrounding (e.g., text atoms) later.
--- Similarly, <#> is only included to avoid initial <#> being matched as part
--- of @text.
-$verySpecialChar = [ $anyBracket : \| \; \, \/ \~ \# ]
+$specialChar = [ $anyBracket : \| \; \, \/ \~ \+ ]
 
--- Characters that are only special in that they may occur enclosed in slashes.
-$slashSpecialChar = [ \% \@ ]
-
-$specialChar = [ $verySpecialChar $slashSpecialChar ]
+-- Characters that are special in that they may occur enclosed in slashes.
+$slashSpecialChar = [ $specialChar \% \@ ]
 
 $textChar = $printable # $specialChar
 
 -- anything printable, not containing a special char; excluding surrounding
 -- whitespace.
-@text = [$textChar # $white] ($textChar* [$textChar # $white])?
+-- @text = [$textChar # $white] ($textChar* [$textChar # $white])?
+@text = [$textChar # $white]+
 
 -- This is a simple, restricted url pattern.  It is only supposed to match the
 -- URL in the heading, as of now.
@@ -119,14 +117,8 @@ $freeSlashPost = [ $white $anyRightBracket \; \, : \. \? ! ]
 
 tokens :-
 
-  -- Header prefixes.  Should only match in the first few lines.
-  ^ "# Version :: "       { regularToken $ const $ HeaderPrefix VersionPref }
-  ^ "# Copyright (c) :: " { regularToken $ const $ HeaderPrefix CopyrightPref }
-  ^ "# License :: "       { regularToken $ const $ HeaderPrefix LicensePref }
-  ^ "# URL :: "           { regularToken $ const $ HeaderPrefix URLPref }
-
-  @url                    { regularToken URL }
-
+  -- A header line.
+  ^ \# .* $                             { regularToken HeaderLine }
 
   -- Divide slashes into categories.
   -- Slashes have many roles (in particular one similar to brackets), but
@@ -163,16 +155,18 @@ tokens :-
   -- The dropLast part would be more efficient if the "monad" or
   -- "monadUserState" wrapper was used (one gets the length of the input).
   $freeSlashPre ^ "/ " @slashWordList " /" / $freeSlashPost {
-    regularToken $ SlashExp . dropLast 2 . drop 2           }
+    regularToken $ AbbrevWithSlash . dropLast 2 . drop 2           }
 
-  -- plural abbreviations
+  -- Plural abbreviations.
+  -- Note: No more than one word between the slashes is permitted.
+  --       Otherwise, lexing + parsing would become more difficult.
   $freeSlashPre ^ "/" @slashWord "/s" / $freeSlashPost      {
-    regularToken $ SlashExpPlural . dropLast 2 . drop 1     }
+    regularToken $ AbbrevPlural . dropLast 2 . drop 1     }
 
   -- Double slashes are used (onserved once) to bind two adjacent alternative
   -- expressions (bound by a strong slash).
   -- Semantic: "a/b//c/d" -> (a or b) or (c or d)
-  "//"                                  { regularToken Separator }
+  "//"                                  { regularToken $ const DoubleSlash }
 
   -- Angle brackets are special in that they also may signify less- resp.
   -- greater-than.  Fortunately, they are, when brackets, always close to the
@@ -182,18 +176,37 @@ tokens :-
   --            ($verySpecialChar).
   $freeSlashPre ^ [\< \>] / $freeSlashPost  { regularToken Text }
 
-  \n                                    { regularToken $ const NL }
-  \n\ +                                 { regularToken $ const LineCont }
+  ::                                    { regularToken $ const LangSep }
+  \|                                    { regularToken $ const Vert }
+  \;                                    { regularToken $ const Semi }
+  \,                                    { regularToken $ const Comma }
+  \~                                    { regularToken $ const Tilde }
+  \+                                    { regularToken $ const Plus }
+  \<\>                                  { regularToken $ const Wordswitch }
 
-  ::                                    { regularToken Separator }
-  \<\>                                  { regularToken Separator }
-  [$verySpecialChar # \/]               { regularToken Separator }
+  \{                                    { regularToken $ const OBrace }
+  \}                                    { regularToken $ const CBrace }
+  \[                                    { regularToken $ const OBracket }
+  \]                                    { regularToken $ const CBracket }
+  \(                                    { regularToken $ const OParen }
+  \)                                    { regularToken $ const CParen }
+  \<                                    { regularToken $ const OAngle }
+  \>                                    { regularToken $ const CAngle }
 
-  -- Any character that is only special when (tightly) enclosed in '/', does
-  -- not have any special meaning here.  Treat as common text.
-  $slashSpecialChar                     { regularToken Text }
+  -- This is only caught explicitly, since it may not be caught as part of
+  -- @text (which could be changed, by complicating the regex).
+  :                                     { regularToken Text }
 
   @text                                 { regularToken kwOrText }
+
+  -- Multi-word keywords.  This is an intermediate solution (TODO).
+  "no pl"                               { regularToken kwOrText }
+  "no sing"                             { regularToken kwOrText }
+  "pron interrog"                       { regularToken kwOrText }
+  "pron relativ"                        { regularToken kwOrText }
+  "bis wann?"                           { regularToken kwOrText }
+
+  \n                                    { regularToken $ const NL }
 
   [$white # \n]+                        { const Whitespace }
 
@@ -216,22 +229,27 @@ regularToken f p s = RegularToken (toPosition p) (f s)
   toPosition (AlexPn _abs line col) = Position line col
 
 
--- Note: For now, only grammar keywords are recognized (TODO).
+-- Note: This could probably be made more efficient by creating one single
+--       map from String to a joint Keyword type.
 -- | Identify keyword from atomary string if applicable, or else simple text.
 kwOrText :: String -> Atom
 kwOrText s = case Map.lookup s grammarMap of
-  Just gram -> Keyword $ GramKW gram
-  Nothing   -> Text s
+  Just gram -> GramKW gram
+  Nothing   ->
+    if s `Set.member` interrogProns
+    then IntPronKW s
+    else Text s
+
+
+-- | Remove the whitespace from the token stream towards the respective
+--   following regular token, as annotation.
+mergeWS :: [SimpleToken] -> [Token]
 
 -- Notes
 --  * There can never be two whitespace tokens in succession.
 --  * One could use `foldr' here, but this is not very straightforward - the
 --    folding function (in some cases) has to inspect the first element of its
 --    list argument, which therefore is inspected twice (in such cases).
-
--- | Remove the whitespace from the token stream towards the respective
---   following regular token, as annotation.
-mergeWS :: [SimpleToken] -> [Token]
 
 mergeWS (                RegularToken pos atom : toks) =
   Token "" pos atom : mergeWS toks

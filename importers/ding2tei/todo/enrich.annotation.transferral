@@ -44,6 +44,8 @@ Infer annotations from auxiliary words like
  . "jdm.", "jdn.", ...
    - See also preprocess/*.sed
 
+Infer pos=verb from the presence of inflected forms.
+
 Grammatical gender of words in plural
  - often only {pl} annotated
  - infer from possibly accompanying singular form ?

@@ -21,3 +21,13 @@
 #
 
 s`\; "/\.ed" \[slang\]$``
+
+s`\{(adj), usually not used before a noun\}`{\1}`
+s`\{(prp)\; \+ Fall des jeweiligen Bezugsworts\}`{\1}`
+s`\{(\+Gen\.)/bei\}`{\1}`g
+s`\{(prp\; \+Dat\.) / von jdm\./etw\.\}`{\1}`
+s` *\{idiom\}``g
+s` *\{Quantifikator\}``g
+
+
+# vi: noet

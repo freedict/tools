@@ -21,6 +21,17 @@ Examples:
  * "Jugendstil-/Kunst" (before preprocessing: "Jugendstil- [Kunst]")
 
 
+Issue 3) Comma separated abbrevs
+--------------------------------
+
+Examples:
+ * "Gesellschaft mit beschränkter Haftung /GmbH/, /GesmbH/"
+ * "bürgerlichen Rechts /GbR/; /GdbR/, BGB-Gesellschaft"
+   * not really an example
+
+(not strongly related) Consider to make all abbreviations their own entry.
+
+
 Remainder (single slashes)
 --------------------------
 

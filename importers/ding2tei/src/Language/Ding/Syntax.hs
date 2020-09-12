@@ -20,20 +20,23 @@
  -}
 
 module Language.Ding.Syntax
-  ( Dict(..)
+  ( Ding
   , Header(..)
   , Line(..)
   , Entry(..)
   , Group(..)
   , Unit(..)
-  , Annotation(..)
   ) where
 
-import Language.Ding.Syntax.Grammar (GrammarAnnotation)
+import Data.NatLang.Dictionary (Dictionary)
+import Data.NatLang.GrammarInfo (GrammarInfo)
+import Data.NatLang.InflectedForms (InflectedForms)
+import Data.NatLang.Usage (Usage)
 
--- | A whole dictionary (set of German-English translation pairs)
-data Dict = Dict Header [Line]
- deriving Show
+
+-- | A whole dictionary (set of German-English translation pairs), together
+--   with a header.
+type Ding = Dictionary Header Line
 
 -- | The header of the Ding.
 data Header = Header
@@ -47,36 +50,38 @@ data Header = Header
  deriving Show
 
 -- | A set of related entries.
-data Line = Line [Entry]
+newtype Line = Line [Entry]
  deriving Show
-
--- Two lines may be joined by just concatenating the entries.  This is useful
--- for line continuations.
-instance Semigroup Line where
-  Line a <> Line b = Line $ a <> b
-
-instance Monoid Line where
-  mempty = Line mempty
 
 -- | A pair of corresponding `Group's.
---   The order of languages is that of the input, so German first, than
---   English.
+--   Upon parsing from the Ding, the order of languages is the same as there.
+--   The order may be flipped later though.
 data Entry = Entry Group Group
- deriving Show
+ deriving (Show, Eq, Ord)
 
 -- | A set of `Unit's matching the same translation.
-data Group = Group [Unit]
- deriving Show
+--   It may be empty, in which a later created corresponding TEI entry may
+--   have zero translations (if the `Group' is on the target language's side).
+--   If an empty `Group' is on the source language's side, it is not at all
+--   represented in the resulting TEI.
+newtype Group = Group [Unit]
+ deriving (Show, Eq, Ord)
 
+-- TODO: ? Represent units being abbreviations differently?
+--       - e.g.: add UnitType argument -- @type="abbrev"
 -- | A single (key-)word or phrase, in one language, with annotations.
-data Unit = Unit String [GrammarAnnotation] -- TODO: other annotations
-          | NullUnit      -- empty
-          -- | AbbrevUnit ...
- deriving Show
+data Unit = Unit
+  { unitHeadword   :: String
+  , unitPlain      :: String        -- ^ includes literal <()>-annotations
+  , unitGrammar    :: [GrammarInfo]
+  , unitUsages     :: [Usage]
+  , unitPrefixes   :: [String]
+  , unitSuffixes   :: [String]
+  , unitAbbrevs    :: [String]
+  , unitInflected  :: Maybe InflectedForms
+  , unitReferences :: [String]
+  }
+ deriving (Show, Eq, Ord)
 
-data Annotation
-  = GramAnnot GrammarAnnotation
-  | MiscAnnot String    -- TODO
- deriving Show
 
--- vi: ts=2 sw=2 et
+-- vi: ft=haskell ts=2 sw=2 et

@@ -1,0 +1,24 @@
+Groups
+======
+
+ * Separated by <|>, contains units, separated by <;>.
+ * Usually related by sharing the same translation.
+   * Usually synonyms.
+   . Exception: "nicht können; kann nicht"
+   . Exception: "wir waren; wir waren nicht"
+     ? TODO: Catch (suffix "nicht" / "not")?
+       - TODO: Investigate further.
+       ? Is this special to inflected forms / and/or phrases?
+         - Note also the mapped order on the RHS.
+     . Same for "tun". (that's all)
+     . For "sollen", "dürfen", "haben", "möchten" separated by <|>.
+     * Do not confuse with other usages of "nicht".
+       . Ex.: "übersieht; überliest; beachtet nicht"
+ . Obsolete documentation [0] (translated from German):
+   "Several translations: similar words / word groups separated by semicolon"
+
+
+References
+----------
+
+ [0] https://dict.tu-chemnitz.de/doc/syntax.html
