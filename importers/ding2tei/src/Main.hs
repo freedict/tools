@@ -28,6 +28,7 @@ import System.Exit (die)
 
 import App.Ding2TEI (ding2tei)
 import Language.Ding.AlexScanner (scan)
+import Language.Ding.Inverse (inverse)
 import Language.Ding.Parser (parse)
 import Language.TEI.ToXML (prettyTEI)
 import Language.TEI.ToXML.ValidateChar (validateString)
@@ -45,15 +46,21 @@ import Language.TEI.ToXML.ValidateChar (validateString)
 
 main :: IO ()
 main = do
-  args <- getArgs
-  when (length args /= 2) $ die "Syntax: ding2tei <in_file> <out_file>"
+  (inFile, outFile, inverseFlag) <- getArgs >>= parseArgs
 
-  let [inFile, outFile] = args
   input <- readFile inFile
 
   let ding = parse $ scan $ validateString input
-  let tei = ding2tei ding
+  let ding' = if inverseFlag then inverse ding else ding
+  let tei = ding2tei ding'
   writeFile outFile $ prettyTEI tei
 
 
--- vi: ts=2 sw=2 et
+parseArgs :: [String] -> IO (String, String, Bool)
+parseArgs ["-i", inFile, outFile] = return (inFile, outFile, True)
+parseArgs [inFile, outFile]       = return (inFile, outFile, False)
+parseArgs _                       =
+  die "Syntax: ding2tei [-i] <in_file> <out_file>"
+
+
+-- vi: ft=haskell ts=2 sw=2 et
