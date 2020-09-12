@@ -47,6 +47,11 @@ modifyLookup f = Map.alterF $ \ v -> let v' = f v in (v', Just v')
 
 
 -- | Convert a Ding AST to TEI AST.
+--   Errors when the result contains no entries.  (The FreeDict XML schema
+--   requires at least one entry.)
+--   Note that the existance of a line in the Ding does not imply the
+--   existance of an entry in the corresponding TEI.
+--    - The Ding is permitted to contain empty lines - " :: " .
 ding2tei :: Ding -> TEI
 ding2tei (Dictionary header srcLang tgtLang body) =
   let
@@ -56,7 +61,9 @@ ding2tei (Dictionary header srcLang tgtLang body) =
     -- TODO: add nEntries to header
     --nEntries = length teiEntries   -- (>= length dingLines)
   in
-    Dictionary header srcLang tgtLang (Body teiEntries)
+    if null teiEntries
+    then error "No real entry found."
+    else Dictionary header srcLang tgtLang (Body teiEntries)
 
 
 convLines :: [Ding.Line] -> IdState [TEI.Entry]

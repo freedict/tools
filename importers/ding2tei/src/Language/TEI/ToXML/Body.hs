@@ -22,6 +22,7 @@
 module Language.TEI.ToXML.Body (convBody) where
 
 import Data.List.NonEmpty (NonEmpty((:|)))
+import qualified Data.List.NonEmpty as NEList (toList)
 import Data.Maybe (mapMaybe)
 import Text.XML.Light
 
@@ -75,7 +76,7 @@ convBody body srcLang tgtLang = convBody' body
   convBody' (Body entries)
     = unode "text" $ (,) xmlLangTgt
     $ unode "body"
-    $ map convEntry entries
+    $ map convEntry $ entries
 
 
   convEntry :: Entry -> Element

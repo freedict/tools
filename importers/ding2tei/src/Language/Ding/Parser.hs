@@ -25,21 +25,27 @@ import Data.NatLang.Dictionary (Dictionary(Dictionary), Body(Body))
 import Data.NatLang.Language (Language(German, English))
 import Language.Ding.Parser.Header (parseHeader)
 import Language.Ding.Parser.Line (parseLine)
-import Language.Ding.Syntax (Ding)
+import Language.Ding.Syntax (Ding, Line)
 import Language.Ding.Token (Token(..), Atom(..))
 
 
 -- | Construct a Ding AST from a list of tokens.
 parse :: [Token] -> Ding
 parse ts =
-  --let (headerLines, bodyLines) = separateHeaderLines $ tokLines ts
-  --in  Ding (parseHeader headerLines) (map parseLine bodyLines)
   let (headerLines, bodyToks) = separateHeaderLines ts
   in  Dictionary
         (parseHeader headerLines)
         German
         English
-        (Body $ map parseLine $ tokLines bodyToks)
+        (Body $ parseBody bodyToks)
+
+
+-- | Parse a list of `Line's.  Errors, if there is none.
+--   (The FreeDict XML schema requires at least one entry and no such can be
+--   generated from nothing.)
+parseBody :: [Token] -> [Line]
+parseBody [] = error "Input contains no post-header data."
+parseBody ts = map parseLine $ tokLines ts
 
 
 -- | Separate the initial lines belonging to the header from the body lines.
@@ -57,9 +63,10 @@ separateHeaderLines tls                                   = ([], tls)
 --   Similar to `Data.OldList.lines', but on tokens, with separator
 --   `Language.Ding.Token.NL'.
 tokLines :: [Token] -> [[Token]]
-tokLines ts = case breakLine ts of
-  (l, [])  -> l : []
-  (l, ts') -> l : tokLines ts'
+tokLines [] = []
+tokLines ts =
+  let (l, ts') = breakLine ts
+  in  l : tokLines ts'
 
 
 -- | Separate a single line, including newline token from the stream.
