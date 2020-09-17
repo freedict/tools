@@ -1,6 +1,6 @@
-#!/usr/bin/env -S sed -nEf
+#!/usr/bin/env -S sed -Ef
 #
-# extract_parenexps.sed - a small script to extract paren-expressions
+# extract_word.sed - a small script to extract words
 #
 # Copyright 2020 Einhard Leichtfuß
 #
@@ -20,20 +20,5 @@
 # along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-# Only innermost paren-expressions ("(...)") are to be matched.
-# Several paren-expressions in the same line are to be split into several
-# lines.
-
-/\(.*\)/ {
-
-	# Reduce to (roughly) "\([^()]*\)*"
-	s/[^(]*[^)]*(\([^)]*\))([^(]*[^)]*$)?/\1/g
-
-	# Separate by newlines.
-	s/\)\(/\)\n\(/g
-
-	# Print
-	p
-}
-
-# vi: noet
+/^#/ d
+s/ +/\n/g

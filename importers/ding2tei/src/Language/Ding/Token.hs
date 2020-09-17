@@ -42,7 +42,14 @@ data Token
       Position
       Atom
   | EmptyToken   -- ^ Neutral element in the monoid.
- deriving Show
+
+
+-- Note:
+--  * This instance's show function is not injective.  Information on position
+--    and preceding whitespace is dropped.
+instance Show Token where
+  show (Token _ _ atom) = show atom
+  show EmptyToken       = "EmptyToken"
 
 
 -- Note: One cannot simply use AlexPosn here, since this would introduce a
@@ -87,6 +94,8 @@ data Atom = NL
           | IntPronKW String
           -- | KW_multi      -- ^ several semantics, depending on context
           | Text String
+
+          | KW_to
 
           | HeaderLine String
  deriving Show
@@ -142,6 +151,8 @@ atomToString (GramKW gram)       =
     Nothing -> error "Language.Ding.Token: " ++ (show gram) ++ " not in map."
 atomToString (IntPronKW pron)    = pron
 atomToString (Text t)            = t
+
+atomToString KW_to               = "to"
 
 atomToString (HeaderLine l)      = l
 

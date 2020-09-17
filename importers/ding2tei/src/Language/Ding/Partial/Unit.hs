@@ -128,6 +128,7 @@ toUnit prefs pu = Unit
   , unitAbbrevs    = concat $ reverse $ map NEList.toList $ abbrevAnnots pu
   , unitInflected  = listToMaybe $ infls pu    -- extract the last one, if any
   , unitReferences = reverse $ references pu
+  , unitExamples   = []   -- populated during enrichment
   }
  where
   (prefStrings, prefToks) = unzip prefs

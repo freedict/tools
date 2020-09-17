@@ -206,6 +206,9 @@ tokens :-
   "pron relativ"                        { regularToken kwOrText }
   "bis wann?"                           { regularToken kwOrText }
 
+  -- Keywords that are identified directly using the lexer
+  --"to"                                  { regularToken KW_to }
+
   \n                                    { regularToken $ const NL }
 
   [$white # \n]+                        { const Whitespace }

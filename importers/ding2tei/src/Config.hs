@@ -37,7 +37,7 @@ contributors = [(editor, "2020")]
 -- | Date of last output-affecting change of this program.
 --   Must be given as YYYY-MM-DD.
 publicationDate :: String
-publicationDate = "2020-09-11"
+publicationDate = "2020-09-17"
 
 status :: String
 status = "stable"
@@ -48,7 +48,7 @@ status = "stable"
 --   May also be set to <n>-devel to indicate frequent changes without version
 --   change.
 modVersion :: String
-modVersion = "1-devel"
+modVersion = "0.2-devel"
 
 programName :: String
 programName = "ding2tei-haskell"
@@ -60,7 +60,7 @@ projectName :: String
 projectName = "FreeDict"
 
 projectURL :: String
-projectURL = "http://freedict.org/"
+projectURL = "https://freedict.org/"
 
 programDownloadURL :: String
 programDownloadURL = programURL
@@ -93,8 +93,15 @@ data Change = Change
 
 changes :: [Change]
 changes =
-  [ Change "1.8.1" "1-devel" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-09-11"
+  [ Change "1.8.1" "0.1" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-09-11"
       [ "Initial import from Ding (version 1.8.1)."
+      ]
+  , Change "1.8.1" "0.2" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-09-17"
+      [ unwords
+          [ "Identify examples to some entries; add the former to the latter"
+          , "at 'entry/sense/cit[@type=\"example\"]' and remove the"
+          , "examples from the list of regular entries."
+          ]
       ]
   ]
 

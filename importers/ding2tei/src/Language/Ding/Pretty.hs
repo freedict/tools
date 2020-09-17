@@ -24,6 +24,9 @@ module Language.Ding.Pretty
   ( pretty
   ) where
 
+-- Notes:
+--  * Examples are not displayed.
+
 import Prelude hiding ((<>))
 
 import Data.NatLang.Dictionary (Dictionary(..), Body(..))

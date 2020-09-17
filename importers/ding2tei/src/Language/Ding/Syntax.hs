@@ -32,6 +32,7 @@ import Data.NatLang.Dictionary (Dictionary)
 import Data.NatLang.GrammarInfo (GrammarInfo)
 import Data.NatLang.InflectedForms (InflectedForms)
 import Data.NatLang.Usage (Usage)
+import Language.Common.Syntax (Example)
 
 
 -- | A whole dictionary (set of German-English translation pairs), together
@@ -79,7 +80,8 @@ data Unit = Unit
   , unitSuffixes   :: [String]
   , unitAbbrevs    :: [String]
   , unitInflected  :: Maybe InflectedForms
-  , unitReferences :: [String]
+  , unitReferences :: [String]      -- ~tilde references
+  , unitExamples   :: [Example]     -- initially none, added during enrichment
   }
  deriving (Show, Eq, Ord)
 

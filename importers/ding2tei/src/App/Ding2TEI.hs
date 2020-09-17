@@ -1,9 +1,9 @@
 module App.Ding2TEI where
 
+import Control.Monad (liftM)
+import Control.Monad.Trans.State (State, state, evalState)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
-import Control.Monad (liftM)
-import Control.Monad.Trans.State
 
 import Data.NatLang.Dictionary (Dictionary(Dictionary), Body(Body))
 import Language.Ding.Syntax (Ding)
@@ -160,7 +160,7 @@ makeTEIEntry u ident uRefs gRefs translations = TEI.Entry
         , TEI.senseGrammar      = []
         , TEI.senseUsages       = Ding.unitUsages u
         , TEI.senseTranslations = translations
-        , TEI.senseExamples     = []              -- TODO
+        , TEI.senseExamples     = Ding.unitExamples u
         , TEI.senseReferences   =
                map makeUnitReference  uRefs
             ++ map makeGroupReference gRefs

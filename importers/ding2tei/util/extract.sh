@@ -21,7 +21,10 @@
 #
 
 dingfile=../dingsrc/de-en.txt.preprocessed
-types=( {brace,bracket,paren,dot,switch}exps nonalpha )
+types=(
+	{brace,bracket,paren,dot,switch}exps nonalpha words wordpairs
+	parenprefs{1,2}
+	)
 
 dir="$(dirname "$(realpath "$0")")"
 outdir="${dir}/results"
@@ -52,16 +55,25 @@ function main()
 
 function extract()
 {
-	type="$1"
-	sedfile="extract_${type}.sed"
+	local type="$1"
+	local shfile="extract_${type}.sh"
+	local sedfile="extract_${type}.sed"
+	local script
 
-	if ! [ -e "$sedfile" ]
+	if [ -e "$shfile" ]
 	then
-		printf 'Error: %s does not exist.\n' "$sedfile" 1>&2
-		exit 1
+		script="$shfile"
+	else
+		if ! [ -e "$sedfile" ]
+		then
+			printf 'Error: %s does not exist.\n' "$sedfile" 1>&2
+			exit 1
+		fi
+
+		script="$sedfile"
 	fi
 
-	exps_sorted="$(./"$sedfile" "$dingfile" | sort)"
+	exps_sorted="$(./"$script" < "$dingfile" | sort)"
 
 	# Sort by name.
 	uniq <<< "$exps_sorted" > "${outdir}/${type}.by_name"

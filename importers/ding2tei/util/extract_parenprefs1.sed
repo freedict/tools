@@ -1,6 +1,6 @@
-#!/usr/bin/env -S sed -nEf
+#!/usr/bin/env -S sed -Ef
 #
-# extract_parenexps.sed - a small script to extract paren-expressions
+# extract_parenprefs.sed - a small script to extract prefixes inside parens
 #
 # Copyright 2020 Einhard Leichtfuß
 #
@@ -20,20 +20,10 @@
 # along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-# Only innermost paren-expressions ("(...)") are to be matched.
-# Several paren-expressions in the same line are to be split into several
-# lines.
+# Notes:
+#  * This script should receive lines with parenthese-expressions.
+#  * Prefixes consisting of a single word extracted.
 
-/\(.*\)/ {
-
-	# Reduce to (roughly) "\([^()]*\)*"
-	s/[^(]*[^)]*(\([^)]*\))([^(]*[^)]*$)?/\1/g
-
-	# Separate by newlines.
-	s/\)\(/\)\n\(/g
-
-	# Print
-	p
-}
+s`^\( *([^ )]+).*$`\1`
 
 # vi: noet

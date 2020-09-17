@@ -22,7 +22,6 @@
 module Language.TEI.ToXML.Body (convBody) where
 
 import Data.List.NonEmpty (NonEmpty((:|)))
-import qualified Data.List.NonEmpty as NEList (toList)
 import Data.Maybe (mapMaybe)
 import Text.XML.Light
 
@@ -30,6 +29,7 @@ import Data.NatLang.Dictionary (Body(Body))
 import Data.NatLang.InflectedForms (InflectedForms(..), InflectedForm(..))
 import Data.NatLang.Language
 import Data.NatLang.Usage (Usage(..))
+import Language.Common.Syntax (Example(..))
 import Language.TEI.Syntax.Body
 import Language.TEI.Syntax.Reference
 import Language.TEI.ToXML.Aux

@@ -30,8 +30,12 @@ import Language.Ding.Parser.Line (parseLine)
 import Language.Ding.Pretty
 import Language.Ding.Syntax
 import Language.Ding.Token
+import Language.Ding.Enrich
 import Language.TEI.Syntax.Body
 import Language.TEI.ToXML
+
+import Data.NatLang.Dictionary
+import Language.Ding.Enrich.Example
 
 -- | For testing purposes, parse all but the first `n' lines.
 --   Useful to identify several syntax errors in succession (avoids re-parsing

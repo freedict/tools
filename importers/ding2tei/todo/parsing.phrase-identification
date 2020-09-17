@@ -13,6 +13,7 @@ themselves.
 * positive signs
   ? a comma
   ? a period (at the end?)
+? Consider quotes (<">, <'>)
 
 ? Which side should match?
   ? Any?
@@ -36,3 +37,12 @@ Obstacles
 
  * Plural forms
    * Take care not to match "Menschen" as an example for "Mensch".
+
+
+Some examples:
+ > Angeklagte {m,f}; Angeklagter [jur.] | Angeklagten {pl}; Angeklagte | Hauptangeklagter; Erstangeklagter | Zweitangeklagter | "Angeklagter!" | anonymer Angeklagter oder anonymes Opfer (in einer Anklageschrift) | anonyme Angeklagte oder anonymes Opfer (in einer Anklageschrift) :: accused; defendant | the accused (persons/parties); defendants | primary accused | second defendant; second accused | "Prisoner at the bar!" | (the person of) John Doe (in a bill of indictment) [Am.] | (the person of) Jane Doe (in a bill of indictment) [Am.]
+   * "anonyme Angeklagte oder anonymes Opfer" vs "Jane Doe"
+     * the first is likely to be considered an example, the latter not.
+   * "accused" ~ "the accused"
+     * Is that an example?
+     ? Be conservative in such cases?

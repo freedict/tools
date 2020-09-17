@@ -24,7 +24,6 @@ module Language.TEI.Syntax.Body
   , Form(..)
   , Sense(..)
   , Translation(..)
-  , Example(..)
   ) where
 
 
@@ -32,6 +31,7 @@ import Data.NatLang.GrammarInfo (GrammarInfo)
 import Data.NatLang.Usage (Usage)
 import Data.NatLang.InflectedForms (InflectedForms)
 import Language.TEI.Syntax.Reference (Ident, Reference)
+import Language.Common.Syntax (Example)
 
 
 -- Note:
@@ -77,16 +77,6 @@ data Translation = Translation
   , translationGrammar :: [GrammarInfo]
   , translationUsages  :: [Usage]
   }
- deriving (Show, Eq, Ord)
-
-
--- | An example in the source language with translation.
---   Usually, there is one translation given, however any number is possible
---   (including none).
-data Example
-  = Example
-      String    -- ^ example in the source language
-      [String]  -- ^ set of translations
  deriving (Show, Eq, Ord)
 
 

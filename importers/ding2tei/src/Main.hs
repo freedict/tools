@@ -22,12 +22,12 @@
 
 module Main (main) where
 
-import Control.Monad (when)
 import System.Environment (getArgs)
 import System.Exit (die)
 
 import App.Ding2TEI (ding2tei)
 import Language.Ding.AlexScanner (scan)
+import Language.Ding.Enrich (enrichUndirected, enrichDirected)
 import Language.Ding.Inverse (inverse)
 import Language.Ding.Parser (parse)
 import Language.TEI.ToXML (prettyTEI)
@@ -50,8 +50,8 @@ main = do
 
   input <- readFile inFile
 
-  let ding = parse $ scan $ validateString input
-  let ding' = if inverseFlag then inverse ding else ding
+  let ding = enrichUndirected $ parse $ scan $ validateString input
+  let ding' = enrichDirected $ if inverseFlag then inverse ding else ding
   let tei = ding2tei ding'
   writeFile outFile $ prettyTEI tei
 

@@ -61,11 +61,15 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
   ----------------------------------------------
   -- Information extracted from the Ding header
 
+  -- Note:
+  --  * The headerLicense field is not used.  Instead, the licensing
+  --    information is hardcoded below, since the interaction with AGPL is
+  --    non-trivial.
+
   dingVersion         = headerVersion header
-  dingDate            = headerVersionDate header      -- TODO: Not used.
+  dingDate            = headerVersionDate header
   dingAuthor          = headerCopyrightHolder header
-  dingCopyrightPeriod = headerCopyrightPeriod header  -- TODO: Not used
-  dingLicense         = headerLicense header          -- TODO: Not used.
+  dingCopyrightPeriod = headerCopyrightPeriod header
   dingURL             = headerURL header
 
 
@@ -154,7 +158,8 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
     , unode "p" $ mergeContent
         [ text "This dictionary was generated from the "
         , Elem $ unode "ref" (uattr "target" dingURL, "Ding")
-        , text " dictionary, using the "
+        , text $ " dictionary, version " ++ dingVersion
+            ++ " (" ++ dingDate ++ ") using the "
         , Elem $ unode "ref" (uattr "target" Cfg.programURL, Cfg.programName)
         , text " program."
         ]
