@@ -91,12 +91,10 @@ convBody body srcLang tgtLang = convBody' body
 
   -- @type=lemma is a TEI Lex-0 recommendation.
   convForm :: Form -> Element
-  convForm form = unode "form"
-    ( [uattr "type" "lemma"]
-    ,    unode "orth" (formOrth form)
-      :  map convAbbrev (formAbbrevs form)
-      ++ maybe [] convInflectedForms (formInflected form)
-    )
+  convForm form = unode "form" $
+       unode "orth" (formOrth form)
+    :  map convAbbrev (formAbbrevs form)
+    ++ maybe [] convInflectedForms (formInflected form)
 
   -- Encoded as suggested by Sebastian Humenda (on <freedict@freelists.org>,
   -- 2020-08-29).
@@ -115,20 +113,22 @@ convBody body srcLang tgtLang = convBody' body
     ++ map (convInflectedForm "pstp" Nothing)             (pp : pps)
 
   -- Syntax:
-  --  a) E-Mail from Sebastian Humenda (on <freedict@freelists.org>, 2020-05-03)
+  --  a) E-Mail from Sebastian Humenda (on <freedict@freelists.org>,
+  --     2020-05-03)
   --     * Nest inside the main form.
   --  b) TEI Lex-0 (3.3): suggests value as content, e.g. <tns>pres</tns>.
   --     * Not followed.
   --  c) TEI P5
   --     * 9.3.1: grammar tags
   --     * <tns> doc: tns, mood example: <tns value="..."/>
+  --  d) FreeDict TEI (@shumenda): Do not use @value, instead content.
   convInflectedForm :: String -> Maybe String -> InflectedForm -> Element
   convInflectedForm tense mMood (InflectedForm orth usages) = unode "form"
     ( [uattr "type" "infl"]
     ,   unode "gramGrp"
           (
-              (unode "tns"  $ uattr "value" tense)
-            : maybe [] (pure . unode "mood" . uattr "value") mMood
+              (unode "tns" $ tense)
+            : maybe [] (pure . unode "mood") mMood
           )
       : unode "orth" orth
       : map convUsage usages
@@ -149,11 +149,7 @@ convBody body srcLang tgtLang = convBody' body
     in
       if null content
       then Nothing
-      else Just $
-        unode "sense"
-          ( [ uattr "n" (show $ senseN sense) ]
-          , content
-          )
+      else Just $ unode "sense" content
 
 
   convTranslation :: Translation -> Element

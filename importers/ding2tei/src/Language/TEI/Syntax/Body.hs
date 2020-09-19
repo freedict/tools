@@ -61,8 +61,7 @@ data Form = Form
 
 
 data Sense = Sense
-  { senseN            :: Int            -- ^ \@n
-  , senseGrammar      :: [GrammarInfo]
+  { senseGrammar      :: [GrammarInfo]
   , senseUsages       :: [Usage]
   , senseTranslations :: [Translation]
   , senseExamples     :: [Example]

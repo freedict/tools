@@ -1,7 +1,9 @@
 {-
  - Config.hs - configuration of some output variables
+ -
+ - See also: Language/Ding/Syntax/{Usage,Grammar}.hs
+ -           (configuration and classification of usage and grammar annotatios)
  -}
-
 module Config
   ( editor
   , maintainer

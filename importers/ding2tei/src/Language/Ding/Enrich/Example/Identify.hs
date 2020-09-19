@@ -57,6 +57,11 @@ isExampleOf :: String -> String -> Bool
 --    * consider umlauts, e.g. "Ball" ~ "zwei große Bälle"
 --    * consider change in capitalisation, e.g. "Ball" ~ "ein großer Fußball"
 --    * [consider whitespace, e.g. "lang" ~/~ "... langweilig ..."]
+--    * Require the example to be longer than the exemplified unit.
+--      * Define a minimum number of words and/or characters in difference.
+--      * Prevent phrases where for example only the gender changes to match.
+--      * In particular important, if umlauts receive special treatment.
+--    * Require a maximum size (number of chars/words) for the non-example.
 isExampleOf = flip isInfixOf
 
 -- Simple way to perform more flexible matching (not very efficient):

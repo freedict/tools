@@ -156,8 +156,7 @@ makeTEIEntry u ident uRefs gRefs translations = TEI.Entry
 
   , TEI.entrySenses = [
       TEI.Sense
-        { TEI.senseN            = 1
-        , TEI.senseGrammar      = []
+        { TEI.senseGrammar      = []
         , TEI.senseUsages       = Ding.unitUsages u
         , TEI.senseTranslations = translations
         , TEI.senseExamples     = Ding.unitExamples u
