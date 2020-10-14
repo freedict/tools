@@ -42,6 +42,16 @@ import Language.TEI.ToXML.ValidateChar (validateString)
 --      treated as '\n' in right context (unlike the beginning of input).
 --      (The whitespace in right context is needed to differentiate different
 --      kinds of slashes.)
+--  * The input is checked for only containing valid XML characters
+--    (validateString).
+--    * This is not concerned with potentially to be escaped characters, such
+--      as '<', '"'.  These are considered valid here.
+--    * There are only some very unusual characters that are not accepted in
+--      XML.
+--    * This is done here instead at the XML generation state to spot the
+--      error early.
+--      * The result would most likely be the same; the separators present in
+--        the Ding are all valid in XML.
 
 
 main :: IO ()

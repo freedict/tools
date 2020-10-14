@@ -19,9 +19,10 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
-module Language.TEI.ToXML.Header
-  ( convHeader
-  ) where
+{-|
+ - Convert the Ding header to TEI XML
+ -}
+module Language.TEI.ToXML.Header (convHeader) where
 
 
 import Data.List (intercalate)
@@ -31,11 +32,10 @@ import qualified Config as Cfg
 import Data.NatLang.Language
 import Language.Ding.Syntax (Header(..))
 import Language.TEI.ToXML.Aux
-import Language.TEI.Version (makeVersion)
 
 
 -- Notes:
---  * Whenever plain text cooccurs (on the same level) with other Content
+--  * Whenever plain text co-occurs (on the same level) with other Content
 --    inside an element (e.g. "<x>text<y>z</<y>more text</x>"), one should
 --    use `mergeContent' on that list to avoid a pretty-printing like
 --      <x>
@@ -49,11 +49,17 @@ import Language.TEI.Version (makeVersion)
 --  * See also: note on `unode' and `note' in ToXML/Body.hs.
 
 
+-- | Create a `ref' element with equal target and value.
 plainRefNode :: String -> Element
 plainRefNode tgt = unode "ref" (uattr "target" tgt, tgt)
 
 
 -- | Convert the Ding (!) header straight to TEI XML.
+--   A notable share of information is not extracted from the Ding header,
+--   but rather hardcoded, or configured in the `Config' module.  This is
+--   because the Ding header requires a lot more information than the Ding
+--   header provides; further much of that information does only depend on this
+--   program.
 convHeader :: Header -> Language -> Language -> Int -> Element
 convHeader header srcLang tgtLang nHeadwords = teiHeader
  where
@@ -78,7 +84,7 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
 
   -- Contains information customary to this particular dictionary..
   
-  version = makeVersion dingVersion Cfg.modVersion
+  version = Cfg.makeVersion dingVersion Cfg.modVersion
 
   title = show srcLang ++ " - " ++ show tgtLang
             ++ " Ding/" ++ Cfg.projectName ++ " dictionary"
@@ -143,7 +149,8 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
         ]
     ]
 
-  -- TODO: Add more notes.
+  -- TODO: Add more notes (e.g., to provide an ontology -- for grammar keywords
+  --       et al.).
   notesStmt :: Element
   notesStmt = unode "notesStmt" $
     [ unode "note" (uattr "type" "status", Cfg.status)
@@ -213,6 +220,7 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
     , sourceDesc
     ]
   
+  -- TODO: Use @xml:id and @ref for <name>, as in eng-pol.
   titleStmt :: Element
   titleStmt = unode "titleStmt"
     [ unode "title"  title
@@ -268,7 +276,7 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
           )
       )
      where
-      chVersion = makeVersion (Cfg.chDingVersion ch) (Cfg.chModVersion ch)
+      chVersion = Cfg.makeVersion (Cfg.chDingVersion ch) (Cfg.chModVersion ch)
       date      = Cfg.chDate ch
 
       nameList :: [Content]

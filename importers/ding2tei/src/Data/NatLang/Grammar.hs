@@ -1,5 +1,5 @@
 {-
- - Data/NatLang/Grammar.hs - Grammatical and lexical categories
+ - Data/NatLang/Grammar.hs - Grammar (linguistics) information
  -
  - Copyright 2020 Einhard Leichtfuß
  -
@@ -20,15 +20,31 @@
  -}
 
 
+{-|
+ - Grammar information (linguistics), as present in the Ding dictionary,
+ - albeit also representable in TEI.
+ -}
 module Data.NatLang.Grammar
-  ( GramLexCategory(..)
+  ( GrammarInfo(..)
+  , GramLexCategory(..)
   , PartOfSpeech(..)
   , VerbType(..)
   , PronounType(..)
   , Gender(..)
   , Number(..)
   , Case(..)
+  , Collocate(..)
   ) where
+
+
+import Data.NatLang.Usage (Usage)
+
+
+-- | A grammar single annotation, where "{f,n}" counts as two of them.
+data GrammarInfo
+  = GramLexCategory GramLexCategory
+  | Collocate       Collocate       [Usage]
+ deriving (Show, Eq, Ord)
 
 
 -- | Grammatical or lexical category (resp. values thereof).
@@ -39,8 +55,6 @@ data GramLexCategory
   = PartOfSpeech    PartOfSpeech
   | Gender          Gender
   | Number          Number
-  | SingulareTantum         -- ^ a noun that only occurs in the singular form
-  | PluraleTantum           -- ^ a noun that only occurs in the plural form
   | Case            Case    -- ^ rare in the Ding
  deriving (Show, Eq, Ord)
 
@@ -80,9 +94,13 @@ data Gender
  deriving (Show, Eq, Ord)
 
 
+-- | Grammatical number
+--   The argument to both constructors specifies whether the annotated word
+--   may only occur in the respective number, that is, whether it is a
+--   singulare/plurale tantum.
 data Number
-  = Singular
-  | Plural
+  = Singular Bool
+  | Plural   Bool
  deriving (Show, Eq, Ord)
 
 
@@ -92,6 +110,15 @@ data Case
   = Genitive
   | Accusative
   | Dative
+ deriving (Show, Eq, Ord)
+
+
+-- | Grammar collocate, such as "{+Dat.}" or "{+conj}".
+data Collocate
+  = CollocCase
+      [String]                      -- ^ interrogative pronouns; often none
+      Case                          -- ^ case of collocating word
+  | CollocPOS       PartOfSpeech    -- ^ POS of collocating word; rare
  deriving (Show, Eq, Ord)
 
 

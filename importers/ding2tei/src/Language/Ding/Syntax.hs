@@ -19,6 +19,12 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - General Ding AST types.
+ -
+ - This does not include elements of the AST that are common to both Ding and
+ - TEI, which may instead by found in `Data.NatLang'.
+ -}
 module Language.Ding.Syntax
   ( Ding
   , Header(..)
@@ -29,10 +35,10 @@ module Language.Ding.Syntax
   ) where
 
 import Data.NatLang.Dictionary (Dictionary)
-import Data.NatLang.GrammarInfo (GrammarInfo)
+import Data.NatLang.Example (Example)
+import Data.NatLang.Grammar (GrammarInfo)
 import Data.NatLang.InflectedForms (InflectedForms)
 import Data.NatLang.Usage (Usage)
-import Language.Common.Syntax (Example)
 
 
 -- | A whole dictionary (set of German-English translation pairs), together
@@ -61,7 +67,7 @@ data Entry = Entry Group Group
  deriving (Show, Eq, Ord)
 
 -- | A set of `Unit's matching the same translation.
---   It may be empty, in which a later created corresponding TEI entry may
+--   It may be empty, in which case a later created corresponding TEI entry may
 --   have zero translations (if the `Group' is on the target language's side).
 --   If an empty `Group' is on the source language's side, it is not at all
 --   represented in the resulting TEI.

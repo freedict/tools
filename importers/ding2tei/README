@@ -4,18 +4,13 @@ ding2tei-haskell
 A program to convert the Ding [0] dictionary into the TEI [1] format, to be
 used within the FreeDict project [2].
 
-IMPORTANT: This program is written as part of a Bachelor's thesis.  Please
-refrain from giving me any advice on the programming part.  In particular,
-please do not publish any modifications of my code.  This will no longer be
-of concern once the bachelor's thesis is submitted (september or october 2020).
-
-This program is still under development and not yet able to perform its task.
+This program was written as part of a Bachelor's thesis.  See doc/thesis.pdf.
 
 
 Dependencies
 ------------
 
-* Haskell
+* Haskell (Glasgow Haskell Compiler)
   * base
   * containers (Data.Map, Data.Set)
   * transformers (Control.Monad.Trans.State)
@@ -64,17 +59,49 @@ How to run
 Note: The program currently allocates a lot of memory, around 3.5 GiB, when
       applied to the full Ding source.
 
-$ src/preprocess/all.sh < dingsrc/de-en.txt > dingsrc/de-en.txt.preprocessed
-$ ding2tei dingsrc/de-en.txt.preprocessed deu-eng.tei
+$ src/preprocess/de-en/all.sh < dingsrc/de-en.txt \
+    > dingsrc/de-en.txt.preprocessed
+$ ./ding2tei dingsrc/de-en.txt.preprocessed deu-eng.tei
+$ ./ding2tei -i dingsrc/de-en.txt.preprocessed eng-deu.tei
 
 
 How to test (manually)
 ----------------------
 
-$ ghci src/Test.hs
+$ cd src
+$ ghci -XRecursiveDo Test.hs
 >> parseLine $ scan "some dictionary :: line\n"
->> parse $ scan $ header ++ example1
+>> pretty $ parseLine $ scan (examples !! 0)
+>> ding = parse $ scan $ header ++ (concat examples)
+>> pretty ding
+>> tei = ding2tei $ enrichDirected $ enrichUndirected ding
+>> putStr $ prettyTEI $ tei
 >> tailParse "filename" nInitialLinesDropped
+>> :q
+
+$ ./ding2tei doc/examples/test.ding test.tei
+
+See also:
+
+ src/Main.hs
+
+
+Notes on usage with the FreeDict tools
+--------------------------------------
+
+To use the resulting TEI files with the FreeDict tools, the former need to
+be placed in the dictionary hierarchy of the fd-dictionaries git repository.
+Subsequently, the general documentation on using the tools apply.
+
+The adding of phonetics does currently not work, due to some special
+constellations of special characters.  This is considered a bug in the
+corresponding teiaddphonetics script and is to be fixed there.
+
+While the further translation to both output formats (DICT and slob) require
+the adding of phonetics per the Makefile, this step can be simulated by just
+placing a (symbolic) link at the right place:
+
+$ ln -s ../../lg1-lg2.tei lg1-lg2/build/tei/deu-eng-phonetics.tei
 
 
 Licensing

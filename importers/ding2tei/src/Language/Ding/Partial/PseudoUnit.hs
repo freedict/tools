@@ -20,10 +20,14 @@
  -}
 
 
+{-|
+ - Handling of syntax elements that syntactically look like units however
+ - only contain annotations, which are to be applied to preceding units.
+ -}
 module Language.Ding.Partial.PseudoUnit
   ( PartialPseudoUnit
   , fromSuffixes
-  , adjunctToUnit
+  , addToUnit
   , plusGramAnnot
   , plusUsageAnnot
   ) where
@@ -31,10 +35,10 @@ module Language.Ding.Partial.PseudoUnit
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NEList
 
-import Data.NatLang.GrammarInfo
-import Data.NatLang.Usage
-import Language.Ding.Syntax
-import Language.Ding.Token
+import Data.NatLang.Grammar (GrammarInfo)
+import Data.NatLang.Usage (Usage)
+import Language.Ding.Syntax (Unit(..))
+import Language.Ding.Token (Token, tokenToString)
 
 -- | Partial pseudo unit that may be expanded with annotations and finally
 --   adjuncted to a unit.
@@ -49,6 +53,7 @@ data PartialPseudoUnit = PartialPseudoUnit
 empty :: PartialPseudoUnit
 empty = PartialPseudoUnit [] [] [] []
 
+-- | Create a `PartialPseudoUnit' from a list of parenthesis expressions.
 fromSuffixes :: [(String, Token)] -> PartialPseudoUnit
 fromSuffixes sufs = empty
   { suffixes  = map fst sufs
@@ -61,14 +66,16 @@ plusGramAnnot psu as = psu { gramAnnots = as : gramAnnots psu }
 plusUsageAnnot :: PartialPseudoUnit -> NonEmpty Usage -> PartialPseudoUnit
 plusUsageAnnot psu as = psu { usageAnnots = as : usageAnnots psu }
 
+-- | Add all annotations contained in a partial pseudo unit to a regular unit.
+addToUnit :: PartialPseudoUnit -> Unit -> Unit
+
 -- Note:
 --  * Due to the use of (++), this is not very efficient (for larger lists).
 --    * This could be improved by applying to a PartialUnit instead, which has
 --      stored its elements in inverse order.
 --      * This would however likely render the HappyParser.y code less
 --        readable.
-adjunctToUnit :: PartialPseudoUnit -> Unit -> Unit
-adjunctToUnit psu u = u
+addToUnit psu u = u
   { unitPlain    =
       unitPlain u ++ tokenToString (mconcat $ reverse $ plainToks psu)
   , unitSuffixes = unitSuffixes u ++ suffixes psu

@@ -19,6 +19,9 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Parse the header of the Ding dictionary.
+ -}
 module Language.Ding.Parser.Header (parseHeader) where
 
 import Data.List (stripPrefix)
@@ -69,4 +72,4 @@ stripSuffixChar k [c]    = if k == c then Just [] else Nothing
 stripSuffixChar k (c:cs) = fmap (c:) $ stripSuffixChar k cs
 
 
--- vi: ts=2 sw=2 et
+-- vi: ft=haskell ts=2 sw=2 et

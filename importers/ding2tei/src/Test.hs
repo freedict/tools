@@ -20,24 +20,31 @@
  -}
 
 
+{-|
+ - Manual testing.  No function exported.  To be used in `ghci' exclusively.
+ -
+ - Re-exports many data structures and functions.
+ -}
 module Test () where
 
+import Control.Monad.Trans.Writer (runWriter)
+
 import App.Ding2TEI
+import Data.NatLang.Dictionary
+import Data.NatLang.Grammar
 import Language.Ding.AlexScanner (scan)
 import Language.Ding.Parser (parse)
 import Language.Ding.Parser.Header (parseHeader)
-import Language.Ding.Parser.Line (parseLine)
+import qualified Language.Ding.Parser.Line as LP (parseLine)
 import Language.Ding.Pretty
 import Language.Ding.Syntax
 import Language.Ding.Token
 import Language.Ding.Enrich
-import Language.TEI.Syntax.Body
+import Language.TEI.Syntax
 import Language.TEI.ToXML
 
-import Data.NatLang.Dictionary
-import Language.Ding.Enrich.Example
-
 -- | For testing purposes, parse all but the first `n' lines.
+--   Only print the number of lines parsed.
 --   Useful to identify several syntax errors in succession (avoids re-parsing
 --   the known-good part).
 --   A header is prepended.  Make sure to at least drop the header.
@@ -46,6 +53,9 @@ tailParse fileName n = do
   input <- readFile fileName
   let ding = parse $ scan $ header ++ (unlines $ drop n $ lines input)
   putStrLn $ show $ length $ show ding
+
+parseLine :: [Token] -> Line
+parseLine = fst . runWriter . LP.parseLine
 
 header :: String
 header = unlines
@@ -56,21 +66,30 @@ header = unlines
   , "# URL :: http://dict.tu-chemnitz.de/"
   ]
 
-example1 :: String
-example1 =
-  "Bäckerin {f}; Bäcker {m} | Bäckerei {f}; Backstube {f} :: baker | bakery\n"
 
-example2 :: String
-example2 = unlines
-  [ "Wetter {n}; Witterung {f} :: weather"
-  , "  Witterungen {pl} :: weathers"
-  , "  bei jeder Witterung; bei jedem Wetter :: in all weathers"
-  ]   -- from https://dict.tu-chemnitz.de/doc/syntax.html
-
-example3 :: String
-example3 = unlines
-  [ "Whist {n} (Kartenspiel) :: whist"
-  , "(Schaden; Mangel) beheben; (Missstand) abstellen; abhelfen; in Ordnung bringen :: to remedy "
-  ]   -- from https://dict.tu-chemnitz.de/doc/syntax.html
+-- | Some example lines; all except the first from
+--   <https://dict.tu-chemnitz.de/doc/syntax.html>.
+examples :: [String]
+examples =
+  [ unwords
+      [ "Bäckerin {f}; Bäcker {m} | Bäckerei {f}; Backstube {f}"
+      , ":: baker | bakery\n"
+      ]
+  , unwords
+      [ "Wetter {n}; Witterung {f} | Witterungen {pl} | bei jeder Witterung;"
+      , "bei jedem Wetter :: weather | weathers | in all weathers\n"
+      ]
+    -- Outdated syntax:
+    --unlines
+    --  [ "Wetter {n}; Witterung {f} :: weather"
+    --  , "  Witterungen {pl} :: weathers"
+    --  , "  bei jeder Witterung; bei jedem Wetter :: in all weathers"
+    --  ]
+  , "Whist {n} (Kartenspiel) :: whist\n"
+  , unwords
+      [ "(Schaden; Mangel) beheben; (Missstand) abstellen; abhelfen;"
+      , "in Ordnung bringen :: to remedy \n"
+      ]
+  ]
 
 -- vi: ft=haskell ts=2 sw=2 et

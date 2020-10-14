@@ -20,11 +20,10 @@
  -}
 
 
--- Note: The location of this module under Data.NatLang is debatable.
---       In contrast to the other structures found there, this module contains
---       parts of the AST that would not normally be considered leaves.
-
-
+{-|
+ - Data types for inflected forms, as they appear in the Ding dictionary and
+ - may be (partially) represented in TEI.
+ -}
 module Data.NatLang.InflectedForms
   ( InflectedForms(..)
   , InflectedForm(..)
@@ -45,6 +44,9 @@ data InflectedForms
  deriving (Show, Eq, Ord)
 
 
+-- | A single inflected form, annotated with usages.
+--   Note that these usages cannot be specified in TEI, or at least it is
+--   unknown how.
 data InflectedForm = InflectedForm String [Usage]
  deriving (Show, Eq, Ord)
 

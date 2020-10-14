@@ -19,12 +19,16 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+
+{-|
+ - Print grammar annotations according to TEI syntax.
+ -}
 module Language.TEI.Show.Grammar
   ( showPrimaryPOS
   , showVerbType
   , showPronounType
   , showGender
-  , showNumber
+  , showPrimaryNumber
   , showCase
   , shownSingulareTantum
   , shownPluraleTantum
@@ -80,9 +84,9 @@ showGender Feminine  = "fem"
 showGender Masculine = "masc"
 showGender Neuter    = "neut"
 
-showNumber :: Number -> String
-showNumber Singular = "sg"                -- UNCERTAIN (~ several)
-showNumber Plural   = "pl"                -- UNCERTAIN (~ several)
+showPrimaryNumber :: Number -> String
+showPrimaryNumber (Singular _) = "sg"     -- UNCERTAIN (~ several)
+showPrimaryNumber (Plural   _) = "pl"     -- UNCERTAIN (~ several)
 
 showCase :: Case -> String
 showCase Genitive   = "gen"               -- UNCERTAIN (~lat-deu)

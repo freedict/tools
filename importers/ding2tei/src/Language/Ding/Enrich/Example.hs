@@ -45,7 +45,7 @@
  - Note that this enrichment should not be done on the TEI AST -- as might seem
  - more natural -- because
  -  a) this causes unnecessary calculations on later identified examples,
- -     in particular
+ -     in particular,
  -  b) there would be IDs generated for examples, potentially causing
  -     unnecesarily high number suffixes in other (retained) entries' IDs
  -     (likely rare and not really important).
@@ -109,10 +109,7 @@ inferExamples (Line entries) =
 -- | Perform the enrichment on a list of entries.
 --   The result is pushed to the state's stack.
 handleEntries :: [Entry] -> EntryStackState ()
-handleEntries []     = return ()
-handleEntries (e:es) = do
-  handleEntry   e
-  handleEntries es
+handleEntries = mapM_ handleEntry
 
 handleEntry :: Entry -> EntryStackState ()
 handleEntry (Entry g gTrans) = do

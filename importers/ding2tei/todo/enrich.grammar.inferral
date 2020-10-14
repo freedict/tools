@@ -1,0 +1,30 @@
+Grammar annotation inferral
+===========================
+
+See doc/ding.annotation.brace on the current state.
+
+
+TODO:
+-----
+
+ * From the presence of inflected forms, infer `verb'.
+
+
+Ideas:
+------
+
+ * Infer annotations from auxiliary words like
+   . "jdm.", "jdn.", ...
+   - See also todo/parsing.collocation-literals
+
+ * Grammatical gender of words in plural
+   . Often only {pl} annotated.
+   ? Infer from possibly accompanying singular form ?
+
+
+See also
+--------
+
+ * doc/ding.annotation.brace
+ * doc/enrich.grammar
+ * todo/enrich.grammar.transferral

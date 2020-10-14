@@ -1,0 +1,50 @@
+README
+======
+
+This directory contains preprocessor scripts, written in sed.
+They should be applied before running the main program.
+
+
+About
+-----
+
+The scripts are used to fix some irregularities before handling processing to
+the main translating program.  Generally, only irregularities that are
+assumed as mistakes are fixed.
+
+Targeted at the German-English Ding dictionary, version 1.8.1 / 2016-09-06
+
+Called with `sed -E' (see Shebang); i.e. extended regular expressions are
+used.
+
+
+Conventions
+-----------
+ * Use the g (global) specifier, for anything that seems likely to possibly
+   occur elsewhere, even if it does not.  There might always be added another
+   occurrence in a later version and `g' does not cost much.
+ * Be as generic as possible and as specific as necessary.
+   * Do not overgeneralize (e.g., "(n)" -> "{n}").  There may be legitimate
+     uses of apparent misspellings / bad syntax.
+     * Ex.: "to proffer sb. sth. /sth. to sb." -> "... sb. sth. / sth. to sb."
+       * Bad: "sb. /sth." -> "sb./sth." (when generalized).
+ * Use groups (<()>) and back-references (<\$i>).
+ * Use <`> as separator to avoid the necessity to escape (/).
+ * Use "\<" and "\>" where applicable.
+ * On changes of this script, diff the result with the former result to check
+   for erronous replacing.  This is usually doable in time.
+ * When changing to another Ding version, review the diff (!) and check for
+   new irregularities (optional).
+ * Ideally, when grouping (using parentheses), group in an understandable,
+   rather than an efficient way.
+   * Ex.: "s`\<(to take)/ (to carry out) (a measure)`\1 / \2 \3`g"
+     * Groups 2 and 3 could be merged.
+
+
+Helpful tools
+-------------
+ * Regexes (grep/$EDITOR/less) to find common mistakes
+   * e.g.: '\([^{]{0,10}\b(adj|adv|prp|n|m|f|...)\b' to find misusage of
+     parantheses (instead of braces).
+ * util/extract_braceexps.(sed|sh)
+   * Analyze the output to find any irregular brace expression.

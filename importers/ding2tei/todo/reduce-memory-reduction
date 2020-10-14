@@ -1,7 +1,12 @@
-Currently, 2.6 GiB are taken up by parsing the Ding source (which is 20 MiB
-in size).
+Currently (2020-10-14), 4.5 GiB are taken up by parsing the Ding source
+(which is 20 MiB in size).
 
--- Now (2020-09-11): 3.4 GiB
+The main issue is that the program cannot start writing to disk before
+essentially the whole dictionary is processed, because the (prefixing) TEI
+header wants to know the number of TEI entries.
+
+
+-- Obsolete:
 
 This huge memory usage probably is due to something in the Happy-generated
 code.

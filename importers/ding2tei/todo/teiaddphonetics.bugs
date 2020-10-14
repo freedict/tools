@@ -1,0 +1,11 @@
+teiaddphonetics:
+ * Unit: "Angeklagter!"
+ * '[[:letter:]] *[!?:,]"'
+   * in words: a letter, whitespace, [!?:,], <">
+   * [*.\\;-] are ok
+   * Whitespace before <"> also ok.
+ $ fdtools-git/teiaddphonetics --infile deu-eng.tei --outfile build/tei/deu-eng-phonetics.tei --espeak-count 1
+
+last written word: ''Sie sagt sie ist rechtzeitig da'-'Nie im Leben ' / 'Denkste!' / 'Keine Chance!''
+
+See also: preprocess/de-en/adjust_for_teiaddphonetics.sed

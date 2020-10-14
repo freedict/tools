@@ -20,6 +20,10 @@
  -}
 
 
+{-|
+ - XML string validation as per the W3C XML specification
+ - (<https://www.w3.org/TR/xml/#charsets>).
+ -}
 module Language.TEI.ToXML.ValidateChar
   ( validateString
   , validateChar

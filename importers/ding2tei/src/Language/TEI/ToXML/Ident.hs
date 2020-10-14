@@ -19,6 +19,9 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Convert identifiers to valid `@xml:id' values.
+ -}
 module Language.TEI.ToXML.Ident
   ( identToXMLId
   ) where
@@ -28,7 +31,7 @@ import Data.Char (ord)
 import Language.TEI.Syntax.Reference (Ident(Ident))
 
 
--- References:
+-- The syntax of XML id's is described in by the W3C's XML specification:
 --  * https://www.w3.org/TR/xmlschema-2/#ID | #NCName
 --      / https://www.w3.org/TR/2004/REC-xmlschema-2-20041028/#ID | #NCName
 --  * https://www.w3.org/TR/xml-names/#NT-NCName

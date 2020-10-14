@@ -19,6 +19,9 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Invert a Ding dictionary's direction, by mirroring all contained entries.
+ -}
 module Language.Ding.Inverse (inverse) where
 
 import Data.NatLang.Dictionary

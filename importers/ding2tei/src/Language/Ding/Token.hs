@@ -20,6 +20,10 @@
  -}
 
 
+{-|
+ - Token types, as produced by the Alex generated lexer and consumed by the
+ - happy generated parser (and the header parser).
+ -}
 module Language.Ding.Token
  ( Token(..)
  , Position(..)
@@ -27,10 +31,8 @@ module Language.Ding.Token
  , tokenToString
  ) where
 
-import qualified Data.Map.Strict as Map
-
 import Data.NatLang.Grammar (GramLexCategory)
-import Language.Ding.Syntax.Grammar (grammarMapRev)
+import Language.Ding.Show.Grammar (showGLC)
 
 
 
@@ -71,8 +73,8 @@ data Atom = NL
           | Tilde
           | Plus
           | Wordswitch    -- ^ "<>"
-          | StrongSlash   -- ^ see `Language.Ding.AlexScanner'
-          | WeakSlash     -- ^ see `Language.Ding.AlexScanner'
+          | StrongSlash   -- ^ see `doc/ding.slashes'
+          | WeakSlash     -- ^ see `doc/ding.slashes'
           | DoubleSlash
 
           | OBrace
@@ -83,16 +85,14 @@ data Atom = NL
           | CParen
           | OAngle
           | CAngle
-          | OSlash        -- ^ see `Language.Ding.AlexScanner'
-          | CSlash        -- ^ see `Language.Ding.AlexScanner'
+          | OSlash        -- ^ see `doc/ding.slashes'
+          | CSlash        -- ^ see `doc/ding.slashes'
 
           | SlashSpecial String
-          | Smiley String
-          | AbbrevWithSlash String
+          | Abbrev String
           | AbbrevPlural String
           | GramKW GramLexCategory
           | IntPronKW String
-          -- | KW_multi      -- ^ several semantics, depending on context
           | Text String
 
           | KW_to
@@ -109,56 +109,50 @@ tokenToString (Token _ _ atom) = atomToString atom
 tokenToString EmptyToken       = ""
 
 
--- Note: Due to the loss of information on the kinds of slashes, the below
---       function should not used in a Show instance.
--- TODO: link this with a future Pretty instance.
-
 -- | Convert an atom back to the string that it represents, excluding any
 --   delimiters (</>).
 --   This function is not injective, in particular the distinction of different
 --   kinds of slashes is lost.
 atomToString :: Atom -> String
-atomToString NL                  = "\n"
-atomToString LangSep             = "::"
-atomToString Vert                = "|"
-atomToString Semi                = ";"
-atomToString Comma               = ","
-atomToString Tilde               = "~"
-atomToString Plus                = "+"
-atomToString Wordswitch          = "<>"
-atomToString StrongSlash         = "/"
-atomToString WeakSlash           = "/"
-atomToString DoubleSlash         = "//"
+atomToString NL               = "\n"
+atomToString LangSep          = "::"
+atomToString Vert             = "|"
+atomToString Semi             = ";"
+atomToString Comma            = ","
+atomToString Tilde            = "~"
+atomToString Plus             = "+"
+atomToString Wordswitch       = "<>"
+atomToString StrongSlash      = "/"
+atomToString WeakSlash        = "/"
+atomToString DoubleSlash      = "//"
 
-atomToString OBrace              = "{"
-atomToString CBrace              = "}"
-atomToString OBracket            = "["
-atomToString CBracket            = "]"
-atomToString OParen              = "("
-atomToString CParen              = ")"
-atomToString OAngle              = "<"
-atomToString CAngle              = ">"
-atomToString OSlash              = "/"
-atomToString CSlash              = "/"
+atomToString OBrace           = "{"
+atomToString CBrace           = "}"
+atomToString OBracket         = "["
+atomToString CBracket         = "]"
+atomToString OParen           = "("
+atomToString CParen           = ")"
+atomToString OAngle           = "<"
+atomToString CAngle           = ">"
+atomToString OSlash           = "/"
+atomToString CSlash           = "/"
 
-atomToString (SlashSpecial s)    = s   -- pretty: "/ " ++ s ++ " /"
-atomToString (Smiley s)          = s   -- pretty: "/ " ++ s ++ " /"
-atomToString (AbbrevWithSlash s) = s   -- pretty: "/ " ++ s ++ " /"
-atomToString (AbbrevPlural s)    = s   -- pretty: "/" ++ s ++ "/s"
-atomToString (GramKW gram)       =
-  case Map.lookup gram grammarMapRev of
-    Just s  -> s
-    Nothing -> error "Language.Ding.Token: " ++ (show gram) ++ " not in map."
-atomToString (IntPronKW pron)    = pron
-atomToString (Text t)            = t
+atomToString (SlashSpecial s) = s   -- pretty: "/ " ++ s ++ " /"
+atomToString (Abbrev s)       = s   -- pretty: "/ " ++ s ++ " /"
+atomToString (AbbrevPlural s) = s   -- pretty: "/" ++ s ++ "/s"
 
-atomToString KW_to               = "to"
+-- showGLC always gives a list of length one in this context.
+atomToString (GramKW gram)    = head $ showGLC gram
+atomToString (IntPronKW pron) = pron
+atomToString (Text t)         = t
 
-atomToString (HeaderLine l)      = l
+atomToString KW_to            = "to"
+
+atomToString (HeaderLine l)   = l
 
 
 -- All tokens have a string representation, which, together with the preceding
--- whitespace identifies their value.  Two tokens may hence be combined in a
+-- whitespace, identifies their value.  Two tokens may hence be combined in a
 -- natural way, into a canonical `Text' token.
 
 instance Semigroup Token where

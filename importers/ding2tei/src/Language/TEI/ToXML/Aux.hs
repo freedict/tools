@@ -20,6 +20,12 @@
  -}
 
 
+{-|
+ - Auxiliary XML generation functions.
+ -
+ - The used `xml' library is very simple; this module tries to compensate
+ - for this.
+ -}
 module Language.TEI.ToXML.Aux
   ( uattr
   , xmlLangAttr
@@ -36,11 +42,11 @@ import Text.XML.Light
 uattr :: String -> String -> Attr
 uattr k v = Attr (unqual k) v
 
--- | @xml:lang attribute
+-- | `@xml:lang' attribute
 xmlLangAttr :: String -> Attr
 xmlLangAttr lang = Attr (QName "lang" Nothing (Just "xml")) lang
 
--- | @xml:id attribute
+-- | `@xml:id' attribute
 xmlIdAttr :: String -> Attr
 xmlIdAttr val = Attr (QName "id" Nothing (Just "xml")) val
 

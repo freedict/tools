@@ -3,6 +3,8 @@ How to represent lines in the TEI output
 
 - Create two dictionaries, one for each direction (de->en, en->de).
 
+NOTE: Mostly done.
+
 Let one direction be fixed.
 
 ? Group Ding groups in a <superEntry>?

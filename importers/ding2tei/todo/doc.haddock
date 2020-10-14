@@ -3,6 +3,8 @@ Haddock markup TODO
 
 See: https://haskell-haddock.readthedocs.io/en/latest/markup.html
 
+Haddock syntax is used for comments, albeit untested.
+
 * module description
 * top-level / exported functions (partially done)
   - arguments

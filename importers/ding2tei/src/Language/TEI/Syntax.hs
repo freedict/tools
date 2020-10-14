@@ -19,23 +19,90 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
-module Language.TEI.Syntax (TEI) where
+
+{-|
+ - The TEI AST.
+ -
+ - The types are quite closely related to TEI's XML elements (see
+ - `Language.TEI.ToXML' on how they translate.
+ -
+ - This does only support a small subset of TEI (for dictionaries), as is
+ - needed to represent the information that stems from the Ding dictionary.
+ -
+ - AST elements that are common to both Ding and TEI are to be found in
+ - `Data.NatLang'.
+ -
+ - The TEI header is not explicitly represented, instead the Ding header type
+ - is used.
+ -}
+module Language.TEI.Syntax
+  ( TEI
+  , Entry(..)
+  , Form(..)
+  , Sense(..)
+  , Translation(..)
+  ) where
 
 import Data.NatLang.Dictionary (Dictionary)
+import Data.NatLang.Grammar (GrammarInfo)
+import Data.NatLang.Usage (Usage)
+import Data.NatLang.InflectedForms (InflectedForms)
 import qualified Language.Ding.Syntax as Ding (Header)
-import Language.TEI.Syntax.Body (Entry)
+import Language.TEI.Syntax.Reference (Ident, Reference)
+import Data.NatLang.Example (Example)
 
 
--- Notes:
---  * The TEI header is not explicitly represented as AST; the Ding header is
---    used instead and to be directly translated to TEI XML.
---  * Only a subset of TEI supported, sufficient to represent the Ding.
---    * In particular, only dictionaries can be represented.
---  * Trying to adhere to TEI Lex-0.
---  * The data types' names mostly map to the respective TEI XML node names.
-
-
+-- | A TEI dictionary, with a Ding header.
 type TEI = Dictionary Ding.Header Entry
+
+
+-- | A TEI entry, with a unique identifier, a form (containing the headword,
+--   i.a.), grammar annotation and a list of senses (containing translations,
+--   i.a.).
+--   Note that annotated grammar information should pertain to all senses.
+data Entry = Entry
+  { entryIdent   :: Ident
+  , entryForm    :: Form
+  , entryGrammar :: [GrammarInfo]
+  , entrySenses  :: [Sense]
+  }
+ deriving Show
+
+
+-- | A form, containing a single headword and potentially some related forms.
+--   Pronunciation information, that also belongs to a `<form>' is added by a
+--   separate tool, after TEI XML generation.
+data Form = Form
+  { formOrth      :: String   -- ^ headword
+  , formAbbrevs   :: [String]
+  , formInflected :: Maybe InflectedForms
+  }
+ deriving (Show, Eq, Ord)
+
+
+-- | A sense, containing translations and annotations.
+data Sense = Sense
+  { senseGrammar      :: [GrammarInfo]
+  , senseUsages       :: [Usage]
+  , senseTranslations :: [Translation]
+  , senseExamples     :: [Example]
+  , senseReferences   :: [Reference]
+  , senseNotes        :: [String]     -- ^ from suffixing Ding-<()>-annotations
+  }
+ deriving (Show, Eq, Ord)
+
+
+-- | A translation to a headword, together with annotations.  Corresponds
+--   to `<cit type="trans" />'.
+data Translation = Translation
+  { translationOrth      :: String
+  , translationGrammar   :: [GrammarInfo]
+  , translationUsages    :: [Usage]
+  , translationAbbrevs   :: [String]
+  , translationInflected :: Maybe InflectedForms
+  , translationNotes     :: [String]
+  }
+ deriving (Show, Eq, Ord)
 
 
 -- vi: ft=haskell ts=2 sw=2 et

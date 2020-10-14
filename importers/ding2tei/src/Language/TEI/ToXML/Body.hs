@@ -19,6 +19,9 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Convert the TEI body to XML.
+ -}
 module Language.TEI.ToXML.Body (convBody) where
 
 import Data.List.NonEmpty (NonEmpty((:|)))
@@ -26,11 +29,11 @@ import Data.Maybe (mapMaybe)
 import Text.XML.Light
 
 import Data.NatLang.Dictionary (Body(Body))
+import Data.NatLang.Example (Example(..))
 import Data.NatLang.InflectedForms (InflectedForms(..), InflectedForm(..))
 import Data.NatLang.Language
 import Data.NatLang.Usage (Usage(..))
-import Language.Common.Syntax (Example(..))
-import Language.TEI.Syntax.Body
+import Language.TEI.Syntax
 import Language.TEI.Syntax.Reference
 import Language.TEI.ToXML.Aux
 import Language.TEI.ToXML.Grammar
@@ -93,15 +96,16 @@ convBody body srcLang tgtLang = convBody' body
   convForm :: Form -> Element
   convForm form = unode "form" $
        unode "orth" (formOrth form)
-    :  map convAbbrev (formAbbrevs form)
+    :  map (convAbbrev "form") (formAbbrevs form)
     ++ maybe [] convInflectedForms (formInflected form)
 
   -- Encoded as suggested by Sebastian Humenda (on <freedict@freelists.org>,
   -- 2020-08-29).
   -- To be nested inside the main <form> element.
-  convAbbrev :: String -> Element
-  convAbbrev = unode "form" . (,) (uattr "type" "abbrev")
-             . unode "orth"
+  -- Note: The tagName is "form" inside <form> and "cit" inside <cit>.
+  convAbbrev :: String -> String -> Element
+  convAbbrev tagName = unode tagName . (,) (uattr "type" "abbrev")
+                     . unode "orth"
 
 
   -- tns[@value="past"]: no source - guessed / newly defined.
@@ -152,6 +156,7 @@ convBody body srcLang tgtLang = convBody' body
       else Just $ unode "sense" content
 
 
+  -- Note: inflected forms are dropped for now - unsure how to encode. (TODO)
   convTranslation :: Translation -> Element
   convTranslation trans = unode "cit"
     ( [uattr "type" "trans"]
@@ -161,8 +166,10 @@ convBody body srcLang tgtLang = convBody' body
         )
         :
         (maybe id (:)
-            (convGrammar $ translationGrammar trans)
-          $ (map convUsage (translationUsages trans))
+             (convGrammar            $ translationGrammar trans)
+          $  (map convUsage          $ translationUsages trans)
+          ++ (map (convAbbrev "cit") $ translationAbbrevs trans)
+          ++ (map (unode "note")     $ translationNotes trans)
         )
     )
 

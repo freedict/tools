@@ -20,32 +20,49 @@
 
 {-# LANGUAGE FlexibleInstances #-}
 
-module Language.Ding.Pretty
-  ( pretty
-  ) where
+{-|
+ - Pretty printing of the Ding AST.
+ -
+ - Note that the pretty printing does not generally reproduce the originally
+ - parsed Ding syntax; the result may even not be accepted by the parser.
+ -
+ - The former is because
+ -  a) during parsing, some information is dropped,
+ -  b) enrichment may have changed the order of annotations.
+ - Also, potentially identified examples are not displayed.
+ -
+ - The latter is only the case when grammar inferral (enrichment) was
+ - performed.  In this case, grammar information such as "{noun}" may be
+ - inferred, which is not originally present in the Ding dictionary, albeit
+ - useful information during debugging.
+ -}
+module Language.Ding.Pretty (pretty) where
 
--- Notes:
---  * Examples are not displayed.
 
 import Prelude hiding ((<>))
 
-import Data.NatLang.Dictionary (Dictionary(..), Body(..))
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NEList
-import qualified Data.Map.Strict as Map
 import Text.PrettyPrint
 
+import Data.NatLang.Dictionary (Dictionary(..), Body(..))
 import Data.NatLang.Grammar
-import Data.NatLang.GrammarInfo
 import Data.NatLang.InflectedForms
 import Data.NatLang.Usage
+import Language.Ding.Show.Grammar (showGLC, showCase, showPOS)
 import Language.Ding.Syntax hiding (Dictionary)
-import Language.Ding.Syntax.Grammar (grammarMapRev, caseMapRev, posMapRev)
 
+
+-------------------------
+-- Some helper functions
 
 -- | Modify a `Doc' iff it is non-empty.
 applyNE :: (Doc -> Doc) -> Doc -> Doc
 applyNE f x = if isEmpty x then empty else f x
+
+-- | Like `punctuate', but remove nonempty `Doc's first.
+punctuateNE :: Doc -> [Doc] -> [Doc]
+punctuateNE p = punctuate p . filter (not . isEmpty)
 
 slashes :: Doc -> Doc
 slashes x = char '/' <> x <> char '/'
@@ -60,6 +77,11 @@ class Pretty a where
 
   prettyNEList :: NonEmpty a -> Doc
   prettyNEList = prettyList . NEList.toList
+
+
+
+------------------------
+-- The Pretty instances
 
 
 instance Pretty Ding where
@@ -95,6 +117,10 @@ instance Pretty Line where
   prettyList = foldr ($+$) empty . map pretty
 
 
+instance Pretty Entry where
+  pretty (Entry g h) = pretty g <+> text "::" <+> pretty h
+
+
 instance Pretty Group where
   pretty (Group us) = prettyList us
 
@@ -116,29 +142,27 @@ instance Pretty Unit where
   prettyList = hsep . punctuate semi . map pretty
 
 
-instance Pretty GramLexCategory where
-  pretty gram = case Map.lookup gram grammarMapRev of
-    Nothing -> error "Language.Ding.Pretty: Unknown GramLexCategory."
-    Just v  -> text v
-
 instance Pretty GrammarInfo where
   pretty (GramLexCategory gram)  = pretty gram
+  pretty (Collocate colloc usgs) = pretty colloc <+> prettyList usgs
+
+  prettyList = applyNE braces . hsep . punctuate semi . map pretty
+
+instance Pretty GramLexCategory where
+  pretty = hcat . punctuate (char '/') . map text . showGLC
+
+instance Pretty Collocate where
   pretty (CollocCase iProns cas) = pref <+> char '+' <> pretty cas
    where
     pref = hsep $ punctuate comma $ map text iProns
   pretty (CollocPOS pos)         = char '+' <> pretty pos
 
-  prettyList = applyNE braces . hsep . punctuate semi . map pretty
-
 instance Pretty Case where
-  pretty cas = case Map.lookup cas caseMapRev of
-    Nothing -> error "Language.Ding.Pretty: Unknown grammatical case."
-    Just v  -> text v
+  pretty = text . showCase
 
 instance Pretty PartOfSpeech where
-  pretty pos = case Map.lookup pos posMapRev of
-    Nothing -> error "Language.Ding.Pretty: Unknown part of speech."
-    Just v  -> text v
+  -- Note: showPOS is expected to always give exactly one string here.
+  pretty = hcat . punctuate (char '/') . map text . showPOS
 
 instance Pretty Usage where
   pretty (Usage _ str) = text str

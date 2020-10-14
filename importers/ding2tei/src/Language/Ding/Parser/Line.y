@@ -1,5 +1,5 @@
 {-
- - Language/Ding/Parser/Line.y - parser for a single regular line
+ - Language/Ding/Parser/Line.y - parser for a single Ding line
  -
  - Copyright 2020 Einhard Leichtfuß
  -
@@ -34,32 +34,43 @@
 {
 -- Haskell module header and import statements.
 
+{-|
+ - Parse single Ding lines from a list of tokens.  Only accepts newline
+ - terminated lines.
+ -}
 module Language.Ding.Parser.Line (parseLine) where
 
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import qualified Data.List.NonEmpty as NEList
+import Control.Monad.Writer (Writer, tell)
 
-import Data.NatLang.GrammarInfo (GrammarInfo(..))
-import Data.NatLang.Grammar (GramLexCategory(..), Case(..))
+import Data.NatLang.Grammar
+  ( GrammarInfo(..)
+  , GramLexCategory(..)
+  , Case(..)
+  , Collocate(..)
+  )
 import Data.NatLang.Usage (Usage)
 import Data.NatLang.InflectedForms (InflectedForms(..), InflectedForm(..))
 import Language.Ding.Partial.Unit (PartialUnit)
 import qualified Language.Ding.Partial.Unit as PU
 import Language.Ding.Partial.PseudoUnit (PartialPseudoUnit)
 import qualified Language.Ding.Partial.PseudoUnit as PSU
+import Language.Ding.Read.Usage (readUsage)
 import Language.Ding.Syntax
-import Language.Ding.Syntax.Usage (stringToUsage)
 import Language.Ding.Token
 }
 
 
 %name parseLine         -- name of the resulting function
 %tokentype { Token }
+%monad { Writer [String] }
 %error { parseError }   -- name of the error function - must be defined later
 
 
+-------------------------------------------------------------------------------
 -- Link Happy tokens (left) to Haskell patterns (right).
---
+
 -- Notes:
 --  * If `$$' is specified on the right, the Happy token will evaluate to the
 --    token's part matched by `$$'.  Otherwise, the Happy token evaluates to
@@ -90,9 +101,10 @@ import Language.Ding.Token
        '</'             { Token _ _ OSlash }
        '/>'             { Token _ _ CSlash }
 
+       'to'             { Token _ _ KW_to }
+
        tok_slashSpecial { Token _ _ (SlashSpecial _) }
-       tok_smiley       { Token _ _ (Smiley _) }
-       tok_abbrevSlash  { Token _ _ (AbbrevWithSlash _) }
+       tok_abbrev       { Token _ _ (Abbrev _) }
        tok_abbrevPlural { Token _ _ (AbbrevPlural _) }
 
        -- Note:
@@ -101,12 +113,19 @@ import Language.Ding.Token
        tok_gramPOS      { Token _ _ (GramKW (PartOfSpeech _)) }
        tok_gramGender   { Token _ _ (GramKW (Gender _)) }
        tok_gramNumber   { Token _ _ (GramKW (Number _)) }
-       tok_gramST       { Token _ _ (GramKW SingulareTantum) }
-       tok_gramPT       { Token _ _ (GramKW PluraleTantum) }
        tok_gramCase     { Token _ _ (GramKW (Case _)) }
 
        tok_interrogPron { Token _ _ (IntPronKW _) }
        tok_text         { Token _ _ (Text _) }
+
+
+
+-- Just ensure that 'to' has lowest precedence.
+--  * Giving it right associativity causes 'to to' to cause a shift.
+%right 'to'
+%right ',' '~' '+' '<>' '/' '</>' '//' tok_gramPOS tok_gramGender
+  tok_gramNumber tok_gramCase tok_interrogPron tok_text
+  '('
 
 %%
 
@@ -114,6 +133,9 @@ import Language.Ding.Token
 -------------------------------------------------------------------------------
 -- Grammar specification
 -------------------------------------------------------------------------------
+
+-- See doc/ding-grammar-naming for a brief syntax overview and naming
+-- conventions.
 
 -- Notes:
 --  * Only a single line is parsed.
@@ -126,9 +148,13 @@ import Language.Ding.Token
 --      * Hence, ignore this.
 --    - https://www.haskell.org/happy/doc/html/sec-sequences.html
 --    - String-concatenation that uses left-recursion has the same problem.
---      - '<>' when applied to tokens does essentially perform string
+--      - (<>), when applied to tokens does essentially perform string
 --        concatentation.
 --        - mconcat can be used instead.
+--  * The parsing happens in the Writer monad to allow for logging.
+--    * There does however not happen any logging as of now.
+--    * The syntax would be the same without a monad; only the type of the
+--      parseLine function would be simpler.
 
 
 -- Note:
@@ -136,6 +162,10 @@ import Language.Ding.Token
 --    on end of tokens.
 --    * (One could also have given this parser a non-newline terminated stream
 --      of tokens.)
+--    * End-of-tokens errors do not report the position of the error, which
+--      usually is not a problem, since it is just the end of input.
+--      * However, since we only parse single lines, where each contained
+--        token is annotated with a line number, this would be a problem.
 line :: { Line }
 line : groups '::' groups '\n'          { makeLine $1 $3 }
 
@@ -144,8 +174,8 @@ groups : group '|' groups               { $1 : $3 }
        | group                          { $1 : [] }
 
 -- Note:
---  * In some cases, there is exactly one unit, which does not obey to the
---    rules of a proper unit - the headword is enclosed in <()>.
+--  * In some cases, there is exactly one unit in a group, which does not obey
+--    to the rules of a proper unit - the headword is enclosed in <()>.
 --    * It does however (in practice) obey the rules of a PartialPseudoUnit.
 --      * Use these, to ignore the unit.  (TODO: improve)
 --    * See also: todo/parsing.paren-units
@@ -156,11 +186,11 @@ group : units                           { Group $ reverse $1 }
 
 -- Notes:
 --  * Produces the list of units in reverse order.
---    * This is to ease the application of `adjunctToUnit'.
+--    * This is to ease the application of `addToUnit'.
 --  * Only accepts a non-empty list of units.  (because of the <;> seps)
 units :: { [Unit] }
 units : units ';' unit                  { $3 : $1 }
-      | units ';' pseudoUnit            { map (PSU.adjunctToUnit $3) $1 }
+      | units ';' pseudoUnit            { map (PSU.addToUnit $3) $1 }
       | unit                            { $1 : [] }
 
 
@@ -180,42 +210,64 @@ pseudoUnit : pseudoUnit gramAnnot       { $1 `PSU.plusGramAnnot` $2 }
 -- Notes:
 --  * Any infix annotations are silently dropped (see plusToken).  Prefix
 --    annotations are considered invalid and not accepted by the grammar.
---  * As of now, only grammar annotations are recognized.  All other are
---    silently dropped.
---  * Once special suffix recognition is added, these should be considered
---    normal text when occuring initially.  (Similarly for special prefixes.)
+--    * Parenthesis expressions may occur as prefixes though, they are
+--      recognized in the `unit' rule.
 --  * Initial abbreviations are equated to regular text, iff they are "single",
 --    that is contain no <,> or <;> separated list of abbeviations.
--- TODO: Do not ignore angleExp.
+--  * If prefixed by 'to', ignore the 'to' and mark as verb.
+--    * This only happens if 'to' is immediately followed by something
+--      recognized as regular text (unitText).
+--      * In particular things like 'to (have a) lisp' or
+--        'to (give one's) consent (to)' are not specially treated.
+--        (They are quite infrequent though.)
+--    * Also, allowing () would complicate the parsing.
+--    * PU.fromVerbToken annotates the unit as a verb.  This may be superfluous
+--      if there is an explicit annotation (rare), but such a duplicate would
+--      be resolved during enrichment.
+--  * angleExp ("<...>") is ignored.  (TODO?)
+--    * Semantics unclear.
 partialUnit :: { PartialUnit }
-partialUnit : partialUnit partialUnit1  { $1 `PU.plusToken` $2 }
-            | partialUnit gramAnnot     { $1 `PU.plusGramAnnot` $2 }
+partialUnit : partialUnit gramAnnot     { $1 `PU.plusGramAnnot` $2 }
             | partialUnit usageAnnot    { $1 `PU.plusUsageAnnot` $2 }
             | partialUnit abbrevAnnot   { $1 `PU.plusAbbrevAnnot` $2 }
             | partialUnit inflAnnot     { $1 `PU.plusInflAnnot` $2 }
             | partialUnit parenExp      { $1 `PU.plusSuffix` $2 }
+            | partialUnit angleExp      { $1 {- ignore $2 -} }
             | partialUnit reference     { $1 `PU.plusRef` $2 }
-            | partialUnit partialUnitIgnore   { $1 }
-            | partialUnit1              { PU.fromToken $1 }
+            | partialUnit unitText      { $1 `PU.plusToken` $2 }
+            | partialUnit 'to'          { $1 `PU.plusToken` $2 }
+            | partialUnit unitInterpct  { $1 `PU.plusToken` $2 }
+            | unitText                  { PU.fromToken $1 }
+
+            -- 'to' has lowest precedence (and is right associative), so the
+            -- later rules will be prefered.
+            | 'to'                      { PU.fromToken $1 }
+            | 'to' unitInterpct         { PU.fromToken ($1 <> $2) }
+            | 'to' unitText             { PU.fromVerbToken $2 }
+
+            -- Some units start with an abbreviation (usually without further
+            -- unitText).  In such, treat the abbreviation as plain text.
             | singleAbbrevAnnot         { PU.fromToken $1 }
 
--- Note: As of now, keywords have no special meaning in top-level text.
---       Hence, treat them as simple text.
-partialUnit1 :: { Token }
-partialUnit1 : tok_text                 { $1 }
-             | gtok_anyKW               { $1 }
-             | ','                      { $1 }
+-- Notes:
+--  * As of now, keywords (except for 'to') have no special meaning in
+--    top-level text.  Hence, treat them as simple text.
+--  * Cannot use gtok_anyKW, since it includes 'to'.
+unitText :: { Token }
+unitText : tok_text                 { $1 }
+         | gtok_gram                { $1 }
+         | tok_interrogPron         { $1 }
+
+-- | Interpunctuation in units.
+-- 
+--   Note: "<>" is ignored.
+unitInterpct :: { Token }
+unitInterpct : ','                      { $1 }
              | '+'                      { $1 }
              | '//'                     { $1 }
              | '/'                      { $1 }
              | '</>'                    { $1 }
-
--- TODO: Emtpy the below list.
-partialUnitIgnore :: { () }
-partialUnitIgnore : angleExp            { () }
-                  | '<>'                { () }
-                  | tok_slashSpecial    { () }
-                  | tok_smiley          { () }
+             | '<>'                     { mempty }
 
 
 -------------------------------------------------------------------------------
@@ -230,28 +282,25 @@ gramAnnot1s :: { NonEmpty GrammarInfo }
 gramAnnot1s : gramAnnot1 ';' gramAnnot1s  { $1 <> $3 }
             | gramAnnot1                  { $1 }
 
--- The two rules for CollocCase are necessary to avoid a shift/reduce conflict.
--- The first rule only allows a non-empty list of interrogation pronouns.
--- Note: The usage annotations are dropped for now.  (TODO)
---       It is uncertain whether they can be represented in TEI.
 gramAnnot1 :: { NonEmpty GrammarInfo }
 gramAnnot1 : gramAnnot2s                  { $1 }
-           | interrogProns
-             '+' tok_gramCase
-             usageAnnots              { CollocCase $1 (tokenToCase $3) :| [] }
-           | '+' tok_gramCase
-             usageAnnots              { CollocCase [] (tokenToCase $2) :| [] }
-           | '+' tok_gramPOS
-             usageAnnots              { CollocPOS (tokenToPOS $2)      :| [] }
+           | collocAnnot1 usageAnnots     { Collocate $1 $2 :| [] }
+
+-- The two rules for CollocCase are necessary to avoid a shift/reduce conflict.
+-- The first rule only allows a non-empty list of interrogation pronouns.
+collocAnnot1 :: { Collocate }
+collocAnnot1 : interrogProns
+               '+' tok_gramCase           { CollocCase $1 (tokenToCase $3) }
+             | '+' tok_gramCase           { CollocCase [] (tokenToCase $2) }
+             | '+' tok_gramPOS            { CollocPOS (tokenToPOS $2)      }
 
 -- TODO: Consider to add '/' as alternative separator.
 gramAnnot2s :: { NonEmpty GrammarInfo }
 gramAnnot2s : gramAnnot2 ',' gramAnnot2s  { $1 <| $3 }
             | gramAnnot2                  { $1 :| [] }
 
--- TODO: Do not drop usageAnnots.
 gramAnnot2 :: { GrammarInfo }
-gramAnnot2 : gramLexCat usageAnnots       { GramLexCategory $1 }
+gramAnnot2 : gramLexCat                   { GramLexCategory $1 }
 
 gramLexCat :: { GramLexCategory }
 gramLexCat : gtok_gram                    { tokenToGramLexCat $1 }
@@ -265,9 +314,8 @@ interrogProns : tok_interrogPron ',' interrogProns  { tokenToString $1 : $3 }
 -- Inflected forms
 
 -- Notes:
---  * If there ever happens to appear a conjugated form that matches a grammar
---    keyword, that keyword must become a MultiKW and accepted individually in
---    both cases.  There would be required some work to avoid ambiguity.
+--  * Inflected forms are distinguished from grammar annotations by not the
+--    absence of grammar keywords.
 --  * NonEmpty lists are used here.  (:|) constructs a NonEmpty list from a
 --    single head element and a regular list.  (<|) joins a single element with
 --    a NonEmpty list, just like (:) for normal lists.
@@ -284,11 +332,15 @@ inflAnnot1s : inflAnnot1 ',' inflAnnot1s  { $1 <| $3 }
 inflAnnot1 :: { InflectedForm }
 inflAnnot1 : inflAnnot2 usageAnnots     { InflectedForm (tokenToString $1) $2 }
 
--- Note: most inflected forms consist of a single word.  Not all
---       (e.g., "creeped out").
+-- Notes:
+--  * Most inflected forms consist of a single word.  Not all
+--    (e.g., "creeped out").
+--  * Cannot use gtok_anyKW, as it includes gtok_gramKW.
 inflAnnot2 :: { Token }
 inflAnnot2 : tok_text inflAnnot2        { $1 <> $2 }
            | tok_text                   { $1 }
+           | tok_interrogPron           { $1 }
+           | 'to'                       { $1 }
 
 
 -------------------------------------------------------------------------------
@@ -297,11 +349,15 @@ inflAnnot2 : tok_text inflAnnot2        { $1 <> $2 }
 -- Note: This rule exists purely to provide a prefix for unit.
 singleAbbrevAnnot :: { Token }
 singleAbbrevAnnot : '</' abbrevAnnot1 '/>'  { $2 }
+                  | tok_abbrev              { $1 }
+                  | tok_abbrevPlural        { $1 }
+                  | tok_slashSpecial        { $1 }
 
 abbrevAnnot :: { NonEmpty String }
-abbrevAnnot : tok_abbrevSlash           { tokenToString $1 :| [] }
+abbrevAnnot : '</' abbrevAnnot1s '/>'   { $2 }
+            | tok_abbrev                { tokenToString $1 :| [] }
             | tok_abbrevPlural          { (tokenToString $1 ++ "s") :| [] }
-            | '</' abbrevAnnot1s '/>'   { $2 }
+            | tok_slashSpecial          { tokenToString $1 :| [] }
 
 -- Note: <;> is more frequent.
 abbrevAnnot1s :: { NonEmpty String }
@@ -312,7 +368,7 @@ abbrevAnnot1s : abbrevAnnot1 ';' abbrevAnnot1s  { tokenToString $1 <| $3 }
 -- Consider content a literal (in particular do not drop any inner annotation).
 abbrevAnnot1 :: { Token }
 abbrevAnnot1 : abbrevAnnot2 abbrevAnnot1  { $1 <> $2 }
-              | abbrevAnnot2              { $1 }
+             | abbrevAnnot2               { $1 }
 
 -- Note:
 --  * <()>, <[]> are rare here.
@@ -321,20 +377,22 @@ abbrevAnnot1 : abbrevAnnot2 abbrevAnnot1  { $1 <> $2 }
 --    * Nesting likely does not occur at all, but is considered valid.
 abbrevAnnot2 :: { Token }
 abbrevAnnot2 : tok_text                 { $1 }
-              | gtok_anyKW              { $1 }
-              | '+'                     { $1 }
-              | '/'                     { $1 }
-              | '(' abbrevAnnot2 ')'    { $1 <> $2 <> $3 }
-              | '[' abbrevAnnot2 ']'    { $1 <> $2 <> $3 }
+             | gtok_anyKW               { $1 }
+             | '+'                      { $1 }
+             | '/'                      { $1 }
+             | '(' abbrevAnnot2 ')'     { $1 <> $2 <> $3 }
+             | '[' abbrevAnnot2 ']'     { $1 <> $2 <> $3 }
 
 
 -------------------------------------------------------------------------------
--- expressions enclodsed in parentheses
+-- Expressions enclosed in parentheses
 
 -- Note:
---  * The below rules give (String, Token) for a parenthese expression.
+--  * The below rules give (String, Token) for a parenthesis expression.
 --    The string is the content, the token joins the content with the
 --    parentheses (and retains any spacing).
+--    * The token is required to allow for infix parenthesis expressions to be
+--      merged back with its context.
 
 parenExps :: { [(String, Token)] }
 parenExps : parenExp parenExps          { $1 : $2 }
@@ -357,7 +415,7 @@ parenExp1 : parenExp2                   { $1 }
 --  * Nested <()>-annotations are included literally.
 --    * They are rare though.  (Hence the nested (<>) application is ok.)
 --  * One might consider to include abbreviations literally.  (TODO?)
---    * This would require a abbrevAnnot'-rule, producing a token instead of
+--    * This would require an abbrevAnnot'-rule, producing a token instead of
 --      a list of Strings.
 --      * Alternatively, one might reconstruct an equivalent representation,
 --        based on that list.
@@ -382,6 +440,8 @@ parenExp2 : tok_text                    { $1 }
 -------------------------------------------------------------------------------
 -- Expressions enclosed in angle brackets
 
+-- Note: They are dropped as of now, since their semantics are ambiguous.
+
 angleExp :: { NonEmpty String }
 angleExp : '<' angleExp1s '>'            { $2 }
 
@@ -400,7 +460,7 @@ angleExp1 : angleExp2 angleExp1         { $1 <> $2 }
 --  * There are nested angle-expressions.  It is unclear how to handle them.
 --    Drop for now.  (TODO?)
 --    * They are rare (two occurences).
---  * Only one occurence of <()>.  Dropped for now.  (TODO?)
+--  * Only one occurence of nested <()>.  Dropped for now.  (TODO?)
 angleExp2 :: { Token }
 angleExp2 : tok_text                    { $1 }
           | gtok_anyKW                  { $1 }
@@ -442,7 +502,7 @@ usageAnnot1s : usageAnnot1 ',' usageAnnot1s   { $1 <| $3 }
              | usageAnnot1                    { $1 :| [] }
 
 usageAnnot1 :: { Usage }
-usageAnnot1 : usageAnnot2s              { stringToUsage $ tokenToString $1 }
+usageAnnot1 : usageAnnot2s              { readUsage $ tokenToString $1 }
 
 usageAnnot2s :: { Token }
 usageAnnot2s : usageAnnot2 usageAnnot2s { $1 <> $2 }
@@ -461,19 +521,48 @@ usageAnnot2 : tok_text                  { $1 }
 gtok_anyKW :: { Token }
 gtok_anyKW : gtok_gram                  { $1 }
            | tok_interrogPron           { $1 }
+           | 'to'                       { $1 }
 
 gtok_gram :: { Token }
 gtok_gram : tok_gramPOS                 { $1 }
           | tok_gramGender              { $1 }
           | tok_gramNumber              { $1 }
-          | tok_gramST                  { $1 }
-          | tok_gramPT                  { $1 }
           | tok_gramCase                { $1 }
 
 {
 
 -------------------------------------------------------------------------------
 -- Auxiliary Haskell code
+
+
+-- Note:
+--  * If we wanted to perform the parsing in a monad that both allows for
+--    logging and producing errors, we might use the following.
+
+--data FailWriter w a
+--  = Ok a w
+--  | Failed String
+--
+--instance Monoid w => Functor (FailWriter w) where
+--  fmap f (Ok x w)   = Ok (f x) w
+--  fmap _ (Failed s) = Failed s
+--
+--instance Monoid w => Applicative (FailWriter w) where
+--  pure x = Ok x mempty
+--  (Ok f w) <*> (Ok x w') = Ok (f x) (w <> w')
+--  (Failed s) <*> _ = Failed s
+--  _ <*> (Failed s) = Failed s
+--
+--instance Monoid w => Monad (FailWriter w) where
+--  (Ok x w) >>= f =
+--    case f x of
+--      Failed s -> Failed s
+--      Ok y w'  -> Ok y (w <> w')
+--  (Failed s) >>= _ = Failed s
+--
+--instance Monoid w => MonadFail (FailWriter w) where
+--  fail s = Failed s
+
 
 parseError :: [Token] -> a
 parseError [] = error "Parse error at end of line (missing newline?)."
@@ -484,7 +573,7 @@ parseError ((Token _ (Position line col) _):_) =
 -- Create a line from the left and right side's groups.
 -- This is essentially `Data.List.zipWith', but throws an error when the lists
 -- have different lengths.  (One could also use zipWithExact from the `safe'
--- package, but this would not give a custom error.
+-- package, but this would not give a custom error.)
 makeLine :: [Group] -> [Group] -> Line
 makeLine gs hs = Line $ makeLine' gs hs
  where

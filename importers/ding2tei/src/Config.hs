@@ -1,8 +1,10 @@
 {-
  - Config.hs - configuration of some output variables
  -
- - See also: Language/Ding/Syntax/{Usage,Grammar}.hs
- -           (configuration and classification of usage and grammar annotatios)
+ - See also
+ -  * Language/{Ding,TEI}/{Read,Show}/
+ -  * Language/Ding/AlexScanner.x
+ - on configuration and classification of usage and grammar annotatios.
  -}
 module Config
   ( editor
@@ -20,6 +22,7 @@ module Config
   , gpl3url
   , gpl2url
   , agpl3url
+  , makeVersion
   , Change(..)
   , changes
   ) where
@@ -39,7 +42,7 @@ contributors = [(editor, "2020")]
 -- | Date of last output-affecting change of this program.
 --   Must be given as YYYY-MM-DD.
 publicationDate :: String
-publicationDate = "2020-09-17"
+publicationDate = "2020-10-14"
 
 status :: String
 status = "stable"
@@ -50,7 +53,7 @@ status = "stable"
 --   May also be set to <n>-devel to indicate frequent changes without version
 --   change.
 modVersion :: String
-modVersion = "0.2-devel"
+modVersion = "0.2"
 
 programName :: String
 programName = "ding2tei-haskell"
@@ -80,6 +83,11 @@ agpl3url :: String
 agpl3url = "https://www.gnu.org/licenses/agpl-3.0.html"
 
 
+-- | Combine the Ding version and a modification version.
+makeVersion :: String -> String -> String
+makeVersion dingVer modVer = dingVer ++ "-fd" ++ modVer
+
+
 -- Notes:
 --  * chUsersShort and chUsersFull must be non-empty lists.
 --    * The NonEmpty type is not used to ease manual modification.
@@ -97,13 +105,35 @@ changes :: [Change]
 changes =
   [ Change "1.8.1" "0.1" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-09-11"
       [ "Initial import from Ding (version 1.8.1)."
+      , "Fixed many syntax errors and inconsistencies in the Ding dictionary."
+      , "Most explicit Ding annotations are transferred to TEI."
+      , unwords
+          [ "Several entries per Ding line are given references to one another"
+          , "(@type=\"see\")."
+          ]
+      , unwords
+          [ "Entries with more than one keyword on the source language side"
+          , "are split up into multiple entries."
+          , "These are linked using references of @type=\"syn\"."
+          ]
       ]
-  , Change "1.8.1" "0.2" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-09-17"
+  , Change "1.8.1" "0.2" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-10-14"
       [ unwords
           [ "Identify examples to some entries; add the former to the latter"
           , "at 'entry/sense/cit[@type=\"example\"]' and remove the"
           , "examples from the list of regular entries."
           ]
+      , unwords
+          [ "Add annotations that are only implicitly present in the Ding"
+          , "dictionary, such as: {f}, but no {pl} -> {noun}."
+          ]
+      , unwords
+          [ "Transfer some annotations within Ding entries (e.g., when"
+          , "\"Apfel\" is a masculine noun, we may infer that its translation,"
+          , "\"apple\", is also a noun."
+          ]
+      , "Fixed some TEI syntax, as per comments from Sebastian Humenda."
+      , "Recognize more types of annotations (notes)."
       ]
   ]
 

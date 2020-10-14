@@ -19,6 +19,10 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+
+{-|
+ - Convert the TEI AST to textual TEI XML.
+ -}
 module Language.TEI.ToXML (prettyTEI) where
 
 import Text.XML.Light
@@ -72,7 +76,10 @@ teiToElement tei = unode "TEI"
   srcLang = dictSrcLang tei
   tgtLang = dictTgtLang tei
 
-  -- TODO: nHeadwords should be calculated in the ding2tei conversion
+  -- Note: It seems more reasonable to calculate the number of headwords, which
+  --       is to become part of the TEI header, in the ding2tei translation
+  --       function.  However, as of now, the TEI AST is unable to store that
+  --       number.
   nHeadwords = length entries
    where
     (Body entries) = dictBody tei

@@ -19,13 +19,16 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Convert grammar annotations to TEI XML.
+ -}
 module Language.TEI.ToXML.Grammar (convGrammar) where
 
 
 import Text.XML.Light
 
 import Data.NatLang.Grammar
-import Data.NatLang.GrammarInfo
+import Data.NatLang.Usage (Usage)
 import Language.TEI.Show.Grammar
 
 
@@ -44,8 +47,12 @@ convGrammar gs = Just $ unode "gramGrp" $ concatMap convGrammarInfo gs
 --    in the same form they appear in the Ding.
 convGrammarInfo :: GrammarInfo -> [Element]
 convGrammarInfo (GramLexCategory gram)  = convGramLexCat gram
+convGrammarInfo (Collocate colloc usgs) = pure $ convCollocate colloc usgs
 
-convGrammarInfo (CollocCase iProns cas) = pure $ unode "colloc" $
+-- Note: It seems impossible to represent the present usage annotations
+--       (TODO).
+convCollocate :: Collocate -> [Usage] -> Element
+convCollocate (CollocCase iProns cas) _usgs = unode "colloc" $
   "[" ++ prefix ++ "+ " ++ showCase cas ++ "]"
  where
   prefix =
@@ -53,7 +60,7 @@ convGrammarInfo (CollocCase iProns cas) = pure $ unode "colloc" $
       []     -> ""
       (p:ps) -> p ++ concatMap (", " ++) ps
 
-convGrammarInfo (CollocPOS pos)         = pure $ unode "colloc" $
+convCollocate (CollocPOS pos)         _usgs = unode "colloc" $
   "[+ " ++ showPrimaryPOS pos ++ subType ++ "]"
  where
   subType =
@@ -66,9 +73,8 @@ convGrammarInfo (CollocPOS pos)         = pure $ unode "colloc" $
 convGramLexCat :: GramLexCategory -> [Element]
 convGramLexCat (PartOfSpeech pos) = convPOS pos
 convGramLexCat (Gender gen)       = [unode "gen" (showGender gen)]
-convGramLexCat (Number num)       = [unode "number" (showNumber num)]
-convGramLexCat (SingulareTantum)  = [unode "number" shownSingulareTantum]
-convGramLexCat (PluraleTantum)    = [unode "number" shownPluraleTantum]
+convGramLexCat (Number num)       = unode "number" (showPrimaryNumber num)
+                                  : convNumberSubc num
 convGramLexCat (Case cas)         = [unode "case" (showCase cas)]
 
 convPOS :: PartOfSpeech -> [Element]
@@ -77,6 +83,11 @@ convPOS pos = unode "pos" (showPrimaryPOS pos)
       (Verb vTypes)    -> map (unode "subc" . showVerbType) vTypes
       (Pronoun pTypes) -> map (unode "subc" . showPronounType) pTypes
       _                   -> []
+
+convNumberSubc :: Number -> [Element]
+convNumberSubc (Singular True) = [unode "subc" shownSingulareTantum]
+convNumberSubc (Plural   True) = [unode "subc" shownPluraleTantum]
+convNumberSubc _               = []
 
 
 -- References:

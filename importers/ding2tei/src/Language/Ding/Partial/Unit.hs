@@ -20,9 +20,13 @@
  -}
 
 
+{-|
+ - Intermediate representation and handling of partially parsed units.
+ -}
 module Language.Ding.Partial.Unit
   ( PartialUnit
   , fromToken
+  , fromVerbToken
   , toUnit
   , plusToken
   , plusGramAnnot
@@ -34,14 +38,17 @@ module Language.Ding.Partial.Unit
   ) where
 
 import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NEList
-import Data.Maybe (listToMaybe)
+import qualified Data.List.NonEmpty as NEList (toList)
 
-import Data.NatLang.GrammarInfo
-import Data.NatLang.InflectedForms
-import Data.NatLang.Usage
-import Language.Ding.Syntax
-import Language.Ding.Token
+import Data.NatLang.Grammar
+  ( GrammarInfo(GramLexCategory)
+  , GramLexCategory(PartOfSpeech)
+  , PartOfSpeech(Verb)
+  )
+import Data.NatLang.InflectedForms (InflectedForms)
+import Data.NatLang.Usage (Usage)
+import Language.Ding.Syntax (Unit(..))
+import Language.Ding.Token (Token, tokenToString)
 
 
 -- Notes
@@ -57,34 +64,49 @@ import Language.Ding.Token
 --      list would then later be processed by means equivalent to `plus*'.
 --  * All `plus*' functions are meant to be used in infix-form.
 
--- TODO?: polymorphic data type joining PartialUnit and Unit.
-
 -- | Partial unit that may be expanded with annotations and regular tokens,
 --   and finally converted into a `Language.Ding.Syntax.Unit'.
---   All fields are stored in reverse order.
+--   All fields' contents are stored in reverse order.
 data PartialUnit = PartialUnit
   { headwordToks :: [Token]       -- ^ tokens to later form the headword
   , plainToks :: [Token]          -- ^ tokens to form a potential example
   , gramAnnots :: [NonEmpty GrammarInfo]
   , usageAnnots :: [NonEmpty Usage]
   , abbrevAnnots :: [NonEmpty String]
-  , infls :: [InflectedForms]
+  , mInfl :: Maybe InflectedForms
   , suffixes :: [String]
   , references :: [String]
   }
 
 
 empty :: PartialUnit
-empty = PartialUnit [] [] [] [] [] [] [] []
+empty = PartialUnit [] [] [] [] [] Nothing [] []
 
+-- | Convert a token to a partial unit without any annotation.
 fromToken :: Token -> PartialUnit
 fromToken = (empty `plusToken`)
 
+-- | Like fromToken, but mark as verb.  Meant to be used for units prefixed by
+--   "to".
+fromVerbToken :: Token -> PartialUnit
+fromVerbToken t =
+  fromToken t `plusGramAnnot` pure (GramLexCategory $ PartOfSpeech $ Verb [])
+
+-- | Add a token.
+--   All previous annotations except parenthesis expression are thrown away.
+--   (Due to the presence of the processed token, they are infix
+--   annotations.)
+--   Preceding parenthesis expressions are treated equal to preceding text
+--   tokens, and therefore effectively retained in verbatim.
 plusToken :: PartialUnit -> Token -> PartialUnit
+
+-- Use plainToks also for the headwordToks, because they contain literal
+-- ()-annots.
 plusToken pu t = empty
-  { headwordToks = t : headwordToks pu
-  , plainToks    = t : plainToks pu
+  { headwordToks = toks'
+  , plainToks    = toks'
   }
+ where toks' = t : plainToks pu
 
 plusGramAnnot :: PartialUnit -> NonEmpty GrammarInfo -> PartialUnit
 plusGramAnnot pu as = pu { gramAnnots = as : gramAnnots pu }
@@ -94,13 +116,16 @@ plusUsageAnnot pu as = pu { usageAnnots = as : usageAnnots pu }
 
 -- Note:
 --  * One might consider keeping one of the abbreviations in the example
---    version.
+--    version (i.e., as Token) to allow for abbreviations to be retained
+--    verbatim when infixes of an example unit.
 --    * Further analysis required (TODO).
 plusAbbrevAnnot :: PartialUnit -> NonEmpty String -> PartialUnit
 plusAbbrevAnnot pu as = pu { abbrevAnnots = as : abbrevAnnots pu }
 
+-- | Add an inflection annotation.
+--   If there are added several ones in succession, the last one is prefered.
 plusInflAnnot :: PartialUnit -> InflectedForms -> PartialUnit
-plusInflAnnot pu infl = pu { infls = infl : infls pu }
+plusInflAnnot pu infl = pu { mInfl = Just infl }
 
 -- | Takes both the string representing the suffix, without potential
 --   enclosing parentheses, and a token that includes potential parentheses.
@@ -115,7 +140,8 @@ plusRef pu ref = pu { references = ref : references pu }
 
 
 -- | From a list of prefixes and a partial unit, construct a unit.
---   Takes a list of (String, Token), with the same meaning as in plusSuffix.
+--   Takes a list of (`String', `Token') prefixes that stem from parenthesis
+--   expressions, where the type has the same significance as in `plusSuffix'.
 toUnit :: [(String, Token)] -> PartialUnit -> Unit
 toUnit prefs pu = Unit
   { unitHeadword   = tokenToString $ mconcat $ reverse $ headwordToks pu
@@ -126,7 +152,7 @@ toUnit prefs pu = Unit
   , unitPrefixes   = prefStrings
   , unitSuffixes   = reverse $ suffixes pu
   , unitAbbrevs    = concat $ reverse $ map NEList.toList $ abbrevAnnots pu
-  , unitInflected  = listToMaybe $ infls pu    -- extract the last one, if any
+  , unitInflected  = mInfl pu
   , unitReferences = reverse $ references pu
   , unitExamples   = []   -- populated during enrichment
   }

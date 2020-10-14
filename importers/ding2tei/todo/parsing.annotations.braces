@@ -1,0 +1,20 @@
+Differentiation (grammar vs. inflected forms)
+ ? Use the fact that inflected forms appear only on the English side.
+ ? Issue a warning on partial grammar keyword matches.
+   . e.g. "{prp; +Genn}"
+ ? Use the fact that conjugated forms only appear for verbs.
+   . Information usually not trivial to obtain - verb annotation is usually
+     only on the german side.
+
+Allow for unknown content, e.g. {Quantifikator}; log that though.
+ - Potentially require a command line flag.
+
+Special cases:
+ . "{adj, usually not used before a noun}"
+ . "{prp; + Fall des jeweiligen Bezugsworts}"
+ . "{+Gen./bei}", "{prp; +Dat. / von jdm./etw.}"
+ . "{idiom}"
+ . "{Quantifikator}"
+   ? Equivalent to {num}?
+ . "{prp; +Gen.; +Dat. [ugs.]}"  -- <[]>
+   ? Cannot be represented in TEI?

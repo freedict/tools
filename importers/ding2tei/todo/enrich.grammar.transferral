@@ -1,0 +1,35 @@
+Grammar annotation transferral
+==============================
+
+See doc/enrich.grammar on the current state.
+
+
+Transferral between groups in a line:
+-------------------------------------
+
+ * {n,f,m,pl,no pl}: no
+   - ex.: "ökologische/biologische Landwirtschaft {f}; ökologisch wirtschaftende Betriebe [agr.]"
+ * {pron}
+   . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
+   * Seems difficult.
+ * ...
+
+
+Consideratations:
+-----------------
+
+ * Move some annotations to the level of an Entry or a Group.
+ ? Only transfer annotations to the other side that match the whole group?
+ ? Only transfer annotations where the other group is composed of only one
+   unit ?
+   - Alternatively: some restrictions
+     - only alphabetic chars ?
+     - only single word (depending on the annotation ?) ?
+
+
+See also
+--------
+
+ * doc/enrich.grammar
+ * todo/parsing.scope-of-annotations
+ * doc/ding.annotation.*

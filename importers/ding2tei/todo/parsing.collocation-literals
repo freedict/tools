@@ -1,0 +1,58 @@
+Collocation literals
+====================
+
+Many units contain certain keywords such as "etw.", "sth.".
+The should be considered collocations and encoded in TEI as <colloc> elements
+(not <usg type="colloc">).
+
+They may occur anywhere in units, however mostly as prefixes and suffixes.
+When occurring as infixes, the representation in TEI is questionable.
+
+Notes:
+ * Only occuring as suffixes.
+ * "to", "in" also are modifiers, but need to be matched separately.
+
+Syntax analysis:
+ * utils/results/words.*
+ * utils/results/wordspairs.*
+ * utils/results/keywordprefs.*
+ * utils/results/keywordsufs.*
+ * utils/results/keywordswithprefs.*
+
+
+Classification:
+---------------
+
+Notes:
+ * While the below is expressed in Alex syntax, the identification of such
+   collocations can not effectively happen in Alex, because
+   * some potential collocations (e.g., "for sth.") may also occur as
+     individual unit (only "sth." would be the collocation),
+   * the collocations's constituents can be combined in many ways, including
+     with slashes, whose scopes can not be generally determined.
+ * This classification is incomplete.
+   * The most frequent prefixes and suffixes that are considered collocations
+     of the regarded type (>= 100 occs) should be included though.
+
+@en_kw = (sth|sb|so)\.|oneself
+@en_lmod = of|for|on|with|at|by|from|off|as|into|over|about|through|under|against|without|around|after|before|than|past
+
+@kw_special_in = "in"
+
+-- Note: "jmd." occurs both in nominative and accusative case.
+@de_kw_nom = (etw|jm?d)\.
+@de_kw_gen = (etw|jm?ds)\.
+@de_kw_acc = (etw|jm?dn|jmd)\.
+@de_kw_dat = (etw|jm?dm)\.
+
+-- TODO: "ohne" - really?
+-- Note: "vor +acc" usually (always?) requires another object (in acc.).
+@de_lmod_nom = als|wie
+@de_lmod_gen = wegen
+@de_lmod_acc = an|auf|für|über|vor|um|durch|unter|ohne|gegen
+@de_lmod_dat = mit|an|auf|von|zu|aus|nach|bei|über|vor|unter|"bis zu"|gleich
+
+@de_kw_special_sich = sich (\ + selbst)?
+@de_kw_special_zwischen = zwischen
+
+@de_exp_dat_zwischen = zwischen \ + @kw_de_dat \ + und \ + @kw_de_dat

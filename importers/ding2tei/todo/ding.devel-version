@@ -1,0 +1,10 @@
+Not only support version 1.8.1, but also "devel"
+ - split preprocess/*.sed files#
+
+Note that "devel" is ever-changing, there is no (known) way of accessing old
+"devel" versions.
+
+Some words have disappeared in the devel version of the Ding
+- ex.: "Aggregationsreagenz" (and surrounding)
+- The web version of the Ding seems to be based on a third version of the Ding
+  - has "Aggregationsreagens" (final "s", not "z")

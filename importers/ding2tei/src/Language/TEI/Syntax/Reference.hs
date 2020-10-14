@@ -19,6 +19,10 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+
+{-|
+ - TEI references, corresponding to the `xr' and `ref' XML tags.
+ -}
 module Language.TEI.Syntax.Reference
   ( Ident(..)
   , Reference(..)
@@ -26,10 +30,13 @@ module Language.TEI.Syntax.Reference
   ) where
 
 
+-- | An identifier representing `HW.n' where `HW' is a headword and `n'
+--   a distinguishing number.
 data Ident = Ident String Int
  deriving (Show, Eq, Ord)
 
 
+-- | A reference of a particular type; corresponds to `xr/ref' in TEI XML.
 data Reference
   = Reference
       RefType

@@ -19,7 +19,14 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Parse the Ding dictionary from a list of tokens as identified by
+ - `Language.Ding.AlexScanner'.  The header is parsed manually, the body by
+ - a `Happy' generated module.
+ -}
 module Language.Ding.Parser (parse) where
+
+import Control.Monad.Writer (runWriter)
 
 import Data.NatLang.Dictionary (Dictionary(Dictionary), Body(Body))
 import Data.NatLang.Language (Language(German, English))
@@ -37,15 +44,15 @@ parse ts =
         (parseHeader headerLines)
         German
         English
-        (Body $ parseBody bodyToks)
+        (Body $ fst $ parseBody bodyToks)
 
 
 -- | Parse a list of `Line's.  Errors, if there is none.
 --   (The FreeDict XML schema requires at least one entry and no such can be
 --   generated from nothing.)
-parseBody :: [Token] -> [Line]
+parseBody :: [Token] -> ([Line], [String])
 parseBody [] = error "Input contains no post-header data."
-parseBody ts = map parseLine $ tokLines ts
+parseBody ts = runWriter $ mapM parseLine $ tokLines ts
 
 
 -- | Separate the initial lines belonging to the header from the body lines.

@@ -19,6 +19,9 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+{-|
+ - Usage information, as present in both the Ding dictionary and TEI.
+ -}
 module Data.NatLang.Usage
   ( Usage(..)
   , UsageType(..)
@@ -29,18 +32,21 @@ module Data.NatLang.Usage
 --  * In TEI, usages are represented in <usg> tags.
 --  * See the TEI doc on <usg>.
 --    * https://www.tei-c.org/release/doc/tei-p5-doc/en/html/DI.html#DITPUS
---  * See also the TEI Lex-0 documentation on <usg>-
+--  * See also the TEI Lex-0 documentation on <usg>.
 --    * https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html#index.xml-body.1_div.7_div.2
 --  * See also the Wikipedia on Varieties and Registers (contains a list).
 --    * https://en.wikipedia.org/wiki/Variety_(linguistics)
 --    * https://en.wikipedia.org/wiki/Register_(sociolinguistics)
 
+-- | Usage information, bearing a particular type.
 data Usage = Usage UsageType String
  deriving (Show, Eq, Ord)
 
 -- Maps directly to TEI recommended \@type values for <usg>.
---  - https://www.tei-c.org/release/doc/tei-p5-doc/en/html/DI.html#DITPUS
---  - Some types omitted, since they are not used.
+-- | Usage types.
+--   These map directly to the TEI Guidelines' recommended \@type value for
+--   <usg>.  Some unused types are omitted.
+--   See: <https://www.tei-c.org/release/doc/tei-p5-doc/en/html/DI.html#DITPUS>
 data UsageType
   = Regional
   | Time
@@ -50,6 +56,7 @@ data UsageType
   | Preference
   | Acceptability   -- likely unused; consider to remove
   | Language        -- @type="lang" - do not confound with @xml:lang !
+  | Colloc
   | Hint
  deriving (Eq, Ord)
 
@@ -64,6 +71,7 @@ instance Show UsageType where
   show Preference    = "plev"
   show Acceptability = "acc"
   show Language      = "lang"
+  show Colloc        = "colloc"
   show Hint          = "hint"
 
 

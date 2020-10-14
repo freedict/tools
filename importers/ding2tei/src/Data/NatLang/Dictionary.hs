@@ -19,6 +19,10 @@
  - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
  -}
 
+
+{-|
+ - General dictionary AST.
+ -}
 module Data.NatLang.Dictionary
   ( Dictionary(..)
   , Body(..)
@@ -27,17 +31,17 @@ module Data.NatLang.Dictionary
 import Data.NatLang.Language (Language)
 
 -- | A polymorphic dictionary type, parametrised over the header type and the
---   type of entries/lines.
-data Dictionary header entry = Dictionary
+--   type of elements (entries/lines) contained therin.
+data Dictionary header element = Dictionary
   { dictHeader  :: header
   , dictSrcLang :: Language
   , dictTgtLang :: Language
-  , dictBody    :: Body entry
+  , dictBody    :: Body element
   }
  deriving Show
 
--- | The body of a dictionary, composed of a list of entries/lines.
-newtype Body entry = Body [entry]
+-- | The body of a dictionary, composed of a list of elements (entries/lines).
+newtype Body element = Body [element]
  deriving Show
 
 

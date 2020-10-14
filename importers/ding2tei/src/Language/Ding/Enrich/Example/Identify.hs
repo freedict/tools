@@ -44,6 +44,9 @@ isPhrase = (>=3) . length . words
 -- | Identify unit strings that contain interpunctuation (including quote
 --   signs)
 containsSpecial :: String -> Bool
+
+-- TODO?: This also catches '/' and '-'.
+--  * The latter is likely worse (ex.: "A-Dur")
 containsSpecial = any isPunctuation
 
 -- | Decide whether a potential example should be considered example of a

@@ -2,8 +2,11 @@ Classification of brace (<{}>) annotations
 ==========================================
 
  * Grammar
+   . Mostly on the German side.
+   . Refer to units
+     ? Or a prefix of units in a group (see todo/parsing.scope-of-annotations)
    * Gender: {n} {f} {m}
-     . implies singular, noun
+     . implies singular (unless {pl}), noun
    * Multiplicity: {n,f,m,sing} {pl} {no pl} {no sing}
      . {sing} is rare
        . Does not imply noun.
@@ -18,6 +21,8 @@ Classification of brace (<{}>) annotations
          . Ex.: "diese; dieser; dieses {pron} | diese {pl}"
          . Ex.: "Wir freuen uns über euer/Ihr {pl} zahlreiches Erscheinen."
          . Ex.: "that; those {pl}"
+         * One could use a heuristic (such as capitalization for german words).
+           * Likely flawed; cases rare anyways.
      * {no pl}
        . implies singular, noun
      * {no sing}
@@ -36,8 +41,33 @@ Classification of brace (<{}>) annotations
        . Counterex: "beide {pron} {num}"
    * {Quantifikator}
      . Occurs only once.
-     ? Equivalent to {num}?  (TODO)
    * ...
+
+   * Separators
+     . {prp; +Dat.; +Gen.; +Akk.} - always separeted by <;>.
+       . Often {prp; +(Dat|Gen|Akk).}.
+       . {wo?, wann?, wohin?, bis wann? +(Akk|Dat|Akk).}
+     . {vt, vi} - <,>, <;>, </>.
+       . Currently transformed in preprocessor to <,>.
+     . {m,n,f,pl} - <,>
+     . {adj} - separated from textual info by <,> once.
+     . all others: only occuring alone.
+
+
+ * Inflected forms
+   . Exclusively on the English side.
+   . imply verb
+   . Ex.: "to be {was, were; been}"
+   . Form: "{simple_past; past_participle}"
+   . Both simple_past and past_participle contain a comma separated list.
+     . each single (comma-separated) form can be annotated with <[]> and/or
+       <()> annotations.
+
+ * Differentiation
+   . Keyword <;> does not suffice - ex.: "{prp; +Gen.}".
+   - Identify grammar keywords and differentiate by these.
+   - If the whole brace expression can be parsed as a grammar annotation, it
+     very likely is one, otherwise assume conjugated forms.
 
 
 Specialties
@@ -53,3 +83,5 @@ See also
 
  * tools/results/braceexps.*
    . Full list of all brace expressions.
+ * todo/enrich.grammar.inferral
+ * todo/parsing.annotations.braces

@@ -1,4 +1,14 @@
-Consider to remove `to` preceding verbs.
+The `to' prefix should be removed and the annotated unit considered a verb.
+
+This is done, however some corner cases are not caught.  Also, the
+implementation is no very elegant.
+
+Room for improvement.
+
+See src/Language/Ding/AlexScanner.hs
+
+Likely, PartialUnit should be amended.
+
 
 There was a debate on the FreeDict ML around the necessity of words like such.
  - assumed first half of 2020

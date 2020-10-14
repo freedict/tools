@@ -2,7 +2,10 @@ It would be nice to identify phrases or other non-trivial expression, such that
 they may be considered examples for associated keywords, and not keywords
 themselves.
 
-? Test for supsequence match (should be delimited by whitespace or similar).
+NOTE: This has been implemented, although there remains room for improvement.
+See Language/Ding/Enrich/Example*
+
+? Test for subsequence match (should be delimited by whitespace or similar).
   * Potential counterexamples:
     . "etw. unterlassen {vt} [adm.] | etw. zu unterlassen haben [jur.]"
     . "Adel" ~ "niederer Adel"
@@ -46,3 +49,8 @@ Some examples:
    * "accused" ~ "the accused"
      * Is that an example?
      ? Be conservative in such cases?
+ > Abenddämmerung {f}; Niedergang {m}; Ausklang {m} | Lebensabend {m} :: sere and yellow leaf [fig.] | the sere and yellow leaf (of life/age) [fig.]
+   * latter is to be considered an example, even though only slightly longer
+ > echte Aale {pl}; Flussaale {pl}; Süßwasseraale {pl} (Anguilla) (zoologische Gattung) | Aal grün; grüner Aal [cook.] | Aal blau; blauer Aal [cook.] | Aal in Aspik; Aal in Gelee [cook.] :: freshwater eels; anguilla (zoological genus) | Boiled Eel served with Parsely Sauce | Eel au bleu; Eel steamed and served with Butter | Jellied Eel
+ > Abstand {m}; Zwischenraum {m} (zwischen) | Abstände {pl}; Zwischenräume {pl} | in 25 Meter Abstand | im Abstand von 5 Metern | lichter Abstand | den gebührenden Abstand halten | Abstand halten! | Ich folgte ihm mit einigem Abstand.; Ich folgte ihm in einiger Entfernung. :: distance (between) | distances | at a distance of 25 metres | 5 metres apart | clear distance | to keep the proper distance | Keep a distance! | I followed him at a distance.
+   * two synonymous phrases, only on has an infix

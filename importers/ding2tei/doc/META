@@ -38,6 +38,12 @@ Documentation may be found in:
        documentation by adressing the more abstract issues.
      * Its files should be well structured, as desribed later.
      * It should contain only few questions and TODO annotations.
+     * doc/partial/
+       * Less well structured or rather incomplete documentation.
+   * doc/examples/
+     * Small (Ding) examples.
+   * doc/thesis.pdf
+     * Bachelor's thesis explicating this program.
    * todo/
      * Contains documentation on steps that remain to be taken and problems
        that remain to be solved.  It does in particular allow for the
@@ -45,14 +51,18 @@ Documentation may be found in:
      * A file's structure requires less strictness to allow for the likely
        frequent additions, changes and restructuring.
      * Files in todo/ should end up in doc/ when all is done.
-       * If what was done, seems unworthy of documentation, it may be moved to
-         todo/done/ or the bin.
+       * If instead, it was decided not to pursue something further, either
+         should the reasons be documented, or else the corresponding file in
+         todo/ moved to todo/old/.
        * It may be a good idea to split off parts of a todo file into a file
          under doc/.
+       * todo/old/
+         * No-more-todo, not considered worthy of conversion to proper
+           documentation, but nonetheless not to be binned.
 
 
-Syntax & Semantic
------------------
+Syntax & Semantics
+------------------
 
  * Applying to all documentation:
    * Things should be usually specified in hierarchical lists, like in this

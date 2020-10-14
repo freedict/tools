@@ -30,9 +30,9 @@ module Language.Ding.Enrich.Example.Augment (augmentEntriesWith) where
 import Control.Monad (liftM)
 import Control.Monad.Trans.Writer (Writer, writer, runWriter)
 
+import Data.NatLang.Example (Example(..))
 import Language.Ding.Enrich.Example.Identify (isExampleOf)
 import Language.Ding.Syntax (Entry(..), Group(..), Unit(..))
-import Language.Common.Syntax (Example(..))
 
 
 -- | Add the potential example `pex', together with its translations, to
@@ -74,9 +74,7 @@ returnUnchanged a = writer (a, Changed False)
 -- | Augment entries with the provided example, wherever it matches.
 --   If any change happens, this is recorded in the `ChangeWriter' result.
 updateEntries :: Unit -> [Unit] -> [Entry] -> ChangeWriter [Entry]
-updateEntries _   _        []     = returnUnchanged []
-updateEntries pex pexTrans (e:es) =
-  (:) <$> updateEntry pex pexTrans e <*> updateEntries pex pexTrans es
+updateEntries pex pexTrans = mapM $ updateEntry pex pexTrans
 
 updateEntry :: Unit -> [Unit] -> Entry -> ChangeWriter Entry
 updateEntry pex pexTrans (Entry g h) = do
@@ -87,9 +85,7 @@ updateGroup :: Unit -> [Unit] -> Group -> ChangeWriter Group
 updateGroup pex pexTrans (Group us) = liftM Group $ updateUnits pex pexTrans us
 
 updateUnits :: Unit -> [Unit] -> [Unit] -> ChangeWriter [Unit]
-updateUnits _   _        []     = returnUnchanged []
-updateUnits pex pexTrans (u:us) =
-  (:) <$> (updateUnit pex pexTrans u) <*> (updateUnits pex pexTrans us)
+updateUnits pex pexTrans = mapM $ updateUnit pex pexTrans
 
 -- Note that examples are appended, using (++), to keep the order of the
 -- examples.  This inefficient for large lists.  The lists are expected to be

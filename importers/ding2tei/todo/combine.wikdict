@@ -1,0 +1,9 @@
+Piotr Bański suggested [1] to combine certain parts of the WikDict data
+with that of the Ding.
+
+Q: Should inflected forms from the Ding be retained?
+ - Likely yes.
+   - Presumably, not all words are in the Wiktionary (with inflected forms)
+
+References:
+ [1] FreeDict ML (2020-05-09)

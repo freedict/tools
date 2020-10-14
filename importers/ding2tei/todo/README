@@ -6,8 +6,16 @@ Todo files, grouping several related tasks within.
 The idea is for some of them to wander into doc/, once the respective things
 are done.
 
+Some TODO are also to be found in the FreeDict Wiki [0].
+
 
 Syntax
 ------
 
 See: doc/META
+
+
+References
+----------
+
+ [0] https://github.com/freedict/fd-dictionaries/wiki/discussion-TEI

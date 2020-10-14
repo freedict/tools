@@ -4,6 +4,10 @@ Options (that are valid FreeDict TEI):
  * entry/sense
  * entry/sense/sense
 
+All known information collected in the FreeDict Wiki (11 - Grouping of
+homographs):
+ <https://github.com/freedict/fd-dictionaries/wiki/discussion-TEI>
+
 See also:
  * Language/TEI/Syntax/Body.hs
  * https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html#nested-entries-vs-multiple-senses

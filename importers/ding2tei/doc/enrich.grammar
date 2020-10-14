@@ -1,0 +1,50 @@
+Grammar enrichment
+==================
+
+The German side is generally richer annotated.  Similarly, individual units in
+a group may be richer annotated.
+
+Many of such annotations may be transferred.
+
+Also, from some annotations, we may infer others--applying to the same group.
+
+
+Inferral:
+---------
+
+See doc/ding.annotation.brace
+
+
+Transferral:
+------------
+
+Transfer annotations to units within the same entry, regardless of the side,
+according to the following rules.  Note that they are specific to the language
+pair (German, English)--and the concrete dictionary.
+
+ * Grammar annotations
+   * {v*}
+     - Drop transitivity information ("{vi}"/"{vt}").
+     - Drop reflexivity ("{vr}") (debatable).
+   * {n,f,m}
+     * Only transform implicit information, as found during inferral.
+   * {sing}, {pl}
+     - Do not transfer.
+     . Counterexample: "Schere" ~ "scissors" (plurale tantum)
+   * part of speech (excl {v*})
+     - Transfer.
+   * All else: Drop.
+
+ * Inflected forms
+   - Do not transfer.
+   - Inferral should provide `verb' though---this should be transferred.
+
+ * Other (incl. usages)
+   - Do not transfer.
+
+
+See also
+--------
+
+ * todo/parsing.scope-of-annotations
+ * doc/ding.annotation.*

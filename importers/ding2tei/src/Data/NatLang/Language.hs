@@ -20,6 +20,10 @@
  -}
 
 
+{-|
+ - Natural language data types.
+ - Only English and German for now, the main languages of the Ding dictionary.
+ -}
 module Data.NatLang.Language
   ( Language(..)
   , showCode

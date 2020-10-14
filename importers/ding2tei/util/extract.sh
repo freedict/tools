@@ -24,6 +24,7 @@ dingfile=../dingsrc/de-en.txt.preprocessed
 types=(
 	{brace,bracket,paren,dot,switch}exps nonalpha words wordpairs
 	parenprefs{1,2}
+	keyword{prefs,sufs} keywordswithprefs
 	)
 
 dir="$(dirname "$(realpath "$0")")"

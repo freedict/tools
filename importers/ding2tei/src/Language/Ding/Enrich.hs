@@ -20,7 +20,7 @@
  -}
 
 {-|
- - Enrich the Ding AST with several information.
+ - Enrich the Ding AST with various information.
  - This partially starts a translation towards TEI.
  -}
 module Language.Ding.Enrich
@@ -29,16 +29,18 @@ module Language.Ding.Enrich
   ) where
 
 import Language.Ding.Enrich.Example (inferExamples)
-import Language.Ding.Syntax (Ding, )
+import Language.Ding.Enrich.Grammar (enrichGrammar)
+import Language.Ding.Syntax (Ding)
 import Data.NatLang.Dictionary (Dictionary(..), Body(..))
 
 -- | Enrich the Ding AST in a way that does not depend on the order of
 --   languages.
 --   That is, `enrichUndirected . inverse = inverse . enrichUndirected'.
 enrichUndirected :: Ding -> Ding
-enrichUndirected = id
+enrichUndirected (Dictionary header srcLang tgtLang (Body ls))
+  = Dictionary header srcLang tgtLang $ Body $ map enrichGrammar ls
 
--- | Enricht the Ding AST considering it a directed dictionary, with a source
+-- | Enrich the Ding AST considering it a directed dictionary, with a source
 --   and target language.
 --   This function affects elements in the source and target language
 --   differently.
