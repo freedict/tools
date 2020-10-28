@@ -42,7 +42,7 @@ contributors = [(editor, "2020")]
 -- | Date of last output-affecting change of this program.
 --   Must be given as YYYY-MM-DD.
 publicationDate :: String
-publicationDate = "2020-10-14"
+publicationDate = "2020-10-28"
 
 status :: String
 status = "stable"
@@ -53,7 +53,7 @@ status = "stable"
 --   May also be set to <n>-devel to indicate frequent changes without version
 --   change.
 modVersion :: String
-modVersion = "0.2"
+modVersion = "0.2.1"
 
 programName :: String
 programName = "ding2tei-haskell"
@@ -134,6 +134,9 @@ changes =
           ]
       , "Fixed some TEI syntax, as per comments from Sebastian Humenda."
       , "Recognize more types of annotations (notes)."
+      ]
+  , Change "1.8.1" "0.2.1" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-10-28"
+      [ "Mark units with annotated inflected forms as verbs."
       ]
   ]
 

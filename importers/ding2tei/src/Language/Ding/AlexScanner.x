@@ -222,8 +222,7 @@ tokens :-
   -- Angle brackets are special in that they also may signify less- resp.
   -- greater-than.  Fortunately, they are, when brackets, always close to the
   -- enclosed object.  Treat similar to left and right slashes.
-  -- Important: This rule must be above the generic \<,\>-encompassing rule
-  --            ($verySpecialChar).
+  -- Important: This rule must be above the generic \< and \> rule(s).
   $slashLeftFree ^ [\< \>] / $slashRightFree  { regularToken Text }
 
   \<                                          { regularToken $ const OAngle }

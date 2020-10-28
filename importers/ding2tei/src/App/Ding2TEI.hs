@@ -28,7 +28,7 @@ import Control.Monad (liftM)
 import Control.Monad.Trans.State (State, state, evalState)
 
 -- When laziness is not required, Data.Map.Strict is to be preferred over
--- the default Data.Map.Lazy
+-- the default Data.Map.Lazy.
 --  - See: <https://hackage.haskell.org/package/containers-0.6.2.1/docs/Data-Map-Strict.html>
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)

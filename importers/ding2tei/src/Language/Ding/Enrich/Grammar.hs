@@ -20,11 +20,14 @@
  -}
 
 {-|
- - Enrich a line's grammar annotations.
+ - Enrich a line's grammar annotations and infer such from the presence of
+ - inflected forms.
  -
- - This includes inferral and transferral, see
+ - This includes inferral from and transferral of grammar annotations, see
  - `Language.Ding.Enrich.Grammar.Infer' and
- - `Language.Ding.Enrich.Grammar.Transfer', respectively.
+ - `Language.Ding.Enrich.Grammar.Transfer', respectively,
+ - and inferral of grammar information (POS: verb) from the presence of
+ - inflected forms, see `Language.Ding.Enrich.Grammar.InflectedForms`.
  -
  - Note: This module works on lines.  It could equally well work on entries,
  - as `Language.Ding.Enrich.Grammar.Transfer' does.  This is purely done to
@@ -34,6 +37,7 @@ module Language.Ding.Enrich.Grammar (enrichGrammar) where
 
 import Data.NatLang.Grammar (GrammarInfo)
 import Language.Ding.Syntax
+import Language.Ding.Enrich.Grammar.InflectedForms (enrichFromInflectedForms)
 import Language.Ding.Enrich.Grammar.Infer
   ( expand
   , joinVerbAnnots
@@ -44,13 +48,19 @@ import Language.Ding.Enrich.Grammar.Transfer (transfer)
 
 -- Notes:
 --  * The order of enrichment steps is deliberately chosen.
---    * Do inferral (expand) first, to allow e.g. `POS Noun' as derived from
---      `SingulareTantum' to be transfered.
+--    * First, identify verbs from the presence of inflected forms; the
+--      inflected forms constituting the input of this step do not change
+--      during the whole grammar enrichment process.
+--    * Do inferral (expand) next and hence before the remainder, to allow
+--      e.g. `POS Noun' as derived from `SingulareTantum' to be transfered.
 --    * Do join*Annots last, to account for any new duplicates.
 --  * All functions operate on GramLexCategory, the rest of GrammarInfo
 --    (Collocate) is of no importance.
 --    * It might be better to separate GramLexCategory and Collocate into
 --      two distinct lists in the ASTs (TODO?).
+-- * enrichFromInflectedForms only needs to apply to the english side.
+--   * It is, however, applied to both sides -- for reasons of simplicity.
+--     * The side's languages are unknown here.
 --  ? TODO?: Remove duplicates from the initial list of annotations on a unit?
 --  ? TODO?: Testing: Quickcheck.
 
@@ -62,16 +72,23 @@ enrichGrammar (Line es) = Line $ map enrichEntry es
 enrichEntry :: Entry -> Entry
 enrichEntry = modEntryGrammar (joinVerbAnnots . joinPronounAnnots)
             . transfer
-            . modEntryGrammar expand
+            . modEntryUnit
+                ( modUnitGrammar expand
+                . enrichFromInflectedForms
+                )
 
+
+-- | Modify the units in an entry.
+modEntryUnit :: (Unit -> Unit) -> Entry -> Entry
+modEntryUnit f (Entry g h) =
+  Entry (modGroupUnit f g) (modGroupUnit f h)
+
+modGroupUnit :: (Unit -> Unit) -> Group -> Group
+modGroupUnit f (Group us) = Group $ map f us
 
 -- | Modify the grammar annotations of all units in an entry.
 modEntryGrammar :: ([GrammarInfo] -> [GrammarInfo]) -> Entry -> Entry
-modEntryGrammar f (Entry g h) =
-  Entry (modGroupGrammar f g) (modGroupGrammar f h)
-
-modGroupGrammar :: ([GrammarInfo] -> [GrammarInfo]) -> Group -> Group
-modGroupGrammar f (Group us) = Group $ map (modUnitGrammar f) us
+modEntryGrammar f e = modEntryUnit (modUnitGrammar f) e
 
 modUnitGrammar :: ([GrammarInfo] -> [GrammarInfo]) -> Unit -> Unit
 modUnitGrammar f u = u { unitGrammar = f $ unitGrammar u }
