@@ -1,316 +1,281 @@
-#!/usr/bin/perl
-#vim: set expandtab sts=2 ts=2 sw=2 ft=80:
-# This script requires the following:
-# Dependencies: libxml, libxslt, and /usr/share/xml/iso-codes/iso_639.xml
-# from iso-codecs
+#!/usr/bin/env python3
+# pylint: disable=global-statement
+"""Restrictions:
 
-use v5.10;
-use warnings;
-use strict;
-use utf8;
-use open OUT => ':locale';
-use Getopt::Long;
-use XML::LibXML;
-use XML::LibXSLT;
-use XML::LibXML::XPathContext;
-# an alternative could be: https://metacpan.org/pod/C::DynaLib
-use IPC::Open2;
+-   Escaping within elements could be "lost" since the parser considers &#39;
+    and other characters not to be worth escaping.
+-   Name spacing is ignored.
+ToDo: dependencies (iso-8859-1)
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import xml.sax as sax
 
-my $verbose = 0;
-my $help = 0;
-my $infile;
-my $outfile;
-my $inlang;
-my $supports_lang;
-my $dryrun = 0;
-my $espeak_path;
-my $written_words_limit = -1;# unlimited
-
-sub iso639_2T_to_1
-{
-  my $code_2T = shift;
-  my $isofile = '/usr/share/xml/iso-codes/iso_639.xml';
-  die "Missing $isofile (In Debian install package iso-codes)!" unless -r $isofile;
-  my $isodoc = XML::LibXML->load_xml(location => $isofile);
-  my $xpc = XML::LibXML::XPathContext->new($isodoc);
-  my $expr = '/iso_639_entries/iso_639_entry/@iso_639_1_code[ ../@iso_639_2T_code=\'' . $code_2T . '\' ]';
-  say "Evaluating $expr..." if $verbose>1;
-  my $code_1 = $xpc->findvalue($expr);
-  say "Translated '$code_2T' to '$code_1'" if $verbose;
-  return $code_1;
+ISO_639_TABLE = "/usr/share/iso-codes/json/iso_639-3.json"
+CHARACTER_REPLACEMENTS = {
+    '"',
+    "(",
+    ")",
+    ",",
+    "...",
+    ".",
+    ":",
+    ";",
+    "!",
+    "?",
+    "-",
+    "…",
+    "'",
+    "[",
+    "´",
+    "&",
+    "°",
+    "$",
+    "]",
+    "®",
+    "-",
+    "̩",
+    "£",
+    "%",
+    "\\",
+    "§",
+    "­",
+    "/",
+    "+",
+    "‘",
+    "̃",
+    "²",
+    "³",
 }
+DEBUG = None
 
-sub read_espeak_voices {
-  my $F;
-  open($F, "$espeak_path --voices|");
-  die "unable to execute espeak $!" unless defined $F;
-  my %voices;
-  while (<$F>) {
-    my $line = $_;
-    $line =~ s/^\s*[0-9]*\s*([a-z]+)\s.*$/$1/g;
-    $line =~ s/\s+$//;
-    # add to hash if a match occured
-    if (length($line) >= 3) { # no match for ISO 2 "xx" code, try "xx-yy"
-      $line =~ s/^\s*[0-9]*\s*([a-z]+)-[a-z]+\s.*$/$1/g;
-      $line =~ s/\s+$//;
-    }
-    $voices{$line} = 1 if length($line) <= 3;
-  }
-  return %voices;
-}
+# pylint: disable=too-few-public-methods
+class Orth:
+    """A representation of a <orth> element."""
 
-sub language_exists {
-  my $language = shift;
-  my %espeak_langs = read_espeak_voices();
-  if(exists($espeak_langs{$language})) {
-    return 1;
-  }
-  $inlang = iso639_2T_to_1($language);
-  if(!defined($inlang) || $inlang eq '' || !exists($espeak_langs{$inlang})) {
-    return 0;
-  }
-  return 1;
-}
-
-GetOptions("verbose+" => \$verbose,
-"infile=s" => \$infile,
-"outfile=s" => \$outfile,
-"inlang=s" => \$inlang,
-"help" => \$help,
-"dry-run" => \$dryrun,
-"supports-lang=s" => \$supports_lang,
-"espeak-path=s" => \$espeak_path,
-"espeak-count=i" => \$written_words_limit,
-) or die("Error in command line arguments\n");
-
-if($help)
-{
-    say <<"EOT";
-$0 [OPTIONS]
-
-This script adds pronunciation information to the headwords of a TEI file.
-It goes through all <orth> elements and adds a <pron> element after it,
-unless <pron> already exists.
-
-This script uses 'espeak(-ng) -v <LANG> --ipa -q ok'.  A previous version used the
-espeak API by means of a modified version of Speech::eSpeak, but the
-maintainer of that module is unresponsive. Experiments with the espeak API
-via C::DynaLib (or Python c_types)  were successful, but due to
-cross-platform issues and espeak to espeak-ng API issues not further
-pursuit.
-
-Espeak is started as a subprocess and connected using stdin/stdout. In this
-line-based mode, espeak reads a line from STDIN and outputs a line on
-STDOUT.  Since espeak doesn't flush stdout, we never get a reply.  To prevent
-this deadlock, we use the 'stdbuf' command, which uses LD_PRELOAD to
-change libc behaviour.  stdbuf is even available on MSYS2.
-
-Options:
-
-	--dry-run
-		Don't write OUTFILE.
-
-	--espeak-count <NUMBER>
-		Useful to find headwords that translate to multiple lines
-		of IPA output, which will result in an abort in the end.
-
-		Restart espeak(-ng) subprocess every NUMBER of headwords.
-		By default NUMBER is set to -1, meaning not to restart, which
-		is the fastest.  If espeak has generated more lines than
-		headwords given to it, abort with the last headword written.
-		This headword can be used to find the headword that caused more
-		than one line of IPA output, because it can only be up to NUMBER
-		headwords before and including the last written headword.
-
-	--espeak-path <FULL-PATH-TO-ESPEAK-BINARY>
-		Give full path to espeak(-ng) in case autodetection fails.
-
-	--help
-		This help.
-
-	--infile, -i <INFILE>
-		Use INFILE as input.
-
-		Example: -i eng-ita.tei
-
-	--inlang, -l <CODE>
-		Language of the headwords in INFILE.  The CODE is used to
-		select the speaker language of espeak.  If not given,
-		the basename of INFILE is assumed to have the form la1-la2.tei,
-		as used in FreeDict and is translated to the corresponding
-		espeak code.
-
-		Example: -l de
-
-	--outfile, -o <OUTFILE>
-		Use OUTFILE for output.  If not given, "INFILE.withpron" is used.
-
-		Example: -o output.tei
-
-	--supports-lang <LANG>
-		Exit with 0 (success) if the language is supported and with 2
-		otherwise. This supports both 639-2 and 639-3 codes, but is
-		meant to be used with 639-3 codes to check whether a
-		dictionary's source language is supported.
-
-	--verbose
-		Say what is going on. Can be given up to three times.
-EOT
-  exit 0;
-}
-
-$espeak_path ||= `which espeak-ng`;
-$espeak_path ||= `which espeak`;
-chomp $espeak_path;
-
-if(!defined $infile && !defined $supports_lang) {
-  say "Error: need to specify input file with --infile"; exit 1
-};
-unless(-x $espeak_path) {
-    if (not length $espeak_path) {
-        say "Espeak(-ng) executable missing"
-    } else {
-        say "$espeak_path not executable";
-    }
-    exit 1
-};
+    def __init__(self, attrs):
+        self.attrs = attrs
+        self.text = []
 
 
-if(defined $supports_lang) {
-  exit(language_exists($supports_lang) ? 0 : 2);
-}
-unless(-r $infile) { say "$infile not readable"; exit 1 };
-$outfile ||= "$infile.withpron";
-say "Using espeak from '$espeak_path'" if $verbose;
+class EspeakNg:
+    RESTART_AFTER = 10000
 
-unless(defined $inlang)
-{
-  unless($infile =~ /(\w{3})-\w{3}\.tei$/)
-  {
-    say "Could not guess input language from $infile.  Please provide --inlang.";
-    exit 3;
-  }
-  my $in3 = $1;
-  if (!language_exists($in3)) {
-    say "No voice found for input language code $in3";
-    exit 4
-  }
-}
+    def __init__(self, language):
+        if not shutil.which("espeak-ng"):
+            print("Espeak-ng not found, please install it and rerun the operation.")
+            sys.exit(5)
+        self.cmd = ("stdbuf", "-o0", "espeak-ng", "--ipa", "-v", language, "-q")
+        self.proc = None
+        self.headwords_transcribed = 0
+        self._start()
 
-say "Using language: ", $inlang if $verbose;
-say "espeak version: ", `"$espeak_path" --version` if $verbose;
+    def _start(self):
+        self.proc = subprocess.Popen(
+            self.cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0
+        )
+        self.headwords_transcribed = 0
 
-$SIG{PIPE} = sub
-{
-   die "Got SIGPIPE: $!";
-};
+    def ipa(self, orth):
+        """Transcribe the given headword and return the IPA string. It attempts to
+        remove any punctuation because this can trigger line breaks in the
+        eSpeak-NG output. This scripts relies on a single line of output per
+        headword."""
+        if self.headwords_transcribed >= EspeakNg.RESTART_AFTER:
+            self.reset()
+        headword = "".join(orth.text)
+        headword = self.escape(headword)
+        self.proc.stdin.write(headword.encode(sys.getdefaultencoding()) + b"\n")
+        self.proc.stdin.flush()
+        buf = self.proc.stdout.readline()
+        word = buf.decode(sys.getdefaultencoding()).strip()
+        if DEBUG:
+            open(DEBUG, "a").write(f"{headword} :: {word}\n")
+        self.headwords_transcribed += 1
+        return word
 
-my($pid, $chld_out, $chld_in, $written_words);
+    def escape(self, word):
+        """Escape any punctuation, see ipa()."""
+        for ch in CHARACTER_REPLACEMENTS:
+            word = word.replace(ch, " ")
+        return word.replace("  ", " ")
 
-sub start_espeak
-{
-  # https://github.com/espeak-ng/espeak-ng/pull/536
-  #, '--fflush-stdout'
-  my @cmd = ('stdbuf', '-o0', $espeak_path, '--ipa', '-v', $inlang, '-q');
-  say "Using cmd: ", join(' ', @cmd) if $verbose >= 2;
-  $pid = open2($chld_out, $chld_in, @cmd);
-  die "open2 failed: $!" unless defined $pid;
-  say "espeak has PID $pid" if $verbose>=3;
-  binmode $chld_in, ':utf8';
-  binmode $chld_out, ':utf8';
-  $written_words = 0;
-}
+    def close(self):
+        remainder = self.proc.communicate()[0]
+        if remainder:
+            import textwrap
 
-start_espeak;
+            print(
+                "".join(
+                    textwrap.wrap(
+                        "Error: {len(remainder.split('\n'))} lines found that were not \
+                    recognised by this script during IPA transcription of \
+                    eSpeak-NG. This is a bug due to special characters that lead \
+                    to unexpected newlines in the eSpeak-NG output. Expected is \
+                    a line per headword. Use --debug to save the transcriptions to a \
+                    separate file."
+                    )
+                )
+            )
+            sys.exit(9)
+        ret = self.proc.wait()
+        if ret != 0:
+            raise OSError(f"Espeak-ng gave non-zero exit code {ret}.")
 
-my $exitcode = 0;
+    def reset(self):
+        """Reset eSpeak-NG to avoid filling the OS stdin buffer."""
+        self.close()
+        self._start()
 
-sub close_espeak
-{
-  close($chld_in);
-  while(!eof($chld_out))
-  { $exitcode = 1; print "Extra line from $espeak_path: ", <$chld_out>; }
-  waitpid($pid, 0);
-  my $child_exit_status = $? >> 8;
-  say "espeak subprocess returned error: $child_exit_status" if $child_exit_status != 0;
-}
 
-XML::LibXSLT->register_function("urn:espeak", "ipa",
-  sub {
-    my $inword = shift->string_value;
-    # these characters appear in jpn-eng, espeak generates the same, wrong IPA for each of them
-    if($inword =~ /([ＡＢＣＤＯ])/)
-    {
-	say "Skipping headword containing character(s) '$1' espeak-ng cannot handle: '$inword'";
-	return '';# don't generate <pron>
-    }
-    my $count = kill 0, $pid;
-    die "espeak exited" if $count != 1;
+class TeiConsumer(sax.handler.ContentHandler):
+    """A streaming SAX parser that calls a registered handler function to
+    process <orth/> elements."""
 
-    my $inword_orig = $inword;
-    # ،. from ara-eng
-    $inword =~ s/(, |,\)|,\(|\.\.\.|\. |: |; |\.\)|! |!\)|\? |\?\)|-?\?(\?+)|[．、،.…])/ /g;
-    $inword =~ s/ [\-–] /-/g;
+    def __init__(self, file_handle, ipa_generator):
+        # This is either None or a list. If it is a list, all text data will be
+        # appended.
+        self.current_orth = None
+        self.outstream = file_handle
+        super().__init__()
+        self.ipa_generator = ipa_generator
 
-    say "Notice: headword would generate several lines of IPA: Caused by '$1' in '$inword_orig'.  Using '$inword'"
-      if $verbose and $inword ne $inword_orig;
+    def endDocument(self):
+        self.outstream.write("\n")
+        self.outstream.close()
+        self.ipa_generator.close()
 
-    say "Writing to espeak-ng: ", $inword if $verbose>=2;
-    say $chld_in $inword;
-    $written_words++;
-    say "Will read..." if $verbose>=3;
-    my $ipa = <$chld_out>;
-    $ipa =~ s/^\s+|\s+$//g;# trim
-    chomp($ipa);
-    say "Got from espeak-ng: ", $ipa if $verbose>=2;
-    if($written_words_limit>=1 and $written_words >= $written_words_limit)
-    {
-      close_espeak;
-      if($exitcode != 0)
-      {
-	say "last written word: '$inword'";
-        exit $exitcode
-      }
-      start_espeak;
-    }
-    return $ipa;
-    });
-my $sdoc = XML::LibXML->load_xml(string => <<'EOT');
-<xsl:stylesheet version="1.0"
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-  xmlns:espeak="urn:espeak"
-  xmlns:tei="http://www.tei-c.org/ns/1.0"
-  exclude-result-prefixes="tei espeak">
+    def startElement(self, name, attrs):
+        """Signals the start of an element in non-namespace mode."""
+        attrs = attrs.items()
+        self.outstream.write(f"<{name}")
+        if attrs:
+            for k, v in attrs:
+                self.outstream.write(f' {k}="{v}"')
+        self.outstream.write(">")
+        if name == "orth":
+            if not attrs:
+                attrs = {}
+            self.current_orth = Orth(attrs)
 
-  <xsl:template match="tei:orth[not(boolean(following-sibling::tei:pron))]">
-    <xsl:copy>
-      <xsl:apply-templates match="@*|node()"/>
-    </xsl:copy>
-    <xsl:variable name="pron" select="espeak:ipa(.)"/>
-    <xsl:if test="$pron != ''">
-      <pron xmlns="http://www.tei-c.org/ns/1.0"><xsl:value-of select="$pron"/></pron>
-    </xsl:if>
-  </xsl:template>
+    def endElement(self, name):
+        """Signals the end of an element in non-namespace mode.
 
-  <xsl:template match="@*|node()">
-    <xsl:copy>
-      <xsl:apply-templates select="@*|node()"/>
-    </xsl:copy>
-  </xsl:template>
+        The name parameter contains the name of the element type, just
+        as with the startElement event."""
+        self.outstream.write(f"</{name}>")
+        if name == "orth":
+            transcribed = self.ipa_generator.ipa(self.current_orth)
+            self.outstream.write(f"\n<pron>{transcribed}</pron>\n")
+            self.current_orth = None
 
-</xsl:stylesheet>
-EOT
-my $xslt = XML::LibXSLT->new();
-my $stylesheet = $xslt->parse_stylesheet($sdoc);
-my $source = XML::LibXML->load_xml(location => $infile, expand_xinclude => 1);
-print "Transforming $infile to $outfile... " if $verbose;
-my $results = $stylesheet->transform($source);
-$stylesheet->output_file($results, $outfile) unless $dryrun;
-close_espeak;
-if($exitcode != 0)
-{
-  say "Use --espeak-count 1 to find out the headword causing the extra line" if $written_words_limit<1;
-}
-say "done." if $verbose;
-exit $exitcode;
+    def characters(self, content):
+        """Receive notification of character data."""
+        self.outstream.write(sax.saxutils.escape(content))
+        if self.current_orth:
+            self.current_orth.text.append(content)
 
+    def ignorableWhitespace(self, whitespace):
+        """Receive notification of ignorable whitespace in element content."""
+        self.outstream.write(whitespace)
+
+
+def espeak_voice(iso_639_3_code):
+    """Return the Espeak-NG voice from the given ISO 639-3 code."""
+    # Read all available languages first
+    if not os.path.exists(ISO_639_TABLE):
+        print("Error: failed to load {ISO_639_TABLE}.")
+        print("This file can be found in the isocodes package on Debian-based systems.")
+        sys.exit(3)
+    proc = subprocess.run(["espeak-ng", "--voices"], capture_output=True)
+    espeakng_voices = set()
+    for voice in proc.stdout.decode(sys.getdefaultencoding()).split("\n"):
+        voice = re.search(r"^\s*[0-9]*\s*([a-z]+)\s.*$", voice)
+        if voice:
+            espeakng_voices.add(voice.group(1))
+    all_iso_639 = json.load(open(ISO_639_TABLE))["639-3"]
+    try:
+        lang = next(l["alpha_2"] for l in all_iso_639 if l["alpha_3"] == iso_639_3_code)
+    except StopIteration:
+        print(f"Error, invalid language {iso_639_3_code}")
+        sys.exit(4)
+    if lang not in espeakng_voices:
+        print(f'Error, espeak did not recognise language "{lang}".')
+        sys.exit(6)
+    return lang
+
+
+def xml_preamble(tei_file):
+    """Extract everything until <TEI since the SAX parser ignores it and it's
+    part of the document. This function seeks back to the beginning afterwards."""
+    lines = []
+    found = False
+    for _i in range(100):  # upper limit
+        line = tei_file.readline()
+        idx = line.find("<TEI")
+        if idx >= 0:
+            lines.append(line[:idx])
+            break
+        else:
+            lines.append(line)
+    tei_file.seek(0)
+    return "".join(lines) if found else ""
+
+
+def main():
+    global DEBUG
+    parser = argparse.ArgumentParser(
+        description="Enrich a TEI file with pronunciation info."
+    )
+    parser.add_argument("tei_dict", metavar="TEI_DICT", nargs=1, help="input file name")
+    parser.add_argument(
+        "-o",
+        dest="outpath",
+        metavar="OUTPUT_PATH",
+        nargs=1,
+        help="write processed TEI to given output file. default is \
+        xxx-yyy-phoneme.tei",
+    )
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        metavar="DEBUGFILE",
+        nargs=1,
+        help="write phoneme transcription to specified file. The\
+                    file will have a headword per line, separated by colons from \
+                    the transcription. This helps to find the problematic \
+                    headword if transcriptions start to mismatch.",
+    )
+
+    args = parser.parse_args()
+    teipath = args.tei_dict[0]
+    if args.outpath:
+        outpath = args.outpath[0]
+    else:
+        outpath = f"{os.path.splitext(teipath)[0]}-phonetics.tei"
+
+    if args.debug:
+        DEBUG = args.debug[0]
+
+    # Guess eSpeak-NG voice to use
+    lang = os.path.splitext(teipath)[0].split("-")[0]
+    ipa_gen = EspeakNg(espeak_voice(lang))
+
+    #  Extract preamble (not parsed by SAX parser), write and call SAX parser
+    #  afterwards
+    with open(teipath) as teifile:
+        outfile = open(outpath, "w")  # closed by TeiConsumer
+        outfile.write(xml_preamble(teifile))
+        parser = sax.make_parser()
+        teihandler = TeiConsumer(outfile, ipa_gen)
+        parser.setContentHandler(teihandler)
+        parser.parse(teifile)
+
+
+if __name__ == "__main__":
+    main()

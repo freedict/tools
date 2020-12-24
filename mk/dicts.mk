@@ -95,10 +95,11 @@ dict_tei_source = build/tei/$(dictname)-phonetics.tei
 $(BUILD_DIR)/tei:
 	mkdir -p $@
 
+# Create a copy containing IPA phonetic information
 $(call dict_tei_source): $(dictname).tei | $(BUILD_DIR)/tei
-	$(TEIADDPHONETICS) --infile $< --outfile $@
+	$(TEIADDPHONETICS) -o $@ $<
 else ifeq ($(shell echo '$(supported_phonetics_lang)' |tr -d '[:space:]'|tail -c 1),1)
-dict_tei_source = $(error Espeak or espeak-ng not installed, please install it and proceed.)
+$(error Espeak or espeak-ng not installed, please install it and proceed.)
 endif
 
 ################
