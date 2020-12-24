@@ -1,4 +1,0 @@
-# custom gitignore
-__pycache__
-*.pyc
-de-en.txt*
