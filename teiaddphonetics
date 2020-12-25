@@ -73,6 +73,7 @@ class EspeakNg:
         self.cmd = ("stdbuf", "-o0", "espeak-ng", "--ipa", "-v", language, "-q")
         self.proc = None
         self.headwords_transcribed = 0
+        self.non_alpha = set()
         self._start()
 
     def _start(self):
@@ -94,6 +95,9 @@ class EspeakNg:
         self.proc.stdin.flush()
         buf = self.proc.stdout.readline()
         word = buf.decode(sys.getdefaultencoding()).strip()
+        self.non_alpha.update(
+            c for c in word if not (c.isalpha() or c.isdigit() or c.isspace())
+        )
         if DEBUG:
             open(DEBUG, "a").write(f"{headword} :: {word}\n")
         self.headwords_transcribed += 1
@@ -120,6 +124,7 @@ class EspeakNg:
                     a line per headword. Use --debug to save the transcriptions to a \
                     separate file."
                     )
+                    + f"\nPotentially problematic characters: {self.non_alpha}"
                 )
             )
             sys.exit(9)
@@ -185,7 +190,7 @@ class TeiConsumer(sax.handler.ContentHandler):
         self.outstream.write(whitespace)
 
 
-def espeak_voice(iso_639_3_code):
+def espeakng_voice(iso_639_3_code):
     """Return the Espeak-NG voice from the given ISO 639-3 code."""
     # Read all available languages first
     if not os.path.exists(ISO_639_TABLE):
@@ -232,7 +237,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Enrich a TEI file with pronunciation info."
     )
-    parser.add_argument("tei_dict", metavar="TEI_DICT", nargs=1, help="input file name")
+    parser.add_argument("tei_dict", metavar="TEI_DICT", nargs="?", help="input file name")
     parser.add_argument(
         "-o",
         dest="outpath",
@@ -240,6 +245,13 @@ def main():
         nargs=1,
         help="write processed TEI to given output file. default is \
         xxx-yyy-phoneme.tei",
+    )
+    parser.add_argument(
+        "--supports-lang",
+        dest="supports_lang",
+        metavar="LANG",
+        nargs=1,
+        help="test wheter given language (ISO 639-3) is supported by eSpeak"
     )
     parser.add_argument(
         "--debug",
@@ -253,6 +265,13 @@ def main():
     )
 
     args = parser.parse_args()
+    teipath = None
+    if args.supports_lang:
+        espeakng_voice(args.supports_lang)
+        sys.exit(0)
+    elif not args.tei_dict:
+        print("Error, need to provide input TEI file")
+        sys.exit(9)
     teipath = args.tei_dict[0]
     if args.outpath:
         outpath = args.outpath[0]
@@ -264,7 +283,7 @@ def main():
 
     # Guess eSpeak-NG voice to use
     lang = os.path.splitext(teipath)[0].split("-")[0]
-    ipa_gen = EspeakNg(espeak_voice(lang))
+    ipa_gen = EspeakNg(espeakng_voice(lang))
 
     #  Extract preamble (not parsed by SAX parser), write and call SAX parser
     #  afterwards
