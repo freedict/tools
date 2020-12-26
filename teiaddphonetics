@@ -21,6 +21,8 @@ CHARACTER_REPLACEMENTS = {
     '"',
     "(",
     ")",
+    "{",
+    "}",
     ",",
     "...",
     ".",
@@ -51,6 +53,23 @@ CHARACTER_REPLACEMENTS = {
     "̃",
     "²",
     "³",
+    "\n",
+    "\r",
+    chr(0x60C),  # from ara-eng
+    "−",
+    "–",
+    "↑",
+    "→",
+    "←",
+    "＠",
+    "．",
+    "〜",
+    "×",
+    "＋",
+    "＆",
+    "～",
+    "↓",
+    "、",
 }
 DEBUG = None
 
@@ -61,6 +80,25 @@ class Orth:
     def __init__(self, attrs):
         self.attrs = attrs
         self.text = []
+
+
+class Entry:
+    """A (mostly) serialised entry.
+    An entry may contain strings or Orth nodes. It also mimics an output stream
+    using the write method."""
+
+    def __init__(self, attrs):
+        attrs = "".join(f' {k}="{v}"' for k, v in attrs.items())
+        self.xml = [f"<entry{attrs}>"]
+
+    def write(self, item):
+        """ToDo: text or orth."""
+        self.xml.append(item)
+
+    def contains_pronunciation(self):
+        return any(
+            token for token in self.xml if isinstance(token, str) and "<pron" in token
+        )
 
 
 class EspeakNg:
@@ -91,13 +129,13 @@ class EspeakNg:
             self.reset()
         headword = "".join(orth.text)
         headword = self.escape(headword)
+        self.non_alpha.update(
+            c for c in headword if not (c.isalpha() or c.isdigit() or c.isspace())
+        )
         self.proc.stdin.write(headword.encode(sys.getdefaultencoding()) + b"\n")
         self.proc.stdin.flush()
         buf = self.proc.stdout.readline()
         word = buf.decode(sys.getdefaultencoding()).strip()
-        self.non_alpha.update(
-            c for c in word if not (c.isalpha() or c.isdigit() or c.isspace())
-        )
         if DEBUG:
             open(DEBUG, "a").write(f"{headword} :: {word}\n")
         self.headwords_transcribed += 1
@@ -114,18 +152,20 @@ class EspeakNg:
         if remainder:
             import textwrap
 
+            non_alpha = "".join(self.non_alpha)
+
             print(
-                "".join(
+                "\n".join(
                     textwrap.wrap(
-                        "Error: {len(remainder.split('\n'))} lines found that were not \
-                    recognised by this script during IPA transcription of \
-                    eSpeak-NG. This is a bug due to special characters that lead \
-                    to unexpected newlines in the eSpeak-NG output. Expected is \
-                    a line per headword. Use --debug to save the transcriptions to a \
-                    separate file."
+                        "Error: {} lines found that were not "
+                        "recognised by this script during IPA transcription of "
+                        "eSpeak-NG. This is a bug due to special characters that lead "
+                        "          to unexpected newlines in the eSpeak-NG output. Expected is "
+                        "a line per headword. Use --debug to save the transcriptions to a "
+                        "separate file."
                     )
-                    + f"\nPotentially problematic characters: {self.non_alpha}"
-                )
+                ).format(len(remainder.split(b"\n")))
+                + f"\nPotentially problematic characters: {non_alpha}"
             )
             sys.exit(9)
         ret = self.proc.wait()
@@ -147,6 +187,7 @@ class TeiConsumer(sax.handler.ContentHandler):
         # appended.
         self.current_orth = None
         self.outstream = file_handle
+        self.outstream_backup = None
         super().__init__()
         self.ipa_generator = ipa_generator
 
@@ -157,33 +198,54 @@ class TeiConsumer(sax.handler.ContentHandler):
 
     def startElement(self, name, attrs):
         """Signals the start of an element in non-namespace mode."""
-        attrs = attrs.items()
-        self.outstream.write(f"<{name}")
-        if attrs:
-            for k, v in attrs:
-                self.outstream.write(f' {k}="{v}"')
-        self.outstream.write(">")
-        if name == "orth":
-            if not attrs:
-                attrs = {}
+        if not attrs:
+            attrs = {}
+        if name == "entry":
+            self.outstream_backup = self.outstream
+            self.outstream = Entry(attrs)
+        elif name == "orth":
             self.current_orth = Orth(attrs)
+        else:
+            attrs = attrs.items()
+            self.outstream.write(f"<{name}")
+            if attrs:
+                for k, v in attrs:
+                    self.outstream.write(f' {k}="{v}"')
+            self.outstream.write(">")
 
     def endElement(self, name):
-        """Signals the end of an element in non-namespace mode.
-
-        The name parameter contains the name of the element type, just
-        as with the startElement event."""
-        self.outstream.write(f"</{name}>")
+        """Signals the end of an element in non-namespace mode."""
         if name == "orth":
-            transcribed = self.ipa_generator.ipa(self.current_orth)
-            self.outstream.write(f"\n<pron>{transcribed}</pron>\n")
+            # add the Orth to the Entry
+            self.outstream.write(self.current_orth)
             self.current_orth = None
+        elif name == "entry":
+            entry = self.outstream
+            self.outstream = self.outstream_backup
+            for item in entry.xml:
+                if isinstance(item, Orth):
+                    attrs = "".join(f' {k}="{v}"' for k, v in item.attrs.items())
+                    text = sax.saxutils.escape("".join(item.text))
+                    self.outstream.write(f"<orth{attrs}>{text}</orth>")
+                    # It could be that one orth has transcriptions, another
+                    # doesn't, these cases are ignored in this version
+                    if not entry.contains_pronunciation():
+                        # transcriptions are rarely empty
+                        transcribed = sax.saxutils.escape(self.ipa_generator.ipa(item))
+                        if transcribed:
+                            self.outstream.write(f"\n<pron>{transcribed}</pron>")
+                else:
+                    self.outstream.write(item)
+            self.outstream.write(f"</{name}>")
+        else:
+            self.outstream.write(f"</{name}>")
 
     def characters(self, content):
         """Receive notification of character data."""
-        self.outstream.write(sax.saxutils.escape(content))
         if self.current_orth:
             self.current_orth.text.append(content)
+        else:
+            self.outstream.write(sax.saxutils.escape(content))
 
     def ignorableWhitespace(self, whitespace):
         """Receive notification of ignorable whitespace in element content."""
@@ -191,7 +253,8 @@ class TeiConsumer(sax.handler.ContentHandler):
 
 
 def espeakng_voice(iso_639_3_code):
-    """Return the Espeak-NG voice from the given ISO 639-3 code."""
+    """Return the Espeak-NG voice from the given ISO 639-3 code.
+    StopIteration is raised if language is unknown."""
     # Read all available languages first
     if not os.path.exists(ISO_639_TABLE):
         print("Error: failed to load {ISO_639_TABLE}.")
@@ -204,11 +267,9 @@ def espeakng_voice(iso_639_3_code):
         if voice:
             espeakng_voices.add(voice.group(1))
     all_iso_639 = json.load(open(ISO_639_TABLE))["639-3"]
-    try:
-        lang = next(l["alpha_2"] for l in all_iso_639 if l["alpha_3"] == iso_639_3_code)
-    except StopIteration:
-        print(f"Error, invalid language {iso_639_3_code}")
-        sys.exit(4)
+    # Let StopIteration propagate
+    lang = next(l for l in all_iso_639 if l["alpha_3"] == iso_639_3_code)
+    lang = iso_639_3_code if "alpha_2" not in lang else lang["alpha_2"]
     if lang not in espeakng_voices:
         print(f'Error, espeak did not recognise language "{lang}".')
         sys.exit(6)
@@ -232,12 +293,14 @@ def xml_preamble(tei_file):
     return "".join(lines) if found else ""
 
 
-def main():
+def handle_cmdline():
     global DEBUG
     parser = argparse.ArgumentParser(
         description="Enrich a TEI file with pronunciation info."
     )
-    parser.add_argument("tei_dict", metavar="TEI_DICT", nargs="?", help="input file name")
+    parser.add_argument(
+        "tei_dict", metavar="TEI_DICT", nargs="?", help="input file name"
+    )
     parser.add_argument(
         "-o",
         dest="outpath",
@@ -251,7 +314,7 @@ def main():
         dest="supports_lang",
         metavar="LANG",
         nargs=1,
-        help="test wheter given language (ISO 639-3) is supported by eSpeak"
+        help="test wheter given language (ISO 639-3) is supported by eSpeak",
     )
     parser.add_argument(
         "--debug",
@@ -266,13 +329,19 @@ def main():
 
     args = parser.parse_args()
     teipath = None
+    # Handle --supports-lang that aborts after the check, return results
+    # otherwise
     if args.supports_lang:
-        espeakng_voice(args.supports_lang)
-        sys.exit(0)
+        try:
+            espeakng_voice(args.supports_lang[0])
+        except StopIteration:  # raised to propagate missing language
+            sys.exit(4)
+        else:
+            sys.exit(0)
     elif not args.tei_dict:
         print("Error, need to provide input TEI file")
         sys.exit(9)
-    teipath = args.tei_dict[0]
+    teipath = args.tei_dict
     if args.outpath:
         outpath = args.outpath[0]
     else:
@@ -280,6 +349,11 @@ def main():
 
     if args.debug:
         DEBUG = args.debug[0]
+    return (teipath, outpath)
+
+
+def main():
+    teipath, outpath = handle_cmdline()
 
     # Guess eSpeak-NG voice to use
     lang = os.path.splitext(teipath)[0].split("-")[0]
