@@ -19,9 +19,8 @@ moment.
 You should have at least the following tools installed, to build the
 dictionaries: make, xsltproc, tar, gzip, dictzip, dictfmt
 
-For proper use of all our tools, Perl, Espeak(-ng), Python > 3.4, Git and a
-XML-capable editor are required. Furthermore we require the perl packages
-libxml-libxml and libxml-libxslt.
+For proper use of all our tools, Perl, eSpeakNG, Python > 3.4 are required, and
+Git and a XML-capable editor are recommended.
 
 #### Debian/Ubuntu Dependencies
 
