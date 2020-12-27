@@ -97,16 +97,6 @@ To use the resulting TEI files with the FreeDict tools, the former need to
 be placed in the dictionary hierarchy of the fd-dictionaries git repository.
 Subsequently, the general documentation on using the tools apply.
 
-The adding of phonetics does currently not work, due to some special
-constellations of special characters.  This is considered a bug in the
-corresponding teiaddphonetics script and is to be fixed there.
-
-While the further translation to both output formats (DICT and slob) require
-the adding of phonetics per the Makefile, this step can be simulated by just
-placing a (symbolic) link at the right place:
-
-$ ln -s ../../lg1-lg2.tei lg1-lg2/build/tei/deu-eng-phonetics.tei
-
 
 Licensing
 ---------
