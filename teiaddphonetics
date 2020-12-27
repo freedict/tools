@@ -5,8 +5,8 @@
 -   Escaping within elements could be "lost" since the parser considers &#39;
     and other characters not to be worth escaping.
 -   Name spacing is ignored.
-ToDo: dependencies (iso-8859-1)
-"""
+This script depends on eSpeakNG and /usr/share/isocodes. On Debian-based
+systems, install the packages isocodes and espeak-ng."""
 import argparse
 import json
 import os
@@ -70,6 +70,9 @@ CHARACTER_REPLACEMENTS = {
     "～",
     "↓",
     "、",
+}
+ESPEAKNG_LANG_CORRECTIONS = {
+    "swh": "sw", # eSpeak 1.49 uses "sw" that stands for "swa", while FD uses "swh"
 }
 DEBUG = None
 
@@ -263,13 +266,15 @@ def espeakng_voice(iso_639_3_code):
     proc = subprocess.run(["espeak-ng", "--voices"], capture_output=True)
     espeakng_voices = set()
     for voice in proc.stdout.decode(sys.getdefaultencoding()).split("\n"):
-        voice = re.search(r"^\s*[0-9]*\s*([a-z]+)\s.*$", voice)
+        voice = re.search(r"^\s*[0-9]*\s*([a-z]+)(-[0-9]*[a-z]*)?\s.*$", voice)
         if voice:
             espeakng_voices.add(voice.group(1))
     all_iso_639 = json.load(open(ISO_639_TABLE))["639-3"]
     # Let StopIteration propagate
     lang = next(l for l in all_iso_639 if l["alpha_3"] == iso_639_3_code)
     lang = iso_639_3_code if "alpha_2" not in lang else lang["alpha_2"]
+    if lang in ESPEAKNG_LANG_CORRECTIONS:
+        lang = ESPEAKNG_LANG_CORRECTIONS[lang]
     if lang not in espeakng_voices:
         print(f'Error, espeak did not recognise language "{lang}".')
         sys.exit(6)
@@ -356,7 +361,7 @@ def main():
     teipath, outpath = handle_cmdline()
 
     # Guess eSpeak-NG voice to use
-    lang = os.path.splitext(teipath)[0].split("-")[0]
+    lang = os.path.splitext(os.path.basename(teipath))[0].split("-")[0]
     ipa_gen = EspeakNg(espeakng_voice(lang))
 
     #  Extract preamble (not parsed by SAX parser), write and call SAX parser
