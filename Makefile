@@ -11,7 +11,7 @@ DESTDIR ?=
 INSTALLDIR ?= $(abspath $(DESTDIR)/$(PREFIX)/share/freedict)
 
 dirs = api JMdict lib mk xquery xsl/inc
-TARGET_DIRS = $(addprefix $(INSTALLDIR)/tools/, $(dirs))
+TARGET_INSTALL_DIRS = $(addprefix $(INSTALLDIR)/tools/, $(dirs))
 
 
 api: #! generate the api with information about all dictionaries and their downloads at the configured api path
@@ -146,19 +146,19 @@ mk_venv: #! initialise a new (Python) virtual environment; use mk_venv-help for 
 	fi
 
 # NOTE: the directories below HAVE to be on one line
-DIRS := api api/generator api/file_manager api/generator/apigen mk xquery xsl/inc
-PATHS := $(wildcard api/*.py api/*.md api/generator/*.py api/generator/apigen/*.py \ api/file_manager/*.py \
+INSTALL_DIRS := api api/generator api/file_manager api/generator/apigen mk xquery xsl/inc
+INSTALL_PATHS := $(wildcard api/*.py api/generator/*.py api/generator/apigen/*.py api/file_manager/*.py \
 	freedict-database.rng \
-	mk/* xsl/inc/* \
+	mk/*.mk xsl/inc/* \
 	xquery/* xsl/tei2c5.xsl)
 install: #! install the tools to $$DESTDIR/$PREFIX/share/freedict (default /usr/local/share/freedict)
 install:
 	@echo Creating directories in $(INSTALLDIR)…
-	@set -e; for d in $(DIRS); do \
+	@set -e; for d in $(INSTALL_DIRS); do \
 		install -d $(INSTALLDIR)/$$d; \
 	done
 	@echo Copying files to $(INSTALLDIR)…
-	@set -e; for f in $(PATHS); do \
+	@set -e; for f in $(INSTALL_PATHS); do \
 		if [ -f $$f ]; then \
 			install -m 644 $$f $(INSTALLDIR)/$$f; \
 		fi \
