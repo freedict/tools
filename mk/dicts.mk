@@ -95,7 +95,8 @@ dict_tei_source = build/tei/$(dictname)-phonetics.tei
 $(BUILD_DIR)/tei:
 	mkdir -p $@
 
-$(call dict_tei_source): $(dictname).tei | $(BUILD_DIR)/tei
+$(call dict_tei_source): $(dictname).tei
+	mkdir -p $(dir $@)
 	$(TEIADDPHONETICS) --infile $< --outfile $@
 else ifeq ($(shell echo '$(supported_phonetics_lang)' |tr -d '[:space:]'|tail -c 1),1)
 dict_tei_source = $(error Espeak or espeak-ng not installed, please install it and proceed.)
@@ -111,9 +112,6 @@ all: build
 
 build: #! same as all, build all available output formats
 build: $(foreach platform,$(available_platforms),build-$(platform) )
-
-$(foreach p, $(available_platforms), $(BUILD_DIR)/$(p)):
-	mkdir -p $@
 
 $(RELEASE_DIR):
 	mkdir -p $@
@@ -258,10 +256,11 @@ validation: $(dictname).tei
 
 BUILD_DICTD=$(BUILD_DIR)/dictd
 
-$(BUILD_DICTD)/$(dictname).c5: $(call dict_tei_source) $(BUILD_DICTD) \
+$(BUILD_DICTD)/$(dictname).c5: $(call dict_tei_source) \
 		$(xsldir)/tei2c5.xsl $(xsldir)/inc/teientry2txt.xsl \
 		$(xsldir)/inc/teiheader2txt.xsl \
 		$(xsldir)/inc/indent.xsl
+	@mkdir -p $(dir $@)
 	$(XSLTPROCESSOR) $(XSLTPROCESSORARGS) $(xsldir)/tei2c5.xsl $< >$@
 
 
@@ -406,7 +405,8 @@ clean::
 
 build-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
 
-$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(call dict_tei_source) | $(BUILD_DIR)/slob
+$(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(call dict_tei_source)
+	@mkdir -p $(dir $@)
 	rm -f $@
 	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$@,$<)
 
