@@ -14,6 +14,9 @@ The conversion is based on XSL stylesheets (see directory `xsl/`). These can in
 principle transform to any format, but only the .dict format is supported at the
 moment.
 
+More information is in the wiki at
+<https://github.com/freedict/fd-dictionaries/wiki/>.
+
 ### Dependencies
 
 You should have at least the following tools installed, to build the
@@ -26,7 +29,7 @@ Git and a XML-capable editor are recommended.
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-    sudo apt-get install make unzip xsltproc libxml-libxml-perl libicu-dev libxml-libxslt-perl python3 python3-icu virtualenv python3-virtualenv espeak-ng git
+    sudo apt-get install make xsltproc libicu-dev python3 python3-icu virtualenv python3-virtualenv espeak-ng git
 
 #### Windows
 
@@ -44,8 +47,8 @@ use of them, you should set up a Python virtual environment for that. To help
 you getting started, `make mk_venv` is there to guide you through the process
 and `make mk_venv-help` will explain you why and how you should use `make mk_venv`.
 
-Hint: If you do not like virtual environments, you are free to set up everything
-by hand yourself. See the file requirements.txt for more details.
+Hint: It is possible to set up a environment without virtualenv. See the file
+requirements.txt for more details.
 
 Once done, you can get help on the available actions in any directory containing a
 `Makefile` by typing `make help`.
