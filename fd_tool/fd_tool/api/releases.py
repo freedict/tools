@@ -15,7 +15,7 @@ import urllib.request
 import semver
 
 from .config import RELEASE_HTTP_TOOL_BASE
-from .dictionary import DownloadFormat
+from .dictionary import DownloadFormat, normalize_version
 
 # relative to github.com/freedict/
 TOOLS_REPO = 'tools'
@@ -27,6 +27,7 @@ class ReleaseError(Exception):
 
 
 def git(cmd):
+    """Execute a git command with the given list as arguments. Return stdout."""
     proc = subprocess.Popen(['git'] + cmd, cwd=os.environ['FREEDICT_TOOLS'],
             stdout=subprocess.PIPE)
     stdout = proc.communicate()[0].strip()
@@ -58,16 +59,18 @@ def get_release_info_for_dict(path, version):
     """Retrieve information about the releases of a dictionary."""
     files = {}
     name = None
+    version = normalize_version(version)
     for file in os.listdir(path):
         format = DownloadFormat.get_type(file)
         if not format:
             continue # ignore unknown file naming, possibly outdated or unsupported formats
 
-        parsed_name, parsed_version = format.value.search(file).groups()
+        parsed_name, file_version_str = format.value.search(file).groups()
+        file_version = normalize_version(file_version_str)
 
-        if not version:
-            parsed_version = version
-        elif parsed_version != version:
+        print(file_version, version)
+        if file_version != version:
+            print(file_version)
             raise ReleaseError('Version from file name "%s" did not match version of directory "%s"' \
                     % (file, version))
         if not name:
@@ -127,16 +130,14 @@ def get_all_downloads(root):
 
 def get_latest_version(release_information):
     """Iterate over object and return the latest version, as defined by
-    distutils.version.StrictVersion. The argument is intended to be a dictionary
-    with versions as key, but anything outputing version strings will work."""
+    semver. Versions that are valid distutils.version.StrictVersions, but not
+    valid semver versions are converted."""
     latest = None
     latest_strict = None # might contain '-' replaced through '.'
     for version in release_information:
         version_strict = version[:]
-        if '-' in version_strict:
-            version_strict = version_strict.replace('-', '.')
         try:
-            version_strict = distutils.version.StrictVersion(version_strict)
+            normalize_version(version_strict)
         except ValueError as e:
             raise ReleaseError(e.args)
         if not latest:
