@@ -8,15 +8,14 @@ include $(FREEDICT_TOOLS)/mk/config.mk
 # this shows that this makefile include may only be used for a directory
 # containing many dictionaries
 DICTS=$(shell find . -maxdepth 1 -name '???-???' -printf "%P\n"|sort|xargs echo)
+# A target per dictionary, i.e. validate-DICTNAME.
+VALIDATION_TARGETS=$(foreach DICT,$(DICTS),validate-$(DICT))
 
 # Calls default target for each dictionary module.
 # Note: This is a conflict if you wanted to call
 # the 'all' target of each dictionary module.
 all: #! build all dictionaries (default)
-all: build_all $(DICTs)
-
-# most useful targets
-# allow parallel builds of all dictionaries
+all: build_all
 
 build_all: $(DICTS)
 
@@ -43,4 +42,10 @@ clean::
 		$(MAKE) -C $$DICT clean; \
 	done
 
-.PHONY: install uninstall api all clean build_all $(DICTS)
+validation: #! validate all dictionaries in this directory
+validation: $(VALIDATION_TARGETS)
+
+$(VALIDATION_TARGETS):
+	@$(MAKE) -C $(patsubst validate-%,%,$@) validation
+
+.PHONY: install uninstall api all clean build_all $(DICTS) $(VALIDATION_TARGETS)
