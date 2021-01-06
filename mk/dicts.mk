@@ -249,7 +249,7 @@ rm_duplicates: $(dictname).tei
 
 validation: #! validate dictionary with FreeDict's TEI XML subset
 validation: $(dictname).tei
-	@$(XMLLINT) --noout --relaxng freedict-P5.rng $<
+	@$(XMLLINT) --noout --xinclude --relaxng freedict-P5.rng $<
 
 ######################################################################
 #### Dict(d) format as used by the Dictd server and other programs
