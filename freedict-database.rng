@@ -13,7 +13,7 @@
       </attribute>
       <attribute name="edition">
         <data type="string"> <!-- version in the format 0.1.1 -->
-          <param name="pattern">\d+(\.\d+(\.\d+)?)?</param>
+          <param name="pattern">\d+(\.\d+(\.\d+)?)?(-.+)?</param>
         </data>
       </attribute>
       <attribute name="date">

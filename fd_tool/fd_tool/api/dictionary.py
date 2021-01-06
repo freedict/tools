@@ -8,27 +8,9 @@ import os
 import re
 import urllib.request
 
+import semver
+
 from . import config
-
-def extract_version(string):
-    """Try to extract a version from the given string and feed it into
-    distutils.version.StrictVersion, which is returned. If no version could be
-    extracted, a ValueError is raised.
-    If the given parameter is a path, only the last chunk, "base name", is
-    used."""
-    if os.sep in string: # it's a path
-        string = os.path.basename(string.rstrip(os.sep))
-    match = config.VERSION_PATTERN.search(string)
-    if not match:
-        raise ValueError("%s doesn't contain a version number to extract" %
-                string)
-
-    # remove None groups and join the fragments together with a dot to make
-    # StrictVersion happy
-    match = ''.join([m for m in match.groups() if m is not None])
-    if match.endswith('.'): # strip trailing dots
-        match = match.rstrip('.').lstrip('.')
-    return distutils.version.LooseVersion(match)
 
 
 class Dictionary:
@@ -45,14 +27,17 @@ class Dictionary:
     Additionally, a dictionary keeps a list of downloads which may be empty.
     Each download has to be a Link() object.
     """
+
     def __init__(self, name):
         self.__name = name
         # mandatory dictionary information
-        mandatory = ['headwords', 'edition', 'date']
-        self.__mandatory = dict([(f, None) for f in mandatory])
+        mandatory = ["headwords", "edition", "date"]
+        self.__mandatory = {f: None for f in mandatory}
         # optional dictionary info
-        self.__optional = {f: None for f in ['maintainerName',
-            'maintainerEmail', 'status', 'sourceURL']}
+        self.__optional = {
+            f: None
+            for f in ["maintainerName", "maintainerEmail", "status", "sourceURL"]
+        }
         self.__downloads = []
 
     def get_name(self):
@@ -71,15 +56,13 @@ class Dictionary:
         """Return all download links."""
         return self.__downloads
 
-
     def __getitem__(self, key):
         """Transparently select a key from either optional or mandatory keys."""
         if key in self.__mandatory:
             return self.__mandatory[key]
-        elif key in self.__optional:
+        if key in self.__optional:
             return self.__optional[key]
-        else:
-            raise KeyError(key)
+        raise KeyError(key)
 
     def __contains__(self, key):
         try:
@@ -108,14 +91,13 @@ class Dictionary:
     def _get_missing_keys(self):
         """Return list of keys which haven't been set yet but which are
         mandatory. Empty list means everything has been set."""
-        return [k for k in self.__mandatory  if self.__mandatory[k] is None]
-
+        return [k for k in self.__mandatory if self.__mandatory[k] is None]
 
     def update(self, other):
         """This method works like the .update method on a dictionary, but it
         raises an exception whenever an unknown key is found in the supplied
         dictionary."""
-        if not hasattr(other, '__getitem__') or not hasattr(other, 'keys'):
+        if not hasattr(other, "__getitem__") or not hasattr(other, "keys"):
             raise TypeError("Object must provide methods keys() and __getitem__.")
         for key in other.keys():
             self[key] = other[key]
@@ -132,26 +114,29 @@ class Dictionary:
 
 
 # only match x.x, x.x.x, x-y-z, x-z
-VERSION = r'(\d+(?:-|\.)\d+(?:-|\.)?\d*)'
-DICTIONARY = '([a-z]{3}-[a-z]{3})'
+DICTIONARY = "([a-z]{3}-[a-z]{3})"
+
 
 class DownloadFormat(enum.Enum):
     """The download format, consisting both of the platform and the archive
     format. Some formats might not have a archive format, though."""
-    Source = re.compile(r"freedict-%s-%s.src.(?:zip|tar.bz2|tar.gz|tar.xz)" % (DICTIONARY, VERSION))
-    # dict.tgz / bz2 are legacy
-    DictTgz = re.compile(r"freedict-%s-%s.tar.gz" % (DICTIONARY, VERSION))
-    DictBz2 = re.compile(r"freedict-%s-%s.tar.bz2" % (DICTIONARY, VERSION))
-    DictTxz = re.compile(r"freedict-%s-%s.dictd.tar.xz" % (DICTIONARY, VERSION))
-    Slob = re.compile(r"freedict-%s-%s.slob" % (DICTIONARY, VERSION))
+
+    Source = re.compile(
+        r"freedict-%s-(.*?).src.(?:zip|tar.bz2|tar.gz|tar.xz)" % DICTIONARY
+    )
+    DictTxz = re.compile(r"freedict-%s-(.*?).dictd.tar.xz" % DICTIONARY)
+    Slob = re.compile(r"freedict-%s-(.*?).slob" % DICTIONARY)
+    # legacy formats
+    DictTgz = re.compile(r"freedict-%s-(.*?).dictd.tar.gz" % DICTIONARY)
+    DictBz2 = re.compile(r"freedict-%s-(.*?).dictd.tar.bz2" % DICTIONARY)
+    Dic = re.compile(r"freedict-%s-(.*?).dic.tar.*" % DICTIONARY)
 
     @staticmethod
     def get_type(file_name):
-        #pylint: disable=redefined-variable-type
         """This function allows to get the correct enum value from a given
         file_name. The file name is parsed and the corresponding enum value
         returned. If the format could not be extracted, None is returned."""
-        if file_name.endswith('.sha512'):
+        if file_name.endswith(".sha512"):
             return None
         format = DownloadFormat.Source
         for format in DownloadFormat:
@@ -163,17 +148,16 @@ class DownloadFormat(enum.Enum):
         """Return a string representation of the enum value, as used in the type
         attribute of the release tag in the FreeDict XML API."""
         if self is DownloadFormat.Source:
-            return 'src'
-        elif self is DownloadFormat.DictTgz:
-            return 'dict-tgz'
-        elif self is DownloadFormat.DictBz2:
-            return 'dict-bz2'
-        elif self is DownloadFormat.DictTxz:
-            return 'dictd'
-        elif self is DownloadFormat.Slob:
-            return 'slob'
-        else:
-            raise ValueError("Unsupported format: " + self.name)
+            return "src"
+        if self is DownloadFormat.DictTgz:
+            return "dict-tgz"
+        if self is DownloadFormat.DictBz2:
+            return "dict-bz2"
+        if self is DownloadFormat.DictTxz:
+            return "dictd"
+        if self is DownloadFormat.Slob:
+            return "slob"
+        raise ValueError("Unsupported format: " + self.name)
 
 
 class Link:
@@ -187,12 +171,13 @@ class Link:
     the file format (dict-bz2 or source) and also the version of the
     dictionary.
     It also mandates a hash for verification of the file."""
+
     def __init__(self, path, format, version, sha):
         self.path = path
         self.format = format
         self.version = version
         self.size = -1
-        self.last_modification_date = 'NONE' # YYYY-MM-dd
+        self.last_modification_date = "NONE"  # YYYY-MM-dd
         self.hash = sha
 
     def __str__(self):
@@ -200,12 +185,26 @@ class Link:
         # split the path into chunks, url-quote them
         path = tuple(map(urllib.request.quote, self.path.split(os.sep)))
         if len(path) < 3:
-            raise ValueError("Required is a path with the structure LongName/version/filename")
+            raise ValueError(
+                "Required is a path with the structure LongName/version/filename"
+            )
         path_base = config.RELEASE_HTTP_BASE
-        if not path_base.endswith('/'):
-            path_base += '/'
-        return 'https://{}{}{}/{}/{}'.format(config.PROJECTHOME_HOST,
-                path_base, path[-3], path[-2], path[-1])
+        if not path_base.endswith("/"):
+            path_base += "/"
+        return "https://{}{}{}/{}/{}".format(
+            config.PROJECTHOME_HOST, path_base, path[-3], path[-2], path[-1]
+        )
+
+
+def normalize_version(vers_string):
+    """Make a semantic version out of a less strict version number , e.g. 0.5 to
+    0.5.0."""
+    try:
+        return semver.parse(vers_string)
+    except ValueError:
+        return
+    semver.parse(".".join(distutils.version.StrictVersion(vers_string).version))
+
 
 def mklink(full_path, format, version, sha):
     """Create a Link object with all the required information, i.e. file size.
@@ -213,13 +212,12 @@ def mklink(full_path, format, version, sha):
     date. It doesn't care whether it's actually on the file system or mounted
     with e.g. sshfs."""
     chunks = full_path.split(os.sep)
-    path = '{}/{}/{}'.format(chunks[-3], chunks[-2], chunks[-1])
+    path = "{}/{}/{}".format(chunks[-3], chunks[-2], chunks[-1])
     link = Link(path, format, version, sha)
     # get file size
     link.size = os.path.getsize(full_path)
     # get last modification date
     link.last_modification_date = datetime.datetime.fromtimestamp(
-            os.path.getmtime(full_path)).strftime('%Y-%m-%d')
+        os.path.getmtime(full_path)
+    ).strftime("%Y-%m-%d")
     return link
-
-

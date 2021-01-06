@@ -18,5 +18,4 @@ DICTIONARY_DIRECTORY_PATTERN = re.compile(r"[A-Z][a-z]+%20-%20[A-z][a-z]+")
 
 # Identification of versions; basically distutils.version.StrictVersion, but
 # permits "-" as separator, too
-VERSION_PATTERN = re.compile(r"(\d+)(-|\.)(\d+)?(-|\.)?(\d+)?")
 
