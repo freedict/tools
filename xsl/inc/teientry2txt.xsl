@@ -239,9 +239,17 @@
   </xsl:template><!---->
 
   <xsl:template match="tei:usg">
-    <xsl:text> [</xsl:text>
-    <xsl:value-of select="."/>
-    <xsl:text>] </xsl:text>
+    <xsl:variable name="separator">
+      <xsl:choose>
+        <xsl:when test="count(preceding-sibling::*) = 0 or preceding-sibling::tei:usg">
+          <xsl:value-of select="''"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="' '"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:value-of select="concat($separator,'[',.,'] ')"/>
   </xsl:template>
 
   <xsl:template match="tei:def">
