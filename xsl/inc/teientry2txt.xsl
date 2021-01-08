@@ -186,6 +186,7 @@
         </xsl:when>
       </xsl:choose>
     </xsl:variable>
+<!--  the logic here is risky: if you're not the first sense in a sequence, push a newline -->
     <xsl:if test="number($prec_senses) > 0">
       <xsl:text>&#xa;</xsl:text>
     </xsl:if>
@@ -254,7 +255,7 @@
   </xsl:template>
 
   <xsl:template match="tei:def">
-    <xsl:text>&#xa;</xsl:text>
+    <!--<xsl:text>&#xa;</xsl:text>-->
     <xsl:variable name="stuff">
       <xsl:apply-templates select="*|text()"/>
     </xsl:variable>
