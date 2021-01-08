@@ -177,11 +177,12 @@
     </xsl:variable>
     <xsl:variable name="pref">
       <xsl:choose>
+<!-- @n always overrides    -->
         <xsl:when test="@n">
           <xsl:value-of select="concat(@n,'. ')"/>
         </xsl:when>
         <xsl:when test="number($prec_senses) > 0 or following-sibling::tei:sense">
-          <xsl:value-of select="concat(position(),'. ')"/>
+          <xsl:value-of select="concat($prec_senses + 1,'. ')"/>
         </xsl:when>
       </xsl:choose>
     </xsl:variable>
