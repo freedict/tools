@@ -255,7 +255,8 @@
   </xsl:template>
 
   <xsl:template match="tei:def">
-    <!--<xsl:text>&#xa;</xsl:text>-->
+    <!-- this has to be carefully tuned; feels like a kludge for now -->
+    <xsl:if test="parent::tei:sense/preceding-sibling::tei:cit"><xsl:text>&#xa;</xsl:text></xsl:if>
     <xsl:variable name="stuff">
       <xsl:apply-templates select="*|text()"/>
     </xsl:variable>
