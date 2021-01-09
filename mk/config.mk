@@ -4,7 +4,6 @@
 
 SHELL=bash
 
-
 # set all as default target, so that help is not executed by default
 .DEFAULT_GOAL := all
 

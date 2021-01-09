@@ -17,12 +17,6 @@ endef
 #### Common variable definitions
 #######################
 
-# let the tools from $(toolsdir) override tools
-# from /usr/bin
-PATH := $(FREEDICT_TOOLS):$(PATH)
-# add path to current TEI file to the list of locations searched for XSL
-# includes and XML meta files
-
 ifeq ($(origin UNSUPPORTED_PLATFORMS), undefined)
 UNSUPPORTED_PLATFORMS = evolutionary
 endif
@@ -32,12 +26,11 @@ available_platforms := src dictd slob
 
 dictname ?= $(shell basename "$(shell pwd)")
 xsldir ?= $(FREEDICT_TOOLS)/xsl
+TEIADDPHONETICS := $(FREEDICT_TOOLS)/teiaddphonetics
 XMLLINT := /usr/bin/xmllint
 XSLTPROCESSORARGS += $(strip --stringparam dictname $(dictname) \
 					 --path $(dir $(abspath $(dictname).tei)))
 
-source_lang = $(shell echo $(dictname) | sed 's/-.*//g')
-rdictname := $(shell export V=$(dictname); echo $${V:4:3}-$${V:0:3})
 version1 := $(shell sed -e '100q;/<edition>/!d;s/.*<edition>\(.*\)<\/edition>.*/\1/;q'\
 	   $(wildcard $(dictname).tei))
 version := $(subst $(space),,$(version1))
@@ -79,17 +72,18 @@ dict_tei_source = $(dictname).tei
 #### defined correctly.
 #######################
 
-TEIADDPHONETICS := $(shell which teiaddphonetics 2>/dev/null)
-ifeq ($(TEIADDPHONETICS),)
-TEIADDPHONETICS := $(FREEDICT_TOOLS)/teiaddphonetics
-endif
+source_lang = $(firstword $(subst -, ,$(dictname)))
 
 # dictionary authors may set `supported_phonetics_lang = 2` and skip the check;
 # this should only be used in circumstances where the build system fails to work
 # with the generated phonetics
-supported_phonetics_lang ?= $(shell $(TEIADDPHONETICS) --supports-lang $(source_lang);echo $$?)
+ifeq ($(supported_phonetics_lang),)
+phoneme_generation_supported=$(shell $(TEIADDPHONETICS) --supports-lang $(source_lang) 2> /dev/null;echo $$?)
+ifneq ($(phoneme_generation_supported),0)
+$(warning Unable to run teiaddphonetics, phoneme generation disabled. Check installed dependencies.)
+endif
 
-ifeq ($(supported_phonetics_lang),0) # supported language
+ifeq ($(phoneme_generation_supported),0) # supported language
 dict_tei_source = build/tei/$(dictname)-phonetics.tei
 
 $(BUILD_DIR)/tei:
@@ -99,8 +93,7 @@ $(BUILD_DIR)/tei:
 $(call dict_tei_source): $(dictname).tei
 	mkdir -p $(dir $@)
 	$(TEIADDPHONETICS) -o $@ $<
-else ifeq ($(shell echo '$(supported_phonetics_lang)' |tr -d '[:space:]'|tail -c 1),1)
-$(error Espeak or espeak-ng not installed, please install it and proceed.)
+endif
 endif
 
 ################
