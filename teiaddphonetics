@@ -73,7 +73,7 @@ CHARACTER_REPLACEMENTS = {
     "、",
 }
 ESPEAKNG_LANG_CORRECTIONS = {
-    "swh": "sw", # eSpeak 1.49 uses "sw" that stands for "swa", while FD uses "swh"
+    "swh": "sw",  # eSpeak 1.49 uses "sw" that stands for "swa", while FD uses "swh"
 }
 DEBUG = None
 
@@ -120,7 +120,11 @@ class EspeakNg:
 
     def _start(self):
         self.proc = subprocess.Popen(
-            self.cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0
+            self.cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
         )
         self.headwords_transcribed = 0
 
@@ -273,9 +277,11 @@ def espeakng_voice(iso_639_3_code):
     all_iso_639 = json.load(open(ISO_639_TABLE))["639-3"]
     # Let StopIteration propagate
     lang = next(l for l in all_iso_639 if l["alpha_3"] == iso_639_3_code)
-    lang = iso_639_3_code if "alpha_2" not in lang else lang["alpha_2"]
-    if lang in ESPEAKNG_LANG_CORRECTIONS:
-        lang = ESPEAKNG_LANG_CORRECTIONS[lang]
+    # get the ISO-639-1 code (alpha_2) and afterwards, try to detect whether
+    # there's a correction that maps from a code used by FD to one used by
+    # eSpeakNG
+    lang = lang.get("alpha_2", iso_639_3_code)
+    lang = ESPEAKNG_LANG_CORRECTIONS.get(lang, lang)
     if lang not in espeakng_voices:
         print(f'Error, espeak did not recognise language "{lang}".')
         sys.exit(6)
