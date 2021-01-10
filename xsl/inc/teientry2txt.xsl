@@ -14,13 +14,16 @@
   <!-- I am fully aware of introducing some project-specific features into the P5 mode,
      but let this stuff reside here for a while until we come up with a clean way to 
      import project-dependent overrides from the individual project directories... -PB 13-apr-09 -->
-
+  
+<!-- in C5/DICT, the sense line should always be indented -->
+  <xsl:variable name="sense_indent" select="' '"/>
+ 
   <!-- TEI entry specific templates -->
   <xsl:template match="tei:entry">
     <xsl:apply-templates select="tei:form"/>
     <!-- force form before gramGrp -->
     <xsl:apply-templates select="tei:gramGrp"/>
-    <xsl:text>&#xa;</xsl:text>
+    <!-- 2021: make senses manage their vertical indent themselves <xsl:text>&#xa;</xsl:text>-->
     <xsl:apply-templates select="tei:sense | tei:note"/>
   </xsl:template>
 
@@ -109,8 +112,25 @@
     </xsl:if>
   </xsl:template>
 
+<!-- many systems arbitrarily or (rarely) systematically use the distinction between broad (=phonemic) and 
+     narrow (=phonemic, allophonic) transcription, the former marked with slanted brackets, while the latter 
+     with square brackets; an attribute-based solution may be forthcoming in Freedict, but a low-level
+     override is to use rend="[" to signal that the brackets should be square - otherwise, slashes (slanted brackets)
+     are going to be used -->
   <xsl:template match="tei:pron">
-    <xsl:value-of select="concat(' /',.,'/')"/>
+    <xsl:variable name="opening">
+      <xsl:choose>
+        <xsl:when test="@rend = '['">[</xsl:when>
+        <xsl:otherwise>/</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="closing">
+      <xsl:choose>
+        <xsl:when test="@rend = '['">]</xsl:when>
+        <xsl:otherwise>/</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:value-of select="concat(' ',$opening,.,$closing)"/>
     <!--<xsl:text> /</xsl:text><xsl:apply-templates/><xsl:text>/</xsl:text>-->
   </xsl:template>
 
@@ -175,6 +195,17 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
+    <!-- it seems that the DICT/c5 spec requires that senses should be indented by one or more spaces with respect
+    to the headword information; that means that a sense should always force a newline, unless it's the first child of 
+    a nesting sense -->
+    <xsl:variable name="v_indent">
+      <xsl:choose>
+        <!-- override: rend = 'block' forces a newline anywhere -->
+        <xsl:when test="@rend = 'block'"><xsl:value-of select="'&#xa;'"/></xsl:when>
+        <xsl:when test="not(preceding-sibling::*) and parent::tei:sense"><xsl:text></xsl:text></xsl:when>
+        <xsl:otherwise><xsl:value-of select="'&#xa;'"/></xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
     <xsl:variable name="pref">
       <xsl:choose>
 <!-- @n always overrides    -->
@@ -186,14 +217,10 @@
         </xsl:when>
       </xsl:choose>
     </xsl:variable>
-<!--  the logic here is risky: if you're not the first sense in a sequence, push a newline -->
-    <xsl:if test="number($prec_senses) > 0">
-      <xsl:text>&#xa;</xsl:text>
-    </xsl:if>
-    <xsl:if test="parent::tei:sense">
-      <xsl:text> </xsl:text>
-    </xsl:if>
-    <xsl:value-of select="$pref"/>
+    <xsl:value-of select="$v_indent"/>
+    
+<!-- per the c5 spec, a sense should always be indented; this is going to increase with the nesting level -->
+     <xsl:value-of select="concat($sense_indent,$pref)"/>
     <xsl:apply-templates/>
   </xsl:template>
 
@@ -243,7 +270,7 @@
   <xsl:template match="tei:usg">
     <xsl:variable name="separator">
       <xsl:choose>
-        <xsl:when test="count(preceding-sibling::*) = 0 or preceding-sibling::tei:usg">
+        <xsl:when test="count(preceding-sibling::*) = 0 or preceding-sibling::*[1][self::tei:usg]">
           <xsl:value-of select="''"/>
         </xsl:when>
         <xsl:otherwise>
@@ -254,35 +281,55 @@
     <xsl:value-of select="concat($separator,'[',.,'] ')"/>
   </xsl:template>
 
+  <xsl:template match="tei:def" mode="glueing">
+    <xsl:apply-templates/>
+  </xsl:template>
+  
   <xsl:template match="tei:def">
-    <!-- this has to be carefully tuned; feels like a kludge for now -->
-    <xsl:if test="parent::tei:sense/preceding-sibling::tei:cit"><xsl:text>&#xa;</xsl:text></xsl:if>
-    <xsl:variable name="stuff">
-      <xsl:apply-templates select="*|text()"/>
+    <xsl:variable name="start" select="count(ancestor::tei:sense) + 1"/>
+    <xsl:variable name="content">
+      <xsl:choose>
+        <xsl:when test="preceding-sibling::*[1][self::tei:def]"/>
+        <xsl:when test="following-sibling::*[1][self::tei:def]">
+          <xsl:call-template name="glue_us">
+            <xsl:with-param name="node" select="."/>
+            <xsl:with-param name="separator" select="'; '"/>
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates/>
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:variable>
-    <!-- first question: am I abused? Do I hold a translation equivalent 
-    within a <sense>, or am I a real definition within a <cit>? -->
+
+    <xsl:call-template name="format">
+      <xsl:with-param name="txt" select="normalize-space($content)"/>
+      <xsl:with-param name="width" select="75"/>
+      <xsl:with-param name="start" select="$start"/>
+    </xsl:call-template>
+
+  </xsl:template>
+  
+<!--  This is meant to be a 'universal' node-glueing routine, to concatenate neighbouring 
+    identical nodes (def, quote) with the appropriate separator (default: comma)-->
+  <xsl:template name="glue_us">
+    <xsl:param name="node"/>
+    <xsl:param name="separator" select="', '"/>
+    <xsl:param name="output" select="''"/>
+    <xsl:variable name="my_name" select="local-name($node)"/>
+    <xsl:variable name="my_content">
+      <xsl:apply-templates select="$node" mode="glueing"/>
+    </xsl:variable>
+    
     <xsl:choose>
-      <xsl:when test="parent::tei:sense">
-        <xsl:variable name="separator">
-          <xsl:choose>
-            <xsl:when test="preceding-sibling::tei:def">
-              <xsl:value-of select="'; '"/>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:value-of select="''"/>
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        <xsl:value-of select="concat($separator,$stuff)"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:call-template name="format">
-          <xsl:with-param name="txt" select="normalize-space($stuff)"/>
-          <xsl:with-param name="width" select="75"/>
-          <xsl:with-param name="start" select="4"/>
+      <xsl:when test="$node[1]/following-sibling::*[1][local-name() = $my_name]">
+        <xsl:call-template name="glue_us">
+          <xsl:with-param name="node" select="$node[1]/following-sibling::*[1][local-name() = $my_name]"/>
+          <xsl:with-param name="separator" select="$separator"/>
+          <xsl:with-param name="output" select="concat($my_content, $separator)"/>
         </xsl:call-template>
-      </xsl:otherwise>
+      </xsl:when>
+      <xsl:otherwise><xsl:value-of select="concat($output,$my_content)"/></xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
@@ -418,8 +465,8 @@
       </xsl:when>
       <!-- a subset of values from the TEI Guidelines -->
       <xsl:when
-        test="@type='lbl' or @type='dom' or @type='obj' or @type='subj' or @type='hint' or @type='num' or @type='geo' or @type='syn' or @type='colloc'">
-        <xsl:value-of select="concat($spc,'(',.,')')"/>
+        test="@type = 'lbl' or @type = 'dom' or @type = 'obj' or @type = 'subj' or @type = 'hint' or @type = 'num' or @type = 'geo' or @type = 'syn' or @type = 'colloc' or @type = 'idarex'">
+        <xsl:value-of select="concat($spc, '(', $stuff, ')')"/>
       </xsl:when>
       <xsl:when test="@type='gram'">
         <xsl:text>&#xa;</xsl:text>
