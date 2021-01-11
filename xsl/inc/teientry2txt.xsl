@@ -16,7 +16,7 @@
      import project-dependent overrides from the individual project directories... -PB 13-apr-09 -->
   
 <!-- in C5/DICT, the sense line should always be indented -->
-  <xsl:variable name="sense_indent" select="' '"/>
+  <xsl:variable name="sense_indent" select="'  '"/>
  
   <!-- TEI entry specific templates -->
   <xsl:template match="tei:entry">
@@ -185,6 +185,23 @@
     <xsl:value-of select="concat('agr: ',.)"/>
   </xsl:template>
   
+  <xsl:template name="calc_sense_indent">
+    <xsl:param name="node"/>
+    <xsl:param name="extra_indent" select="0"/>
+    <xsl:variable name="nesting_level">
+      <xsl:choose>
+        <xsl:when test="$node/self::tei:sense">
+          <xsl:value-of select="count($node/ancestor::tei:sense) + 1"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="count($node/ancestor::tei:sense)"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+<!-- as far as I recall, XSLT 1 didn't shine in this respect   -->
+    <xsl:value-of select="substring('                              ',1,$nesting_level * string-length($sense_indent) + $extra_indent)"/>
+  </xsl:template>
+  
   <!-- senses -->
   <xsl:template match="tei:sense">
     <xsl:variable name="prec_senses">
@@ -219,39 +236,46 @@
     </xsl:variable>
     <xsl:value-of select="$v_indent"/>
     
-<!-- per the c5 spec, a sense should always be indented; this is going to increase with the nesting level -->
+<!-- per the c5 spec, a sense should always be indented; this is going to increase with the nesting level;
+     within the template for sense, we don't need a recourse to the named template that calculates the indent -->
      <xsl:value-of select="concat($sense_indent,$pref)"/>
     <xsl:apply-templates/>
   </xsl:template>
 
   <xsl:template match="tei:cit"><!--cit can be @trans, @translation, @example, (@colloc) and simple cit (for idiomatic expression)-->
-	<xsl:choose>
-		<xsl:when test="@type = 'trans' or @type = 'translation'">
-<!-- 			<xsl:if test="preceding-sibling::tei:cit[@type='trans']"><xsl:text> ◊ </xsl:text></xsl:if> -->
-			<xsl:if test="not(preceding-sibling::tei:cit[@type='trans']) and parent::tei:cit"><xsl:text> - </xsl:text></xsl:if>
-			<xsl:if test="preceding-sibling::tei:cit[@type='trans']"><xsl:text>, </xsl:text></xsl:if>
-			<xsl:apply-templates/>
-		</xsl:when>
-		<xsl:when test="@type = 'example'">
-			<xsl:text>&#xa;      </xsl:text>	
-			<xsl:apply-templates/>
-		</xsl:when>
-		<xsl:when test="@type ='colloc'">
-			<xsl:text> (</xsl:text>	
-			<xsl:apply-templates/>
-			<xsl:text>) </xsl:text>	
-		</xsl:when>
-		<xsl:otherwise>
-			<xsl:apply-templates/>
-			<xsl:text> </xsl:text>
-		</xsl:otherwise>		
-	</xsl:choose>
+    <xsl:choose>
+      <xsl:when test="@type = 'trans' or @type = 'translation'">
+        <!-- 			<xsl:if test="preceding-sibling::tei:cit[@type='trans']"><xsl:text> ◊ </xsl:text></xsl:if> -->
+        <xsl:if test="not(preceding-sibling::tei:cit[@type='trans']) and parent::tei:cit"><xsl:text> - </xsl:text></xsl:if>
+        <xsl:if test="preceding-sibling::tei:cit[@type='trans']"><xsl:text>, </xsl:text></xsl:if>
+        <xsl:apply-templates/>
+      </xsl:when>
+      <xsl:when test="@type = 'example'">
+        <xsl:if test="preceding-sibling::*[1][local-name() != 'def']"><xsl:text>&#xa;</xsl:text></xsl:if>
+        <xsl:apply-templates/>
+      </xsl:when>
+      <xsl:when test="@type ='colloc'">
+        <xsl:text> (</xsl:text>
+        <xsl:apply-templates/>
+        <xsl:text>) </xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:apply-templates/>
+        <xsl:text> </xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
   <xsl:template match="tei:quote">
+    <xsl:variable name="sense_indent">
+      <xsl:call-template name="calc_sense_indent">
+        <xsl:with-param name="node" select="."/>
+        <xsl:with-param name="extra_indent" select="2"/>
+      </xsl:call-template>
+    </xsl:variable>
     <xsl:choose>
       <xsl:when test="parent::tei:cit[@type='example']">
-        <xsl:value-of select="concat('&quot;',.,'&quot; ')"/>
+        <xsl:value-of select="concat($sense_indent,'&quot;',.,'&quot; ')"/>
       </xsl:when><!--
       <xsl:when test="parent::tei:cit[@type='trans'][parent::tei:cit] or parent::tei:cit[@type='translation'][parent::tei:cit]">
 		
@@ -315,7 +339,7 @@
   <xsl:template name="glue_us">
     <xsl:param name="node"/>
     <xsl:param name="separator" select="', '"/>
-    <xsl:param name="output" select="''"/>
+    <xsl:param name="prefix" select="''"/>
     <xsl:variable name="my_name" select="local-name($node)"/>
     <xsl:variable name="my_content">
       <xsl:apply-templates select="$node" mode="glueing"/>
@@ -326,10 +350,10 @@
         <xsl:call-template name="glue_us">
           <xsl:with-param name="node" select="$node[1]/following-sibling::*[1][local-name() = $my_name]"/>
           <xsl:with-param name="separator" select="$separator"/>
-          <xsl:with-param name="output" select="concat($my_content, $separator)"/>
+          <xsl:with-param name="prefix" select="concat($prefix, $my_content, $separator)"/>
         </xsl:call-template>
       </xsl:when>
-      <xsl:otherwise><xsl:value-of select="concat($output,$my_content)"/></xsl:otherwise>
+      <xsl:otherwise><xsl:value-of select="concat($prefix,$my_content)"/></xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
