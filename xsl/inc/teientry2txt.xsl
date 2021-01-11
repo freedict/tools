@@ -16,7 +16,7 @@
      import project-dependent overrides from the individual project directories... -PB 13-apr-09 -->
   
 <!-- in C5/DICT, the sense line should always be indented -->
-  <xsl:variable name="sense_indent" select="'  '"/>
+  <xsl:param name="sense_indent" select="'  '"/>
  
   <!-- TEI entry specific templates -->
   <xsl:template match="tei:entry">
@@ -29,6 +29,10 @@
 
   <!--Headword description FORM and GRAMGRP -->
   <xsl:template match="tei:form">
+    <!-- special case for where gramGrp is used to discriminate between senses and form follows   -->
+    <xsl:if test="preceding-sibling::*[1][self::tei:gramGrp]">
+      <xsl:text> </xsl:text>
+    </xsl:if>
     <xsl:variable name="paren"
       select="count(child::tei:orth) and (count(parent::tei:form) = 1 or @type='infl')"/>
     <!-- parenthesized if nested or (ad hoc) if @type="infl" -->
@@ -86,7 +90,7 @@
         <!-- then, if nested, gramGrp or gram infos... -->
         <xsl:apply-templates select="tei:gramGrp"/> 
         <xsl:apply-templates select="tei:form"/>
-        <!-- only print spaces or ,<space> when there are more leements -->
+        <!-- only print spaces or ,<space> when there are more elements -->
           <xsl:choose>
             <xsl:when test="following-sibling::tei:form"> <!--  and following-sibling::tei:form[1][not(@type='infl')] -->
               <xsl:text>, </xsl:text>
@@ -267,7 +271,7 @@
   </xsl:template>
 
   <xsl:template match="tei:quote">
-    <xsl:variable name="sense_indent">
+    <xsl:variable name="my_sense_indent">
       <xsl:call-template name="calc_sense_indent">
         <xsl:with-param name="node" select="."/>
         <xsl:with-param name="extra_indent" select="2"/>
@@ -275,13 +279,13 @@
     </xsl:variable>
     <xsl:choose>
       <xsl:when test="parent::tei:cit[@type='example']">
-        <xsl:value-of select="concat($sense_indent,'&quot;',.,'&quot; ')"/>
+        <xsl:value-of select="concat($my_sense_indent,'&quot;',.,'&quot; ')"/>
       </xsl:when><!--
       <xsl:when test="parent::tei:cit[@type='trans'][parent::tei:cit] or parent::tei:cit[@type='translation'][parent::tei:cit]">
 		
 		<xsl:value-of select="concat(' - ',.,' ')"/>
       </xsl:when>-->
-      <xsl:when test="preceding-sibling::tei:quote">
+      <xsl:when test="preceding-sibling::*[1][self::tei:quote]">
         <xsl:value-of select="', '"/>
         <xsl:apply-templates/>
       </xsl:when>
@@ -358,54 +362,53 @@
   </xsl:template>
 
   <xsl:template match="tei:xr">
+    <xsl:variable name="my_sense_indent">
+      <xsl:call-template name="calc_sense_indent">
+        <xsl:with-param name="node" select="."/>
+      </xsl:call-template>
+    </xsl:variable>
     <xsl:choose>
+      <!-- first, an override that prevents all extra formatting     -->
       <xsl:when test="count(@rend) and @rend='as-is'">
         <xsl:apply-templates/>
       </xsl:when>
       <xsl:otherwise>
         <xsl:choose>
-          <xsl:when test="not(@type) or @type='cf'">
-            <xsl:text>&#xa;   See also: </xsl:text>
+          <xsl:when test="not(@type) or @type = 'cf' or @type = 'see'">
+            <xsl:value-of select="concat('&#xa;',$my_sense_indent,'See also: ')"/>
             <xsl:apply-templates select="tei:ref"/>
-            <xsl:text>&#xa;</xsl:text>
           </xsl:when>
           <xsl:when test="@type='syn'">
-            <xsl:text>&#xa;   </xsl:text>
             <xsl:choose>
               <xsl:when test="count(tei:ref) &gt; 1">
-                <xsl:text>Synonyms: </xsl:text>
+                <xsl:value-of select="concat('&#xa;',$my_sense_indent,'Synonyms: ')"/>
               </xsl:when>
               <xsl:otherwise>
-                <xsl:text>Synonym: </xsl:text>
+                <xsl:value-of select="concat('&#xa;',$my_sense_indent,'Synonym: ')"/>
               </xsl:otherwise>
             </xsl:choose>
             <xsl:apply-templates select="tei:ref"/>
-            <xsl:text>&#xa;</xsl:text>
           </xsl:when>
           <xsl:when test="@type='ant'">
-            <xsl:text>&#xa;   </xsl:text>
             <xsl:choose>
               <xsl:when test="count(tei:ref) &gt; 1">
-                <xsl:text>Antonyms: </xsl:text>
+                <xsl:value-of select="concat('&#xa;',$my_sense_indent,'Antonyms: ')"/>
               </xsl:when>
               <xsl:otherwise>
-                <xsl:text>Antonym: </xsl:text>
+                <xsl:value-of select="concat('&#xa;',$my_sense_indent,'Antonym: ')"/>
               </xsl:otherwise>
             </xsl:choose>
             <xsl:apply-templates select="tei:ref"/>
-            <xsl:text>&#xa;</xsl:text>
           </xsl:when>
           <xsl:when test="@type='infl-base'">
             <!-- inflectional base -->
-            <xsl:text>&#xa; Inflection of: </xsl:text>
+             <xsl:value-of select="concat('&#xa;',$my_sense_indent,'Inflection of: ')"/>
             <xsl:apply-templates select="tei:ref"/>
-            <xsl:text>&#xa;</xsl:text>
           </xsl:when>
           <xsl:when test="@type='deriv-base'">
             <!-- derivational/compound base -->
-            <xsl:text>&#xa; Derived from: </xsl:text>
+            <xsl:value-of select="concat('&#xa;',$my_sense_indent,'Derived from: ')"/>
             <xsl:apply-templates select="tei:ref"/>
-            <xsl:text>&#xa;</xsl:text>
           </xsl:when>
           <!-- the <xr>s below are positioned inline -->
           <xsl:when test="@type='imp-form'">
@@ -437,7 +440,6 @@
             <xsl:text>&#xa; </xsl:text>
             <xsl:value-of select="concat(@type,': ')"/>
             <xsl:apply-templates select="tei:ref"/>
-            <xsl:text>&#xa;</xsl:text>
           </xsl:otherwise>
         </xsl:choose>
       </xsl:otherwise>
