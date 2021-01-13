@@ -68,9 +68,7 @@ def get_release_info_for_dict(path, version):
         parsed_name, file_version_str = format.value.search(file).groups()
         file_version = normalize_version(file_version_str)
 
-        print(file_version, version)
         if file_version != version:
-            print(file_version)
             raise ReleaseError('Version from file name "%s" did not match version of directory "%s"' \
                     % (file, version))
         if not name:
