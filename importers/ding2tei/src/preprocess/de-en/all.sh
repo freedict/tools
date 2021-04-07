@@ -1,8 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # preprocessed/de-en/all.sh - run all preprocessing scripts, in correct order
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020 Einhard Leichtfuß, 2021 the FreeDict project
 #
 # This file is part of ding2tei-haskell.
 #
@@ -19,6 +19,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
 #
+
+# The Ding source is highly irregular.  The preprocessing steps help to keep
+# the parser clean by transforming irregularities to a more regular markup.
+#
+# See also:
+#  * src/preprocess/de-en/README
+
 
 dir="$(dirname "$(realpath "$0")")"
 cd "$dir"

@@ -19,15 +19,15 @@ Dependencies
 * Happy
 * Alex
 
-On Debian:
+On Debian-based distributions:
 
-$ apt-get install ghc libghc-xml-dev happy alex
+# apt install ghc libghc-xml-dev happy alex
 
 
 Locale
 ------
 
-Use a UTF-8 locale, or else some things might produce unexpected results or
+Use a UTF-8 locale, otherwise some things might produce unexpected results or
 even fail.  In particular, do not use the C locale.
 
 
@@ -93,9 +93,19 @@ See also:
 Notes on usage with the FreeDict tools
 --------------------------------------
 
-To use the resulting TEI files with the FreeDict tools, the former need to
-be placed in the dictionary hierarchy of the fd-dictionaries git repository.
-Subsequently, the general documentation on using the tools apply.
+To use the resulting TEI files with the FreeDict tools:
+
+1.  Create a directory named as the ISO-639-3 language pair (e.g., deu-eng) and
+    place the generated TEI file (e.g., deu-eng.tei) inside.
+2.  Create a minimal Makefile in this directory:
+
+    ```
+    DISTFILES = deu-eng.tei
+
+    include $(FREEDICT_TOOLS)/mk/dicts.mk
+    ```
+3.  See <https://github.com/freedict/tools> for more information.
+    Note: `make' must be provided with a FREEDICT_TOOLS [environment] variable.
 
 
 Licensing
