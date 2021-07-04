@@ -212,7 +212,16 @@
   </xsl:template>
 
   <!-- we pull these in separately -->
-  <xsl:template mode="changelog" match="tei:*[1][local-name() = 'date']"/>
+  <!-- date: Match full path to prevent (non-fatal) xsltproc errors on large
+       input.
+       - On large input (e.g., deu-eng), a hardcoded memory limit is otherwise
+         reached.
+         - See <https://stackoverflow.com/questions/40159864/getting-memory-allocation-failed-growing-nodeset-hit-limit-with-xml2-package/40176398#40176398>
+       - Note: These errors are apparently irrelevant to the result.
+       - `match' is apparently matched before `mode', thus a relative XPath
+         would need to be evaluated for each node.
+  -->
+  <xsl:template mode="changelog" match="/tei:TEI/tei:teiHeader/tei:revisionDesc/tei:*[1][local-name() = 'date']"/>
   <xsl:template mode="changelog" match="tei:name[1]"/>
 
   <xsl:template mode="changelog" match="text()[string-length(normalize-space()) > 0]">
