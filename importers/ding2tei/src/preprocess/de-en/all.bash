@@ -1,8 +1,9 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
-# preprocessed/de-en/all.sh - run all preprocessing scripts, in correct order
+# preprocessed/de-en/all.bash - run all preprocessing scripts, in correct
+#                               order
 #
-# Copyright 2020 Einhard Leichtfuß, 2021 the FreeDict project
+# Copyright 2020,2022 Einhard Leichtfuß, 2021 the FreeDict project
 #
 # This file is part of ding2tei-haskell.
 #
@@ -25,23 +26,19 @@
 #
 # See also:
 #  * src/preprocess/de-en/README
+#  * src/preprocess/de-en/update_help.bash
 
 
 dir="$(dirname "$(realpath "$0")")"
 cd "$dir"
 
 
-./typos.sed \
-	| ./grammar.sed \
-	| ./inflected_forms.sed \
-	| ./usage.sed \
-	| ./usage_debatable.sed \
-	| ./slashes.sed \
-	| ./abbreviations.sed \
-	| ./misc.sed \
-	| ./quotes.sed \
-	| ./additions.sed \
-	| ./alter.sed \
-	| ./drop.sed
+source ./order.conf.bash || exit 1
+sedfiles_ordered_escaped=( "${sedfiles_ordered[@]@Q}" )
+sedfiles_ordered_piped="${sedfiles_ordered_escaped[*]/#/| ./}"
+sedfiles_ordered_piped="${sedfiles_ordered_piped#| }"
+
+eval "$sedfiles_ordered_piped"
+
 
 # vi: ts=2 sw=2 noet

@@ -1,7 +1,7 @@
 {-
  - Language/Ding/Parser.hs - parser
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020-2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -26,33 +26,76 @@
  -}
 module Language.Ding.Parser (parse) where
 
-import Control.Monad.Writer (runWriter)
+import Prelude hiding (log)
+import Control.Monad (guard)
+import Control.Monad.Writer (runWriter, Writer, mapWriterT)
+import Data.Functor.Identity (Identity(Identity))
+import Data.Maybe (catMaybes)
 
 import Data.NatLang.Dictionary (Dictionary(Dictionary), Body(Body))
 import Data.NatLang.Language (Language(German, English))
 import Language.Ding.Parser.Header (parseHeader)
-import Language.Ding.Parser.Line (parseLine)
+import Language.Ding.Parser.Line (parseLine, FailWriter)
 import Language.Ding.Syntax (Ding, Line)
 import Language.Ding.Token (Token(..), Atom(..))
 
 
--- | Construct a Ding AST from a list of tokens.
-parse :: [Token] -> Ding
+-- Note:
+--  * The parse log is completely separated from the returned value.
+--    * Consequence: Writing both in parallel (to stderr and, e.g., a file) is
+--      difficult.
+--    * This should not affect performance too much, however.  The parse log is
+--      usually short and we cannot begin writing the data before most of the
+--      parsing is done, anyways.
+
+
+-- | Construct a Ding AST from a list of tokens, plus a parse log composed of
+--   parse errors and notes.
+--   Iff one of the errors prevents constructing a valid Ding AST, `Nothing' is
+--   returned as such.
+parse :: [Token] -> (Maybe Ding, [Either String String])
 parse ts =
-  let (headerLines, bodyToks) = separateHeaderLines ts
-  in  Dictionary
-        (parseHeader headerLines)
-        German
-        English
-        (Body $ fst $ parseBody bodyToks)
+  ( do
+      header <- either (const Nothing) Just eHeader
+      guard $ not $ null bodyLines
+      return $ Dictionary header German English (Body bodyLines)
+  , concat
+      [ either (pure . Left) (const []) eHeader
+      , bodyLog
+      -- Note: Appending a single value is not optimal.  Prepending instead
+      --       would yield an unusual order.
+      , if null bodyLines
+        -- The FreeDict XML schema requires at least one entry and no such can
+        -- be generated from nothing.
+        then pure $ Left "Input contains no valid dictionary entries."
+        else []
+      ]
+  )
+ where
+  (headerLines, bodyToks) = separateHeaderLines ts
+
+  eHeader = parseHeader headerLines
+  (bodyLines, bodyLog) = runWriter $ parseBody bodyToks
 
 
--- | Parse a list of `Line's.  Errors, if there is none.
---   (The FreeDict XML schema requires at least one entry and no such can be
---   generated from nothing.)
-parseBody :: [Token] -> ([Line], [String])
-parseBody [] = error "Input contains no post-header data."
-parseBody ts = runWriter $ mapM parseLine $ tokLines ts
+-- | Parse a list of `Line's.
+parseBody :: [Token] -> ParseWriter [Line]
+parseBody = fmap catMaybes . mapM (mergeErrorToLog . parseLine) . tokLines
+
+-- | A writer logging both informative messages (`Left') and error messages
+--   (`Right').
+type ParseWriter = Writer [Either String String]
+
+-- | Convert a `FailWriter' to a `ParseWriter'.
+--   If an error occurred in the `FailWriter', the `ParseWriter' returns
+--   `Nothing' as value.
+mergeErrorToLog :: FailWriter a -> ParseWriter (Maybe a)
+mergeErrorToLog = mapWriterT aux
+ where
+  aux :: Either String (a, [String])
+      -> Identity (Maybe a, [Either String String])
+  aux (Left e)         = Identity (Nothing, pure $ Left e)
+  aux (Right (x, log)) = Identity (Just x,  map Right log)
 
 
 -- | Separate the initial lines belonging to the header from the body lines.
@@ -61,7 +104,7 @@ separateHeaderLines :: [Token] -> ([String], [Token])
 separateHeaderLines (Token _ _ (HeaderLine hl) : Token _ _ NL : tls) =
   let (hls, tls') = separateHeaderLines tls
   in  (hl : hls, tls')
-separateHeaderLines tls                                   = ([], tls)
+separateHeaderLines tls = ([], tls)
 
 
 -- | Break a list of tokens into a list of lines, the latter being also a list
@@ -84,6 +127,7 @@ breakLine (t                 : ts) =
   let (l, ts') = breakLine ts
   in  (t : l, ts')
 breakLine []                       =
+  -- TODO: Encapsulate error in the logging monad.
   error "Input is not newline-terminated."
 
 

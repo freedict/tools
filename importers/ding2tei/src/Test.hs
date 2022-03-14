@@ -1,7 +1,7 @@
 {-
  - Test.hs - manual testing
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -27,7 +27,7 @@
  -}
 module Test () where
 
-import Control.Monad.Trans.Writer (runWriter)
+import Control.Monad.Trans.Writer (runWriterT)
 
 import App.Ding2TEI
 import Data.NatLang.Dictionary
@@ -43,27 +43,19 @@ import Language.Ding.Enrich
 import Language.TEI.Syntax
 import Language.TEI.ToXML
 
--- | For testing purposes, parse all but the first `n' lines.
---   Only print the number of lines parsed.
---   Useful to identify several syntax errors in succession (avoids re-parsing
---   the known-good part).
---   A header is prepended.  Make sure to at least drop the header.
-tailParse :: String -> Int -> IO ()
-tailParse fileName n = do
-  input <- readFile fileName
-  let ding = parse $ scan $ header ++ (unlines $ drop n $ lines input)
-  putStrLn $ show $ length $ show ding
 
 parseLine :: [Token] -> Line
-parseLine = fst . runWriter . LP.parseLine
+parseLine ts = case runWriterT $ LP.parseLine ts of
+  Right (l, log) -> l
+  Left e         -> error e
 
 header :: String
 header = unlines
-  [ "# Version :: 1.8.1 2016-09-06"
-  , "# Copyright (c) :: Frank Richter <frank.richter.tu-chemnitz.de>,"
-  , "# 1995 - 2016"
+  [ "# Version :: 0.1 1970-01-01"
+  , "# Copyright (c) :: Jane Doe,"
+  , "# 1970"
   , "# License :: GPL Version 2 or later; GNU General Public License"
-  , "# URL :: http://dict.tu-chemnitz.de/"
+  , "# URL :: https://example.org/"
   ]
 
 

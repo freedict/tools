@@ -1,7 +1,7 @@
 {-
  - Language/TEI/ToXML/Header.hs - convert header to XML
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -93,9 +93,12 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
   availability = unode "availability" $ (,) [uattr "status" "free"]
     [
       -- Copyright holders (Ding author & this program's contributors)
-      unode "p" $ (++) "Copyright (C) " $
-        intercalate ", " $ map (\ (p, y) -> p ++ " " ++ y) $
-          (dingAuthor, dingCopyrightPeriod) : Cfg.contributors
+      unode "p"
+        $ (++) "Copyright (C) "
+        $ intercalate ", "
+        $ map (\ (p, y) -> p ++ " " ++ y)
+        $ (dingAuthor, dingCopyrightPeriod)
+            : map (\ (p, y) -> (Cfg.personName p, y)) Cfg.contributors
     ,
       -- License notice
       unode "p" $ mergeContent
@@ -225,10 +228,10 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
   titleStmt = unode "titleStmt"
     [ unode "title"  title
     , unode "author" dingAuthor
-    , unode "editor" Cfg.editor
+    , unode "editor" $ Cfg.personName Cfg.editor
     , unode "respStmt"
         [ unode "resp" "Maintainer"
-        , unode "name" Cfg.maintainer
+        , unode "name" $ Cfg.personName Cfg.maintainer
         ]
     ]
   
@@ -260,7 +263,10 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
     convChange ch = unode "change"
       ( [ uattr "n"      chVersion
         , uattr "when" $ date
-        , uattr "who"  $ unwords $ map ('#':) $ Cfg.chUsersShort ch
+        , uattr "who" 
+            $ unwords
+            $ map (('#':) . Cfg.personId)
+            $ Cfg.chPersons ch
         ]
       , unode "list"
           ( [uattr "type" "bulleted"]
@@ -281,7 +287,8 @@ convHeader header srcLang tgtLang nHeadwords = teiHeader
 
       nameList :: [Content]
       nameList = intercalate [text " and "]
-               $ map (pure . Elem . unode "name") $ Cfg.chUsersFull ch
+               $ map (pure . Elem . unode "name" . Cfg.personName)
+               $ Cfg.chPersons ch
 
 
 -- References

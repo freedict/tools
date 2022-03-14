@@ -1,6 +1,6 @@
 -- Language/Ding/AlexScanner.x - lexer
 --
--- Copyright 2020 Einhard Leichtfuß
+-- Copyright 2020,2022 Einhard Leichtfuß
 --
 -- This file is part of ding2tei-haskell.
 --
@@ -104,6 +104,9 @@ $slashRightFree = [ $white $anyRightBracket \; \, : \. \? ! ]
 -- Smileys are treated as abbreviations.
 @smiley = ":-)"
 
+-- Abbreviations that cannot be easily parsed by normal means.
+@specialAbbrev = @smiley | "/.ed"
+
 $word_end = ~$textChar
 
 
@@ -185,8 +188,8 @@ tokens :-
   $slashLeftFree ^ "/ " $specialChar " /" / $slashRightFree {
     regularToken $ SlashSpecial . pure . (!!2)              }
 
-  $slashLeftFree ^ "/ " @smiley " /" / $slashRightFree      {
-    regularToken $ Abbrev . dropLast 2 . drop 2             }
+  $slashLeftFree ^ "/ " @specialAbbrev " /" / $slashRightFree {
+    regularToken $ Abbrev . dropLast 2 . drop 2               }
 
   -- Treat stuff like "/ AC/DC /" also as a special case.  This is because,
   -- in general, strong slashes may occur in between weak slashes.  For this
@@ -267,10 +270,13 @@ tokens :-
                                     Pronoun [Relative] }
   "num"                     { gramKW $ PartOfSpeech Numeral }
   "interj"                  { gramKW $ PartOfSpeech Interjection }
+  "Partikel"                { gramKW $ PartOfSpeech Particle }
+  "particle"                { gramKW $ PartOfSpeech Particle }
   --
   "Gen."                    { gramKW $ Case Genitive }
   "Akk."                    { gramKW $ Case Accusative }
   "Dat."                    { gramKW $ Case Dative }
+  "Nom."                    { gramKW $ Case Nominative }
 
   -- Interrogative pronouns (not grammar keywords in the strict sense)
   "wo?"                     { regularToken IntPronKW }

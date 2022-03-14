@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# extract.sh - a small script to extract different expressions
+# extract.bash - a small script to extract different expressions
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -20,7 +20,7 @@
 # along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-dingfile=../dingsrc/de-en.txt.preprocessed
+dingfile=../dict/ding/de-en.txt.pp
 types=(
 	{brace,bracket,paren,dot,switch}exps nonalpha words wordpairs
 	parenprefs{1,2}

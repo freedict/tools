@@ -3,7 +3,7 @@
 # preprocess/de-en/usage_debatable.sed - fix debatable errors in usage
 #                                        annotations
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -27,7 +27,6 @@
 #  * In all but very few cases, the separator is a comma or a slash.
 #  * Slash has a distinct meaning, the others (<;>, <und>) not.
 
-s`\[(archaic)\; (academic)\]`[\1, \2]`g
 s`\[(relig\.) und (Schw\.)\]`[\1, \2]`g
 
 
@@ -37,9 +36,7 @@ s`\[(relig\.) und (Schw\.)\]`[\1, \2]`g
 #    text.
 #  * Otherwise, it could be delegated to the parser.
 
-s`\[(obs\.) or (geh\.)\]`[\1/\2]`g
-s`\[(geh\.) or (humor\.)\]`[\1/\2]`g
-s`\[(formal) or (obs\.|humor\.)\]`[\1/\2]`g
+s`\[(formal) or (humor\.)\]`[\1/\2]`g
 
 
 ## Separation of extra info
@@ -49,9 +46,7 @@ s`\[(formal) or (obs\.|humor\.)\]`[\1/\2]`g
 # Too rare to consider in the parser.
 
 s`\[(French) for (a female singer, especially in a nightclub)\]`[\1] (\2)`
-s`\[(ugs\.) (schnelles Auto)\]`[\1] (\2)`g
 s`\[(übtr\.) für (eine große, schlanke Person)\]`[\1] (\2)`g
-s`\[(pej\.) für (Mittäter\; Gefolge)\]`[\1] (\2)`g
 s`\[(obs\.) für (Küster, Kirchendiener)\]`[\1] (\2)`g
 
 

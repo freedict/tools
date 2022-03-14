@@ -1,7 +1,7 @@
 {-
  - Language/TEI/Show/Grammar.hs - show-like functions for grammar elements
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -39,12 +39,13 @@ import Data.NatLang.Grammar
 
 -- Notes:
 --  * The string representations are chosen according to
---    Freedict/fd-dictionaries/shared/FreeDict_ontology.xml
+--    Freedict/fd-dictionaries/shared/FreeDict_ontology.xml (short).
 --    * If not found, annotated as UNCERTAIN.
 --    * The existing dictionaries may serve as reference also.
 --      * swh-eng is the only dictionary to contain <subc> elements.
 --      * lat-deu is the only dictionary to contain <case> elements.
 --    * Some could not be found anywhere and have been guessed/invented.
+--    * See also <https://github.com/freedict/fd-dictionaries/wiki/FreeDict-HOWTO-%E2%80%93-Writing-A-FreeDict-Dictionary>.
 --  * This module encompasses show* functions, which are similar to show, as
 --    defined in `Show' instances.
 --    * They are not defined in `Show' instances, because
@@ -68,6 +69,7 @@ showPrimaryPOS Article      = "art"
 showPrimaryPOS (Pronoun _)  = "pron"
 showPrimaryPOS Numeral      = "num"
 showPrimaryPOS Interjection = "int"
+showPrimaryPOS Particle     = "ptcl"      -- UNCERTAIN (common gloss)
 
 showVerbType :: VerbType -> String
 showVerbType Transitive   = "trans"
@@ -89,6 +91,7 @@ showPrimaryNumber (Singular _) = "sg"     -- UNCERTAIN (~ several)
 showPrimaryNumber (Plural   _) = "pl"     -- UNCERTAIN (~ several)
 
 showCase :: Case -> String
+showCase Nominative = "nom"               -- UNCERTAIN
 showCase Genitive   = "gen"               -- UNCERTAIN (~lat-deu)
 showCase Accusative = "acc"               -- UNCERTAIN (~lat-deu: akk)
 showCase Dative     = "dat"               -- UNCERTAIN (~lat-deu)

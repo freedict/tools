@@ -1,7 +1,7 @@
 {-
  - Language/Ding/Read/Usage.hs - read usage (<[]>) annotations from strings
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -157,6 +157,7 @@ readUsage s@"iron."    = Usage Register s
 readUsage s@"fachspr." = Usage Register s   -- ~ "sci." ?
 readUsage s@"euphem."  = Usage Register s   -- ?
 readUsage s@"dialect"  = Usage Register s
+readUsage s@"literary" = Usage Register s   -- ~ "poet."
 
 
 -- Styles (TODO: more)
@@ -177,7 +178,7 @@ readUsage s@"fig." = Usage Style s
 -- @type="textType", as in TEI Lex-0.  Currently considered a hint.
 readUsage s@"jur."  = Usage Hint s  -- not a domain?
 readUsage s@"adm."  = Usage Hint s  -- not a domain?
-readUsage s@"poet." = Usage Hint s  -- not a register?
+readUsage s@"poet." = Usage Hint s  -- not a register?;  ~ "literary"
 
 
 -- Domains:

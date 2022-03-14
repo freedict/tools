@@ -10,18 +10,29 @@ This program was written as part of a Bachelor's thesis.  See doc/thesis.pdf.
 Dependencies
 ------------
 
-* Haskell (Glasgow Haskell Compiler / GHC)
-  * base
-  * containers (Data.Map, Data.Set)
-  * transformers (Control.Monad.Trans.State)
-  * pretty (Text.PrettyPrint)
-  * haskell-xml (Text.XML.Light)
-* Happy
-* Alex
+* main ding2tei program:
+  * Haskell (Glasgow Haskell Compiler / GHC)
+    * base
+    * containers (Data.Map, Data.Set)
+    * transformers (Control.Monad.Trans.{State,Writer})
+    * pretty (Text.PrettyPrint)
+    * haskell-xml (Text.XML.Light)
+    * safe (Safe.Exact)
+  * Happy
+  * Alex
+* preprocessing:
+  * Bash
+  * sed (with support for `-E`; e.g., GNU sed, OpenBSD's sed)
+* `make` (optional)
+  * GNU make
+  * standard UNIX utilities (provided by, e.g., GNU coreutils)
+  * curl (`make download-ding-1.9`)
+  * xz (`make download-ding-1.9`)
 
 On Debian-based distributions:
 
-# apt install ghc libghc-xml-dev happy alex
+# apt install ghc libghc-xml-dev libghc-safe-dev happy alex bash sed make \
+    coreutils curl xz-utils
 
 
 Locale
@@ -31,81 +42,75 @@ Use a UTF-8 locale, otherwise some things might produce unexpected results or
 even fail.  In particular, do not use the C locale.
 
 
-Obtain the data
----------------
+Obtain the Ding dictionary
+--------------------------
 
-The Ding source can be obtained here:
+$ make download-ding-1.9
+
+Alternatively, it can be manually downloaded from:
 
  https://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en/
 
-Currently this program targets version 1.8.1.  Expect things to fail with other
-versions.
+and stored (uncompressed) at:
 
-Store the uncompressed file at:
-
- dingsrc/de-en.txt
+ dict/ding/de-en.txt
 
 
-How to build
-------------
+Build ding2tei
+--------------
 
-$ cd src
+$ make
 
-$ alex Language/Ding/AlexScanner.x
-$ happy Language/Ding/Parser/Line.y
+You may need to include `-dynamic` in HCFLAGS; e.g.:
 
-$ ghc -Wall -O2 -XRecursiveDo Main -o ../ding2tei
-
-
-How to run
-----------
-
-Note: The program currently allocates a lot of memory, around 4.5 GiB, when
-      applied to the full Ding source.
-
-$ src/preprocess/de-en/all.sh < dingsrc/de-en.txt \
-    > dingsrc/de-en.txt.preprocessed
-$ ./ding2tei dingsrc/de-en.txt.preprocessed deu-eng.tei
-$ ./ding2tei -i dingsrc/de-en.txt.preprocessed eng-deu.tei
+$ make HCFLAGS='-O2 -Wall -dynamic'
 
 
-How to test (manually)
+Build TEI dictionaries
 ----------------------
 
-$ cd src
-$ ghci -XRecursiveDo Test.hs
+$ make deu-eng
+$ make eng-deu
+
+Note: The main program (ding2tei) allocates a lot of memory, around 5.7 GiB,
+      when applied to the full Ding dictionary.
+
+
+Debug / Run ding2tei manually
+-----------------------------
+
+# TODO: make (alex, happy)
+$ make haskell-source-files
+$ ghci -i -ibuild:src -XRecursiveDo Test
 >> parseLine $ scan "some dictionary :: line\n"
 >> pretty $ parseLine $ scan (examples !! 0)
->> ding = parse $ scan $ header ++ (concat examples)
+>> (Just ding, log) = parse $ scan $ header ++ (concat examples)
 >> pretty ding
 >> tei = ding2tei $ enrichDirected $ enrichUndirected ding
 >> putStr $ prettyTEI $ tei
->> tailParse "filename" nInitialLinesDropped
 >> :q
 
-$ ./ding2tei doc/examples/test.ding test.tei
+$ ./ding2tei --help
+$ ./ding2tei doc/examples/test.ding - | pager
 
 See also:
 
  src/Main.hs
+ GNUmakefile
 
 
-Notes on usage with the FreeDict tools
---------------------------------------
+Usage with the FreeDict tools
+-----------------------------
 
 To use the resulting TEI files with the FreeDict tools:
 
-1.  Create a directory named as the ISO-639-3 language pair (e.g., deu-eng) and
-    place the generated TEI file (e.g., deu-eng.tei) inside.
-2.  Create a minimal Makefile in this directory:
+$ make -C dict/tei/lg1-lg2
 
-    ```
-    DISTFILES = deu-eng.tei
-
-    include $(FREEDICT_TOOLS)/mk/dicts.mk
-    ```
-3.  See <https://github.com/freedict/tools> for more information.
-    Note: `make' must be provided with a FREEDICT_TOOLS [environment] variable.
+Notes:
+ * Above, lg1-lg2 should be either of deu-eng and eng-deu.
+ * Memory usage of the FreeDict tools is even higher than that of ding2tei.
+ * Running time is quite long (~ 1 day).
+ * See <https://github.com/freedict/tools> for more information.
 
 
 Licensing

@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/inflected_forms.sed
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -24,10 +24,27 @@
 ### Annotated inflected forms (on the English side)
 
 
+## Incorrect syntax and semantics.
+
+# See <https://en.wiktionary.org/w/index.php?title=strive&oldid=65625808#Verb>.
+s`\{(strove), (striven) / (strived)\; (strived)\}`\{\1, \3\; \2, \4, \1 [coll.]\}`
+
+# See <https://en.wiktionary.org/w/index.php?title=stink&oldid=65417348#Verb>.
+s`\{(stank)/(stunk), (stunk)\}`{\1, \2; \3}`g
+
+
 ## </> -> <,>  (normalize inner separator)
+
 s`\{(chided)/(chid)\; (chided)/(chidden)/(chid\})`\{\1, \2\; \3, \4, \5\}`g
 s`\{(got)\; (got)/(gotten \[Am\.\])\}`\{\1\; \2, \3\}`g
 s`\{(outshined)/(outshone)\; (outshined)/(outshone)\}`\{\1, \2\; \3, \4\}`g
+s`\{(leaped)/(leapt)\; (leaped)/(leapt)\}`{\1, \2\; \3, \4}`g
+s`\{(smelled) / (smelt \[Br\.\])\; (smelled) / (smelt \[Br\.\])\}`{\1, \2\; \3, \4}`g
+s`\{(learned) / (learnt \[Br\.\])\; (learned) / (learnt \[Br\.\])\}`{\1, \2\; \3, \4}`g
+s`\{(staved)/(stove)\; (staved)/(stove)\}`{\1, \2\; \3, \4}`g
+s`\{(swung) / (swang \[obs\.\]); (swung)\}`{\1, \2\; \3}`g
+s`\{(struck)\; (struck) / (stricken \[Am\.\])\}`{\1\; \2, \3}`g
+s`\{(girded)/(girt); (girded)/(girt)\}`{\1, \2\; \3, \4}`g
 
 
 ## Alternative form in parantheses instead of separated by comma
@@ -37,22 +54,6 @@ s`\{(swung) \((swang \[obs\.\])\)\; (swung)\}`\{\1, \2\; \3\}`g
 # In this particular case it is also unclear (from the syntax only), which
 # forms the [archaic]-annotation applies to.
 s`\{(work)\; (worked)\} \{(wrought)\; (wrought) (\[archaic\])\}`\{\1, \3 \5; \2, \4 \5\}`
-
-
-## <;> -> <,>  (remove syntax breaking second <;>)
-s`\{(besought, beseeched)\; (besought)\; (beseeched)\}`{\1\; \2, \3}`g
-s`\{(awoke, awaked)\; (awoken)\; (awaked)\}`{\1\; \2, \3}`g
-s`\{(pleaded)\; (pled \[coll\.\])\; (pleaded)\; (pled \[coll\.\])\}`{\1, \2; \3, \4}`g
-s`\{(undergirded, undergirt)\; (undergirded)\; (undergirt)\}`{\1\; \2, \3}`g
-
-# See: https://en.wiktionary.org/wiki/durst#English // 2020-09-09 00:34:20 CEST
-s`\{(dared)\; (durst( \[obs\.\])?)\; (dared)\}`{\1, \2\; \4}`g
-
-
-## <,> -> <;>
-s`\{(hung), (hung)\}`{\1; \2}`g
-s`\{(strung), (strung)\}`{\1; \2}`g
-s`\{(kenned), (kent)\}`{\1; \2}`g
 
 
 ## Double }}.

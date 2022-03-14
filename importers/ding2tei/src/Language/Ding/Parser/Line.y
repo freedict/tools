@@ -1,7 +1,7 @@
 {-
  - Language/Ding/Parser/Line.y - parser for a single Ding line
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020-2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -34,15 +34,21 @@
 {
 -- Haskell module header and import statements.
 
+{-# LANGUAGE FlexibleInstances #-}
+
 {-|
  - Parse single Ding lines from a list of tokens.  Only accepts newline
  - terminated lines.
  -}
-module Language.Ding.Parser.Line (parseLine) where
+module Language.Ding.Parser.Line (parseLine, FailWriter) where
 
+import Prelude hiding (fail)
+import Control.Monad.Fail (MonadFail(fail))
+import Control.Monad.Writer
+  (Writer, tell, writer, WriterT(WriterT), mapWriterT)
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import qualified Data.List.NonEmpty as NEList
-import Control.Monad.Writer (Writer, tell)
+import Safe.Exact (zipWithExactMay)
 
 import Data.NatLang.Grammar
   ( GrammarInfo(..)
@@ -59,12 +65,13 @@ import qualified Language.Ding.Partial.PseudoUnit as PSU
 import Language.Ding.Read.Usage (readUsage)
 import Language.Ding.Syntax
 import Language.Ding.Token
+  (Token(..), Atom(..), Position(..), tokenToString, tokenToLine)
 }
 
 
 %name parseLine         -- name of the resulting function
 %tokentype { Token }
-%monad { Writer [String] }
+%monad { FailWriter }
 %error { parseError }   -- name of the error function - must be defined later
 
 
@@ -167,7 +174,7 @@ import Language.Ding.Token
 --      * However, since we only parse single lines, where each contained
 --        token is annotated with a line number, this would be a problem.
 line :: { Line }
-line : groups '::' groups '\n'          { makeLine $1 $3 }
+line : groups '::' groups '\n'          {% makeLine (tokenToLine $2) $1 $3 }
 
 groups :: { [Group] }
 groups : group '|' groups               { $1 : $3 }
@@ -240,7 +247,7 @@ partialUnit : partialUnit gramAnnot     { $1 `PU.plusGramAnnot` $2 }
             | unitText                  { PU.fromToken $1 }
 
             -- 'to' has lowest precedence (and is right associative), so the
-            -- later rules will be prefered.
+            -- later rules will be preferred.
             | 'to'                      { PU.fromToken $1 }
             | 'to' unitInterpct         { PU.fromToken ($1 <> $2) }
             | 'to' unitText             { PU.fromVerbToken $2 }
@@ -276,8 +283,9 @@ unitInterpct : ','                      { $1 }
 gramAnnot :: { NonEmpty GrammarInfo }
 gramAnnot : '{' gramAnnot1s '}'           { $2 }
 
--- Note: <;> and <,> are used with different meanings in this context, but to
---       keep things simple, they are considered equivalent as of now.
+-- Note: <;> and <,> are used with different meanings in this context
+--       (usually AND and OR, respectively), but to keep things simple, they
+--       are considered equivalent as of now.
 gramAnnot1s :: { NonEmpty GrammarInfo }
 gramAnnot1s : gramAnnot1 ';' gramAnnot1s  { $1 <> $3 }
             | gramAnnot1                  { $1 }
@@ -290,9 +298,10 @@ gramAnnot1 : gramAnnot2s                  { $1 }
 -- The first rule only allows a non-empty list of interrogation pronouns.
 collocAnnot1 :: { Collocate }
 collocAnnot1 : interrogProns
-               '+' tok_gramCase           { CollocCase $1 (tokenToCase $3) }
-             | '+' tok_gramCase           { CollocCase [] (tokenToCase $2) }
-             | '+' tok_gramPOS            { CollocPOS (tokenToPOS $2)      }
+               '+' tok_gramCase           { CollocCase $1 (tokenToCase $3)  }
+             | '+' tok_gramCase           { CollocCase [] (tokenToCase $2)  }
+             | '+' tok_gramPOS            { CollocPOS (tokenToPOS $2)       }
+             | '+' tok_gramNumber         { CollocNumber (tokenToNumber $2) }
 
 -- TODO: Consider to add '/' as alternative separator.
 gramAnnot2s :: { NonEmpty GrammarInfo }
@@ -314,7 +323,7 @@ interrogProns : tok_interrogPron ',' interrogProns  { tokenToString $1 : $3 }
 -- Inflected forms
 
 -- Notes:
---  * Inflected forms are distinguished from grammar annotations by not the
+--  * Inflected forms are distinguished from grammar annotations by the
 --    absence of grammar keywords.
 --  * NonEmpty lists are used here.  (:|) constructs a NonEmpty list from a
 --    single head element and a regular list.  (<|) joins a single element with
@@ -461,11 +470,13 @@ angleExp1 : angleExp2 angleExp1         { $1 <> $2 }
 --    Drop for now.  (TODO?)
 --    * They are rare (two occurences).
 --  * Only one occurence of nested <()>.  Dropped for now.  (TODO?)
+--  * Only 4 occurrences of nested abbreviations.  Dropped for now.  (TODO?)
 angleExp2 :: { Token }
 angleExp2 : tok_text                    { $1 }
           | gtok_anyKW                  { $1 }
           | angleExp                    { mempty }
           | '(' angleExp1 ')'           { mempty }
+          | abbrevAnnot                 { mempty }
 
 
 -------------------------------------------------------------------------------
@@ -535,73 +546,69 @@ gtok_gram : tok_gramPOS                 { $1 }
 -- Auxiliary Haskell code
 
 
--- Note:
---  * If we wanted to perform the parsing in a monad that both allows for
---    logging and producing errors, we might use the following.
-
---data FailWriter w a
---  = Ok a w
---  | Failed String
---
---instance Monoid w => Functor (FailWriter w) where
---  fmap f (Ok x w)   = Ok (f x) w
---  fmap _ (Failed s) = Failed s
---
---instance Monoid w => Applicative (FailWriter w) where
---  pure x = Ok x mempty
---  (Ok f w) <*> (Ok x w') = Ok (f x) (w <> w')
---  (Failed s) <*> _ = Failed s
---  _ <*> (Failed s) = Failed s
---
---instance Monoid w => Monad (FailWriter w) where
---  (Ok x w) >>= f =
---    case f x of
---      Failed s -> Failed s
---      Ok y w'  -> Ok y (w <> w')
---  (Failed s) >>= _ = Failed s
---
---instance Monoid w => MonadFail (FailWriter w) where
---  fail s = Failed s
+-- Logging:
+--  * The FailWriter below allows for logging of parse notes and errors
+--    (`fail').
+--    - Errors indicate a failure and, so, no value is returned.
+--  * `fail' should always be preferred over `error', unless the respective
+--    condition indicates a programming error.
+--  * The filename should not and cannot be given here; it is prepended at a
+--    higher level.
 
 
-parseError :: [Token] -> a
+-- | A writer that allows logging informative messages, but also to fail with
+--   an error message.
+--   The informative log is retained in case of a failure.
+type FailWriter = WriterT [String] (Either String)
+
+instance MonadFail (Either String) where
+  fail = Left
+
+
+-- Note: The token list can only be empty if the token list given to
+--       `parseLine' was not terminated by a newline token.  Which should not
+--       be possible (an error would occur on a higher level).
+--  - The first error is thus deliberately handled by `error' and not `fail'.
+parseError :: [Token] -> FailWriter a
 parseError [] = error "Parse error at end of line (missing newline?)."
-parseError ((Token _ (Position line col) _):_) =
-  error $ "Parse error at line " ++ show line ++ ", column " ++ show col ++ "."
+parseError ((Token _ (Position line col) _):_)
+  = fail
+  $ "Parse error at line " ++ show line ++ ", column " ++ show col ++ "."
 
 
--- Create a line from the left and right side's groups.
--- This is essentially `Data.List.zipWith', but throws an error when the lists
--- have different lengths.  (One could also use zipWithExact from the `safe'
--- package, but this would not give a custom error.)
-makeLine :: [Group] -> [Group] -> Line
-makeLine gs hs = Line $ makeLine' gs hs
- where
-  makeLine' :: [Group] -> [Group] -> [Entry]
-  makeLine' [] []         = []
-  makeLine' (g:gs) (h:hs) = (Entry g h) : makeLine' gs hs
-  makeLine' _      _      =
-    error "Error: Number of groups does not match on two sides of a line."
+-- | Create a line from the left and right side's groups.  Fail, if the groups
+--   are not equal in number of entries.
+makeLine :: Int -> [Group] -> [Group] -> FailWriter Line
+makeLine line gs hs =
+  case zipWithExactMay Entry gs hs of
+    Just es -> return $ Line es
+    Nothing -> fail
+      $  "Line " ++ show line ++ ": "
+      ++ "Number of groups does not match on the two sides."
 
 
 tokenToGramLexCat :: Token -> GramLexCategory
 tokenToGramLexCat (Token _ _ (GramKW gram)) = gram
 tokenToGramLexCat _                         =
-  error "Language.Ding.HappyParser: Not a grammar keyword."
+  error "Not a grammar keyword."
 
 tokenToGramAnnot :: Token -> GrammarInfo
 tokenToGramAnnot (Token _ _ (GramKW gram)) = GramLexCategory gram
 tokenToGramAnnot _                         =
-  error "Language.Ding.HappyParser: Not a grammar annotation."
+  error "Not a grammar annotation."
 
 tokenToCase :: Token -> Case
 tokenToCase (Token _ _ (GramKW (Case cas))) = cas
 tokenToCase _                               =
-  error "Language.Ding.HappyParser: Not a case keyword."
+  error "Not a case keyword."
 
 tokenToPOS (Token _ _ (GramKW (PartOfSpeech pos))) = pos
 tokenToPOS _                                       =
-  error "Language.Ding.HappyParser: Not a part of speech keyword."
+  error "Not a part of speech keyword."
+
+tokenToNumber (Token _ _ (GramKW (Number number))) = number
+tokenToNumber _                                    =
+  error "Not a grammatical number keyword."
 
 }
 

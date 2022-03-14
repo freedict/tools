@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/alter.sed - syntax alterations
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -20,17 +20,23 @@
 # along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-# TODO: This does not catch "ppron pl" in grouped annotations (\{.*[,;/].*\}).
-#       (where it does not occur, in the version 1.8.1 of the Ding).
-#       This would possibly better be handled in the parser.
-s`\{(ppron) (pl)\}`\{\1; \2\}`g
-
 # {relativ} is not an indpendent annotation.
 # Assimilate, with {pron interrog} in mind.
 # Note: It can be assumed that both below parts never occcur in (separate)
 #       groups when belonging to one another (since then their relation would
 #       not be obvious).
 s`\{(pron)\} *\{(relativ)\}`\{\1 \2\}`g
+
+# New in version 1.9 (rare); change to old syntax (see also above).
+s`\{(relativ)\.(pron)\}`{\2 \1}`g
+
+# Adapt grammar information in {+ X} to match the usual syntax for X.
+s`\{\+ *(Zahl|number)}`{+num}`g
+s`\{\+ *verb}`{+v}`g
+s`\{\+ *(Einzahl|singular)\}`{+sing}`g
+
+# Not actually alteration of syntax, but of content to fit syntax.
+s`\<(R/S ratio) >(1)\>`\1 > \2`g
 
 
 # vi: noet

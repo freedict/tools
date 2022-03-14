@@ -1,7 +1,7 @@
 {-
  - Language/TEI/ToXML/Grammar.hs - convert grammar information to TEI XML (AST)
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -49,6 +49,7 @@ convGrammarInfo :: GrammarInfo -> [Element]
 convGrammarInfo (GramLexCategory gram)  = convGramLexCat gram
 convGrammarInfo (Collocate colloc usgs) = pure $ convCollocate colloc usgs
 
+
 -- Note: It seems impossible to represent the present usage annotations
 --       (TODO).
 convCollocate :: Collocate -> [Usage] -> Element
@@ -69,6 +70,11 @@ convCollocate (CollocPOS pos)         _usgs = unode "colloc" $
       (Pronoun pTypes) -> concatMap ((' ':) . showPronounType) pTypes
       _                   -> ""
 
+-- Note: Ignore potential singulare/plurale tantum attribute.
+--   - Does not occur in Ding version 1.9.
+convCollocate (CollocNumber number)   _usgs = unode "colloc" $
+  "[+ " ++ showPrimaryNumber number ++ "]"
+
 
 convGramLexCat :: GramLexCategory -> [Element]
 convGramLexCat (PartOfSpeech pos) = convPOS pos
@@ -77,12 +83,14 @@ convGramLexCat (Number num)       = unode "number" (showPrimaryNumber num)
                                   : convNumberSubc num
 convGramLexCat (Case cas)         = [unode "case" (showCase cas)]
 
+
 convPOS :: PartOfSpeech -> [Element]
 convPOS pos = unode "pos" (showPrimaryPOS pos)
   : case pos of
       (Verb vTypes)    -> map (unode "subc" . showVerbType) vTypes
       (Pronoun pTypes) -> map (unode "subc" . showPronounType) pTypes
       _                   -> []
+
 
 convNumberSubc :: Number -> [Element]
 convNumberSubc (Singular True) = [unode "subc" shownSingulareTantum]

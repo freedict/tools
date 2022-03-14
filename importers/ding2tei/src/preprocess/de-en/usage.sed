@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/usage.sed - fix errors in usage annotations
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -21,17 +21,6 @@
 #
 
 
-### Typos
-
-s`\[texti\.]`[textil.]`g
-s`\[bichem\.\]`[biochem.]`g
-s`\[colcoll\.\]`[coll.]`g
-
-s`\[Nordestdt\.\]`[Nordosttdt.]`g
-s`\[(Nordt\.|Norddtd\.|norddt\.|Nordddt\.)\]`[Norddt.]`g
-s`\[Süddtd\.\]`[Süddt.]`g
-
-
 
 ### () -> []
 
@@ -44,15 +33,21 @@ s`\((rarely used|rare)\)`[rare]`g
 #  - alternatively, let the parser take care of it.
 
 # Missing <.>.
+#  - Note: First expression has no matches in version 1.9; keeping
+#    nonetheless.  Similarly, the second espression could be shortened.
 s`\[(Ös|Br|Am|Norddt|Mittelwestdt|Mitteldt|Dt|Bayr)\]`[\1.]`g
 s`\[(ugs|cook|naut|photo|econ|coll|humor|adm|fig|stud|fin|ornith|meteo|geh|zool|textil|techn|pol|envir|bot|telco|statist|soc|sci|poet|mil|med|ling|hist|aviat|chem|zool|adm|biochem)\]`[\1.]`g
 
 # Superfluous < > before <.>.
+#  - Note: Only <Am .> matched in version 1.9.
 s`\[(soc|Am) \.\]`[\1.]`g
 
 # Superfluous <.> (if necessary, decided by count that the dotless variant is
 # correct).
 s`\[(sport|print|auto|slang|dated)\.\]`[\1]`g
+
+# <,> -> <.>
+s`\[(Br),\]`[\1.]`g
 
 
 
@@ -62,8 +57,9 @@ s`\[(sport|print|auto|slang|dated)\.\]`[\1]`g
 
 ## All except languages
 
+# Note: In version 1.9, all fixed except [stone], [milit.]; keeping all
+#       regardless.
 s`\[rel.\]`\[relig.]`g
-s`\[texil\]`[textil]`g
 s`\[environ\.\]`[envir.]`g
 s`\[TM\]`[tm]`g
 s`\[(technical|tech\.)\]`[techn.]`g
@@ -76,25 +72,20 @@ s`\[gramm\.\]`[ling.]`g
 s`\[finan\.\]`[fin.]`g
 s`\[bio\.\]`[biol.]`g
 s`\[const\.\]`[constr.]`g
-
-# Not geogr. !
-s`\<(Isogeotherme \{f\} ([A-Za-z ]+)) \[geo\.\]`\1 [geol.]`g
-
-# This looks like [lit.], but it is not (infered from context).
-# One occurence.
-# TODO: Consider to make literary its own annotation (i.e, do not "fix")?
-s`\[literary\]`[poet.]`g
+s`\[Kunst\]`[art]`g
 
 # [astr.] Could also mean [astrol.] but does not for all occurences.
+#  - Note: Fixed in version 1.9; keeping regardless.
 s`\[(astr\.|aston\.|atron\.)\]`[astron.]`g
 
-# Note that the 'or' is converted in alter.sed.
-s`\[(geh\.|formal) or humorous\]`[\1 or humor.]`g
-s`\[(formal)/humorous\]`[\1/humor.]`g
+# Note that the 'or' is converted in usage_debatable.sed.
+s`\[(formal) or humorous\]`[\1 or humor.]`g
 
 
 ## Languages
 
+# Note: In version 1.9, all fixed except [Sächs.], [Irl.]; keeping all
+#       regardless.
 s`\[Scot.\]`[Sc.]`g
 s`\[(NZ)\.\]`[\1]`g
 s`\[New Zealand\]`[NZ]`g
@@ -103,6 +94,7 @@ s`\[Sächsisch\]`[Sächs.]`g
 s`\[(irisch|Irl\.)\]`[Ir\.]`g
 
 # Debatable.  The replacement value occurs more frequently.
+#  - Note: Fixed in version 1.9; keeping regardless.
 s`\[ZA\]`[South Africa]`g
 
 # Debatable (Is there a semantic difference?).
@@ -115,16 +107,11 @@ s`\[Nordirl\.\]`[Northern Irish]`g
 
 # All of the below versions of [Lat.] appear exactly once.  Use [Lat.] as it
 # seems to match the general convention for dialects / languages the best.
+#  - Note: In version 1.9; only [lat.] remaining.
 s`\[(lateinisch|lat\.|Latin)\]`[Lat.]`g
 
 # Replacing value does not occur.  Adapt to common naming scheme.
 s`\[arabisch\]`[Arab.]`g
-
-
-### Misc
-
-# Doubled [art], one of them with a superfluous <.>.
-s`\[art\.\] (\[art\])`\1`g
 
 
 # vi: noet

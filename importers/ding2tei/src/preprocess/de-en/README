@@ -12,10 +12,17 @@ The scripts are used to fix some irregularities before handling processing to
 the main translating program.  Generally, only irregularities that are
 assumed as mistakes are fixed.
 
-Targeted at the German-English Ding dictionary, version 1.8.1 / 2016-09-06
+Targeted at the German-English Ding dictionary, version 1.9.
 
-Called with `sed -E' (see Shebang); i.e. extended regular expressions are
+Called with `sed -E' (see Shebang); i.e., extended regular expressions are
 used.
+
+
+Updates
+-------
+
+When updating to a new Ding version, `update_help.bash' should be used.  See
+there for more information.
 
 
 Conventions
@@ -46,5 +53,5 @@ Helpful tools
  * Regexes (grep/$EDITOR/less) to find common mistakes
    * e.g.: '\([^{]{0,10}\b(adj|adv|prp|n|m|f|...)\b' to find misusage of
      parantheses (instead of braces).
- * util/extract_braceexps.(sed|sh)
+ * util/extract_braceexps.sed
    * Analyze the output to find any irregular brace expression.

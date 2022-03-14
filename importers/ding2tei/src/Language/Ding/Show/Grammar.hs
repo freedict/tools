@@ -1,7 +1,7 @@
 {-
  - Language/Ding/Show/Grammar.hs - convert grammar annotations to strings
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -33,6 +33,7 @@
 module Language.Ding.Show.Grammar
   ( showGLC
   , showPOS
+  , showNumber
   , showCase
   ) where
 
@@ -58,6 +59,7 @@ showPOS (Pronoun [])     = pure "pron"
 showPOS (Pronoun pTypes) = map showTypedPronoun pTypes
 showPOS Numeral          = pure "num"
 showPOS Interjection     = pure "interj"
+showPOS Particle         = pure "particle"
 
 showTypedVerb :: VerbType -> String
 showTypedVerb Transitive   = "vt"
@@ -81,6 +83,7 @@ showNumber (Plural   False) = "pl"
 showNumber (Plural   True)  = "no sing"
 
 showCase :: Case -> String
+showCase Nominative = "Nom."
 showCase Genitive   = "Gen."
 showCase Accusative = "Akk."
 showCase Dative     = "Dat."

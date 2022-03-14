@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/quotes.sed - regularize quotes
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -26,20 +26,21 @@
 # * There is no clear distinction between single <'> and double <"> quotes.
 #   Sometimes they are even used together (e.g. <"abc'>).
 #   * TODO: It might be necessary to identify them.
+#   * When revising this file for version 1.9, I got the impression that <'>
+#     is the standard on the English side, while <„> and <“> are standard on
+#     the German side.
+# * Sometimes (almost always?) '„“' is used on the german side
+#   (e.g., „So für den Hausgebrauch“).
+#   - Apparently new convention in version 1.9.
 # * Try to infer the "correct" quote variant from the surrounding.
 # * <"> may also be used as abbreviation for the unit inch.
 # * <'> may also be used in other contexts (e.g., <he'll>, <f'>).
 #   * Usage as apostroph is quite frequent.
 
-s`'(So für den Hausgebrauch)"`'\1'`
 s`"(Are you a good singer/player\?)'`'\1'`
-s`\<(unter dem Decknamen) '(George)"`\1 '\2'`g
-s`'(echten Fruchtsaft)"`"\1"`
 s`'(Pay per click)"`'\1'`g
-s`"(And he'll believe you, will he\?)'`"\1"`g
 s`"(The Loyal Subject)'`'\1'`g
 
-s`"(Yeldon)" (und) "(Yelden),`"\1" \2 "\3",`
 s`"(The Hunchback of Notre-Dame), (1831)`"\1", \2`g
 
 

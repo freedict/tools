@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/abbreviations.sed - //-abbreviations
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -21,21 +21,32 @@
 #
 
 
+# Notes:
+#  * Syntax breaking slashes are fixed in slashes.sed.
+
+
 ## "." -> /./
 
-s`"(/\.ed)"$`/ \1 /`
+s`"(/\.ed)"`/ \1 /`
 
 
 ## [abbr .] -> /./
 # Found by searching for "Abk" and "abbr".
+#  - Note: All fixed in version 1.9; kept nonetheless.
 
 s`\[(Abk|abbr)\.: ([A-Za-z.-]+)\]`/\2/`g
 s`\((Abk|abbr)\.: ([A-Za-z.-]+)\)`/\2/`g
 
 s`, (Abk|abbr)\.: ([A-Za-z.]+)\)`) /\2/`g
 
-# Do not generalize this.  There may be abbreviations containing slashes.
-s`\[Abk\. M\./M\]`/M.; M/`g
+
+## (.) -> /./
+# - Note: This alters semantics (TODO?).
+
+# See also `slashes.sed'.
+s`\<(secondary hyperparathyroidism) /(SHPT)/ \((2-HPT)\)`\1 /\2/ /\3/`
+
+s`\<(tertiary hyperparathyroidism) /(THPT)/ \((3-HPT)\)`\1 /\2/ /\3/`
 
 
 ## Misc
@@ -47,7 +58,7 @@ s`\<(signed) /(sgd),/`\1 /\2./`g
 s`/in \{prp\} \./`/in prp./`g
 
 # Qustionably placed: 'A; B /a; b/' -> 'A /a/; B /b/'
-s`^(der Ältere)\; (Senior) /(d\.Ä\.); (Sen\.)/`\1 /\3/\; \2 /\4/`
+s`^(der Ältere)\; (Senior) /(d\. Ä\.); (Sen\.)/`\1 /\3/\; \2 /\4/`
 
 # [.] -> /[.]/
 s`(^|:: *)(\[sic\])`\1/\2/`g

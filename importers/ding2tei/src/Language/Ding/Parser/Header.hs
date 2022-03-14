@@ -1,7 +1,7 @@
 {-
  - Language/Ding/Parser/Header.hs - parse the Ding header
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2021 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -25,7 +25,6 @@
 module Language.Ding.Parser.Header (parseHeader) where
 
 import Data.List (stripPrefix)
-import Data.Maybe (fromMaybe)
 
 import Language.Ding.Syntax (Header(..))
 
@@ -33,9 +32,9 @@ import Language.Ding.Syntax (Header(..))
 -- | Parse the Ding header from a list of lines.
 --   The expected syntax is very strict; it does for example not fit the
 --   header of the es-de Ding dictionary.
-parseHeader :: [String] -> Header
+parseHeader :: [String] -> Either String Header
 parseHeader (versionL : copyrightL : yearsL : licenseL : urlL : []) =
-  fromMaybe (error "Error: Failed parsing header.") $
+  maybe (Left "Failed parsing header.") Right $
     do
       versionInfo <- stripPrefix "# Version :: " versionL
       (version, date) <- case words versionInfo of
@@ -60,7 +59,7 @@ parseHeader (versionL : copyrightL : yearsL : licenseL : urlL : []) =
         , headerURL = url
         }
 
-parseHeader _ = error $ "Error: Incorrect number of header lines."
+parseHeader _ = Left "Unexpected number of header lines."
 
 
 -- | Attempt to strip off a particular terminating char.

@@ -1,8 +1,6 @@
-/dingsrc/
+/dict/ding
+/dict/tei/*/*
+!/dict/tei/*/Makefile
+/build/
 /ding2tei
 /util/results/
-*.o
-*.hi
-/src/Language/Ding/AlexScanner.hs
-/src/Language/Ding/Parser/Line.hs
-/src/Language/Ding/Parser/Line.info

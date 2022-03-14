@@ -1,6 +1,6 @@
 {-
  - Language/Ding/Pretty.hs - pretty printing of the Ding AST
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -49,7 +49,7 @@ import Data.NatLang.Dictionary (Dictionary(..), Body(..))
 import Data.NatLang.Grammar
 import Data.NatLang.InflectedForms
 import Data.NatLang.Usage
-import Language.Ding.Show.Grammar (showGLC, showCase, showPOS)
+import Language.Ding.Show.Grammar (showGLC, showCase, showNumber, showPOS)
 import Language.Ding.Syntax hiding (Dictionary)
 
 
@@ -156,9 +156,13 @@ instance Pretty Collocate where
    where
     pref = hsep $ punctuate comma $ map text iProns
   pretty (CollocPOS pos)         = char '+' <> pretty pos
+  pretty (CollocNumber number)   = char '+' <> pretty number
 
 instance Pretty Case where
   pretty = text . showCase
+
+instance Pretty Number where
+  pretty = text . showNumber
 
 instance Pretty PartOfSpeech where
   -- Note: showPOS is expected to always give exactly one string here.

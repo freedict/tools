@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/misc.sed - fix some irregularities in the Ding source
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020-2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -32,11 +32,6 @@ s`\<(etw|jm?d[mns]?|sth|sb)\>($|[^.])`\1.\2`g
 s`(\(Kfz:) \{n\} (/AND/\))`\1 \2`
 
 
-## Misplaced <::>
-
-s`^(Hadaikum \{n\}\; Präarchaikum \{n\} \(Äon\) \[geol\.\]) (Hadean\; Pre-Archaean \[Br\.\]\; Pre-Archean \[Am\.\]) :: (\(eon\))$`\1 :: \2 \3`g
-
-
 ## <...>
 
 s`< (\[mus\.\]) >`\1`g
@@ -48,15 +43,13 @@ s`\<(to deal) \{(dealt)\; (dealt)\} <(delt)>`\1 {\2; \3, \4 [archaic]}`g
 
 # There is one single occurence of an `s' after "<>".  I see no reason for it.
 # Also, the first english form should be in plural, too.
-s`(Atomforscher \{pl\}\; Atomforscherinnen \{pl\}) :: (.*) \| (atomic scientist) <(nuclear scientist)>s$`\1 :: \2 \| \3s <\4s>`
+s`\<(Atomforscher \{pl\}\; Atomforscherinnen \{pl\}) :: (.*) \| (atomic scientist) <(nuclear scientist)>s$`\1 :: \2 \| \3s <\4s>`
+
+# Superfluous space.
+s`\<(Türeinfassung \{f\} \[constr\.\]) <(Futterrahmen) >`\1 <\2>`
 
 
 ## Syntax-breaking typos (excl. slashes)
-
-s`( Kopenhagener Gebäck)>`\1`
-
-# Superfluous space.
-s`<(420 \("four-twenty"\)) >`<\1>`g
 
 # Missing "<"
 s` (Bucuresti)>` <\1>`g
@@ -70,24 +63,15 @@ s`\((superlative of) -> (level)\)`(\1 ~\2)`g
 # Note: Information on predominance is lost.
 # TODO: reconsider
 s`\<(table) \[(tabular)\] (spar)`\1/\2 \3`g
-s`\<(ruby) \[(red)\]`\1/\2`g
 s`\<(progressive) \[(prograde)\]`\1/\2`g
-s`\<(pitch) \[(plunge)\]`\1/\2`g
 s`\<(spheroidal) (jointing) \[(parting)\]`\1 \2/\3`g
-s`\<(acial) \[(optic)\] (angle)`\1/\2 \3`g
+s`\<(axial) \[(optic)\] (angle)`\1/\2 \3`g
 s`\<(tight) \[(close)\] (sand)`\1/\2 \3`g
-s`\<(cutting) \[(coal-cutter)\] (chain)`\1/\2 \3`g
 
 
 # TODO: This is now really ugly.
 s`\<(post) \[(nach|after)\]`\1/\2`g
 s`\<(scrivere) \[(schreiben|writing)\]`\1/\2`g
-
-s`\<(Jugendstil-) \[(Kunst)\]`\1/\2`g
-
-
-# Ugly.
-s`\(\[(im Preis)\] (enthalten)\)`((\1) \2)`g
 
 
 ## [.] -> (.)
@@ -97,7 +81,6 @@ s`\(\[(im Preis)\] (enthalten)\)`((\1) \2)`g
 
 s`\<(eine Schar) \[(Personen)\]`\1 (\2)`g
 s`\<(a clutch of) \[(persons)\]`\1 (\2)`g
-s`\<(entlangrumpeln) \[(mit einem Fahrzeug)\]`\1 (\2)`g
 
 # Unsure; possibly better translated to a slashed alternative.
 s`\<(Brazilian) \[(optical)\] (pebble)\>`\1 (\2) \3`g
@@ -106,29 +89,27 @@ s`\<(to guzzle sth\.) \[(drink)\]`\1 (\2)`g
 s`\<(to stitch) \[(book)\]`\1 (\2)`g
 
 # Description.  Should become a <note>.
-s`\[(ejecta\; discharges)\]`(\1)`g
 s`\<(Sauerkohl \{m\}) \[(in einigen Regionen alternativer Begriff zu Sauerkraut)\]`\1 (\2)`g
-s`\<(übertreffen \{vt\}) \[(in Geschwindigkeit oder Leistung)\]`\1 (\2)`g
-s`\<(listicle) \[(list + article)\]`\1 (\2)`g
+s`\<(listicle) \[(list \+ article)\]`\1 (\2)`g
 s`\<(eine Portion) \[(Mengenangabe)\]`\1 (\2)`g
 
-# Racist.  TODO: Consider to annotate somehow.
-s`\<(Zehn kleine Negerlein) \[(ein Kinderreim)\]`\1 (\2)`g
-s`\<(Ten Little Indians) \[(a children's rhyme)\]`\1 (\2)`g
+
+## Empty ()
+s`\<(pathologische Abteilung \[med\.\]) \(\)`\1`
 
 
 ## Superfluous <;>
+# - Note: Fixed in version 1.9; keep nonetheless.
 s`\; *$``
-s`\<(Verzögerungszeit \{f\})\; (\[electr\.\])`\1 \2`g
 
 
 ## Smileys
-# Note: There is exactly one smiley.  I consider it better to enclose it in //.
-#       This is therefore no fixing, it is an alteration of syntax.
+# Note: There is exactly one smiley.  Make it fit the expected syntax.
+#       (TODO/CONSIDER: alter expected syntax.)
 
-s` (:-\))( |$)` / \1 /\2`g
+s`/(:-\))/`/ \1 /`g
 
-# This is not a smiley.  Also possibly an alteration of syntax though.
+# This is not a smiley.  Possibly an alteration of syntax though.
 s`\(@\)`/ @ /`g
 
 
@@ -137,43 +118,19 @@ s`\(@\)`/ @ /`g
 # Superfluous semicolon; enrichment.
 s`\<(note)\;\; (/N\.B\.\; NB/)`\1; nota bene [archaic] \2`
 
-# slash, dot
-s`\<(to look forward to sth\.)/ (to expect sth\.)\.`\1 / \2`g
-
-# <;> -> <,>  ;  typo: see https://en.wiktionary.org/wiki/gird#Verb // 2020-09-03 00:47:30 CEST
-s`\{(girded\, girt)\; (girded)\; git\}`{\1\; \2, girt}`g
-
-
-## Wrong location of grammar annotation in phrase
-
-s`\<(miteinander ins) (Bett) (gehen) (\{m\})`\1 \2 \4 \3`
-# - Questionable.  See (1) below.
-
-# Note: One might consider this syntactically correct with the semantics of an
-#       annotation applying to the whole unit.  This is just a corner case
-#       though.
-s`:: (\{vt\}) (to pick) (a quarrel)\>`:: \2 \1 \3`
-
 
 ## Missing <;>
 
 s`(Beide Schriftstücke sind online verfügbar\.) (Diese Schriftstücke sind beide online verfügbar\.)`\1; \2`
 
 
-## Unbalanced parentheses
-
-s`(to make a decision \(up\)on the documents before the court)\)`\1`
-
-
 ## Misc syntax errors
 
 s`:: <> \|`:: |`g
 
-s`:: \((prep)\) \+ (which/what)\; \2 \+ \(\1\) \|`:: (\1 +) \2\; \2 (+ \1) |`
-
-
 
 ## Further seemingly incorrect entries (TODO):
+# - Note: most from version 1.8.1.
 
 #ein gutes Blatt haben {n}							-- {} applies to part
 #Freier, der den Autostrich abfährt {m} -- {} applies to whole / first part
@@ -181,7 +138,7 @@ s`:: \((prep)\) \+ (which/what)\; \2 \+ \(\1\) \|`:: (\1 +) \2\; \2 (+ \1) |`
 #Bouquet garni {n} cook									-- [cook.] ?
 #Bemühen, das Gleiche zu erreichen {m}  -- {} applies to ?
 #einen Unterhaltspfleger bestellen {m}  -- {} applies to part
-# - alternative: disallow {} when refering to part of sentence (remove)    (1)
+# - alternative: disallow {} when refering to part of sentence (remove)
 #eine Sache, die Probleme bereitet / Rätsel aufgibt {n}   -- ?
 # - article ("eine") uncommon
 # - {n} refers to "Rätsel" ?
@@ -261,6 +218,8 @@ s`:: \((prep)\) \+ (which/what)\; \2 \+ \(\1\) \|`:: (\1 +) \2\; \2 (+ \1) |`
 #/s. and s.c./
 #leise; ruhig; still {adj} | leiser; ruhiger; stiller | am leisesten; am ruhigsten; am stillsten
 #name-dropping <name-drop> <name--dropping <namedrop>> <name--dropping <name drop>>
+#das Grundgesetz  -- article
+#Stahlpreisanstieg {m}; erhöhunh {f} :: increase in steel price; in the price of steel
 
 # Hard to identify collocations (the part after the parens)
 #  pressure (on sb.) to adapt/adjust
@@ -271,6 +230,9 @@ s`:: \((prep)\) \+ (which/what)\; \2 \+ \(\1\) \|`:: (\1 +) \2\; \2 (+ \1) |`
 
 # <-> - annotations (<-> likely always surrounded by whitespace)
 #  PS (lat. Postskriptum - post [nach] + scrivere [schreiben]) :: ps (Lat. postscript - post [after] + scrivere [writing])
+
+# Racist.  TODO: Consider to annotate somehow.
+#'Zehn kleine Negerlein'; 'Und dann gab's keines mehr' (von Christie / Werktitel) [lit.] :: 'Ten Little Niggers'; 'And Then There Were None' (by Christie / work title)
 
 
 # Found when searching for units that contain a /./-expression:

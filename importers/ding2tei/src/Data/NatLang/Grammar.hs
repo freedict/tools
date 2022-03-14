@@ -1,7 +1,7 @@
 {-
  - Data/NatLang/Grammar.hs - Grammar (linguistics) information
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -70,6 +70,7 @@ data PartOfSpeech
   | Pronoun [PronounType]
   | Numeral
   | Interjection
+  | Particle
  deriving (Show, Eq, Ord)
 
 data VerbType
@@ -107,7 +108,8 @@ data Number
 -- | Grammatical case.
 --   Only those listed that appear in annotations in the Ding.
 data Case
-  = Genitive
+  = Nominative
+  | Genitive
   | Accusative
   | Dative
  deriving (Show, Eq, Ord)
@@ -119,6 +121,7 @@ data Collocate
       [String]                      -- ^ interrogative pronouns; often none
       Case                          -- ^ case of collocating word
   | CollocPOS       PartOfSpeech    -- ^ POS of collocating word; rare
+  | CollocNumber    Number          -- ^ number of collocating word; rare
  deriving (Show, Eq, Ord)
 
 

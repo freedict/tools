@@ -1,7 +1,7 @@
 {-
  - Language/Ding/Token.hs - token structures as produced by the lexer
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020-2021 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -29,6 +29,9 @@ module Language.Ding.Token
  , Position(..)
  , Atom(..)
  , tokenToString
+ , tokenToPosition
+ , tokenToLine
+ , tokenToColumn
  ) where
 
 import Data.NatLang.Grammar (GramLexCategory)
@@ -58,7 +61,10 @@ instance Show Token where
 --       dependency cycle (in the current setup).
 
 -- | Position of a token in the input, line and column.
-data Position = Position Int Int
+data Position = Position
+  { positionToLine   :: Int
+  , positionToColumn :: Int
+  }
  deriving Show
 
 
@@ -149,6 +155,17 @@ atomToString (Text t)         = t
 atomToString KW_to            = "to"
 
 atomToString (HeaderLine l)   = l
+
+
+tokenToPosition :: Token -> Position
+tokenToPosition EmptyToken      = error "Tried to get position of empty token."
+tokenToPosition (Token _ pos _) = pos
+
+tokenToLine :: Token -> Int
+tokenToLine = positionToLine . tokenToPosition
+
+tokenToColumn :: Token -> Int
+tokenToColumn = positionToColumn . tokenToPosition
 
 
 -- All tokens have a string representation, which, together with the preceding

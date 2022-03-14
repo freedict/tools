@@ -1,13 +1,33 @@
 {-
  - Config.hs - configuration of some output variables
  -
+ - Copyright 2020,2022 Einhard Leichtfuß
+ -
+ - This file is part of ding2tei-haskell.
+ -
+ - ding2tei-haskell is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as published
+ - by the Free Software Foundation, either version 3 of the License, or
+ - (at your option) any later version.
+ -
+ - ding2tei-haskell is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with ding2tei-haskell.  If not, see <https://www.gnu.org/licenses/>.
+ -}
+
+{-
  - See also
  -  * Language/{Ding,TEI}/{Read,Show}/
  -  * Language/Ding/AlexScanner.x
  - on configuration and classification of usage and grammar annotatios.
  -}
 module Config
-  ( editor
+  ( Person(..)
+  , editor
   , maintainer
   , contributors
   , publicationDate
@@ -28,21 +48,38 @@ module Config
   ) where
 
 
-editor :: String
-editor = "Einhard Leichtfuß"
+data Person = Person
+  { personId   :: String
+  , personName :: String
+  }
 
-maintainer :: String
-maintainer = editor
+
+-- Involved people:
+person_shumenda :: Person
+person_shumenda = Person "shumenda" "Sebastian Humenda"
+
+person_eleichtfuss :: Person
+person_eleichtfuss = Person "eleichtfuss" "Einhard Leichtfuß"
+
+
+editor :: Person
+editor = person_eleichtfuss
+
+maintainer :: Person
+maintainer = person_eleichtfuss
 
 -- | Contributors to this program, with the corresponding copyright
 --   periods
-contributors :: [(String, String)]
-contributors = [(editor, "2020")]
+contributors :: [(Person, String)]
+contributors =
+  [ (person_eleichtfuss, "2020-2022")
+  , (person_shumenda, "2021")
+  ]
 
 -- | Date of last output-affecting change of this program.
 --   Must be given as YYYY-MM-DD.
 publicationDate :: String
-publicationDate = "2020-10-28"
+publicationDate = "2022-03-14"
 
 status :: String
 status = "stable"
@@ -53,13 +90,13 @@ status = "stable"
 --   May also be set to <n>-devel to indicate frequent changes without version
 --   change.
 modVersion :: String
-modVersion = "0.2.1"
+modVersion = "1"
 
 programName :: String
 programName = "ding2tei-haskell"
 
 programURL :: String
-programURL = "https://github.com/freedict/tools/tree/ding2tei-haskell-rewrite/importers/ding2tei"
+programURL = "https://github.com/freedict/tools/tree/master/importers/ding2tei"
 
 projectName :: String
 projectName = "FreeDict"
@@ -94,8 +131,7 @@ makeVersion dingVer modVer = dingVer ++ "-fd" ++ modVer
 data Change = Change
   { chDingVersion :: String
   , chModVersion  :: String
-  , chUsersShort  :: [String]
-  , chUsersFull   :: [String]
+  , chPersons     :: [Person]
   , chDate        :: String   -- must be in YYYY-MM-DD format
   , chItems       :: [String] -- translated to <item>'s
   }
@@ -103,7 +139,7 @@ data Change = Change
 
 changes :: [Change]
 changes =
-  [ Change "1.8.1" "0.1" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-09-11"
+  [ Change "1.8.1" "0.1" [person_eleichtfuss] "2020-09-11"
       [ "Initial import from Ding (version 1.8.1)."
       , "Fixed many syntax errors and inconsistencies in the Ding dictionary."
       , "Most explicit Ding annotations are transferred to TEI."
@@ -117,7 +153,7 @@ changes =
           , "These are linked using references of @type=\"syn\"."
           ]
       ]
-  , Change "1.8.1" "0.2" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-10-14"
+  , Change "1.8.1" "0.2" [person_eleichtfuss] "2020-10-14"
       [ unwords
           [ "Identify examples to some entries; add the former to the latter"
           , "at 'entry/sense/cit[@type=\"example\"]' and remove the"
@@ -135,8 +171,11 @@ changes =
       , "Fixed some TEI syntax, as per comments from Sebastian Humenda."
       , "Recognize more types of annotations (notes)."
       ]
-  , Change "1.8.1" "0.2.1" ["eleichtfuss"] ["Einhard Leichtfuß"] "2020-10-28"
+  , Change "1.8.1" "0.2.1" [person_eleichtfuss] "2020-10-28"
       [ "Mark units with annotated inflected forms as verbs."
+      ]
+  , Change "1.9" "1" [person_eleichtfuss] "2022-03-14"
+      [ "Update to Ding version 1.9."
       ]
   ]
 

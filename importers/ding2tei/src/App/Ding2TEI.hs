@@ -1,7 +1,7 @@
 {-
  - App/Ding2TEI.hs - translate the Ding to TEI (AST)
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2021 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -22,7 +22,7 @@
 {-|
  - Translate the `Ding' to `TEI'.
  -}
-module App.Ding2TEI where
+module App.Ding2TEI (ding2tei) where
 
 import Control.Monad (liftM)
 import Control.Monad.Trans.State (State, state, evalState)

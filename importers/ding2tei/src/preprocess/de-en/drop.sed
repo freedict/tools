@@ -2,7 +2,7 @@
 #
 # de-en/drop.sed - drop some information that cannot be properly parsed yet
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -22,10 +22,15 @@
 
 s`\{(adj), usually not used before a noun\}`{\1}`
 s`\{(prp)\; \+ Fall des jeweiligen Bezugsworts\}`{\1}`
-s`\{(\+Gen\.)/bei\}`{\1}`g
+s`\{(\+Gen\.)/(bei|von etw\.)\}`{\1}`g
 s`\{(prp\; \+Dat\.) / von jdm\./etw\.\}`{\1}`
-s` *\{idiom\}``g
 s` *\{Quantifikator\}``g
+
+# TEI does not specify an element for degree of comparison.
+s` *\{\+ *(Superlativ|superlative)\}``g
+
+# This should probably become <colloc>[prp +]</colloc>
+s` *\{prp *\+\}``g
 
 
 # vi: noet

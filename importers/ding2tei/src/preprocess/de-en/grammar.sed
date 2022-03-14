@@ -2,7 +2,7 @@
 #
 # preprocess/de-en/grammar.sed - fix errors in grammar annotations
 #
-# Copyright 2020 Einhard Leichtfuß
+# Copyright 2020,2022 Einhard Leichtfuß
 #
 # This file is part of ding2tei-haskell.
 #
@@ -22,9 +22,6 @@
 
 
 ### Semantic errors
-
-# Typo in grammatical gender
-s`(Aggregationsreagenz) \{d\}`\1 \{n\}`g
 
 # Wrong pos annotation
 s`\<(makrohumiphag) \{m\} (\[zool\.\])`\1 \{adj\} \2`
@@ -48,32 +45,37 @@ s`\{pron\} \(relativ\)`{pron} {relativ}`g
 
 s`\(\+ *(Gen|Akk|Dat)\.?\)`\{+\1.\}`g
 
+s`\{prep\}`{prp}`g
 
-## [] -> {}
 
-s`\[\+ *Genitiv\]`{+Gen.}`g
+## [] -> {} (and nomalization)
 
-s`\[(vi|pl)\]`\{\1\}`g
 s`\[kein Plural\]`\{no pl\}`g
 
 # Note: {no sing} never occurs, it is infered from {no pl} and {sing}.
 s`\[only plural\]`{no sing}`g
 s`\[no singular\]`{no sing}`g
 
-s`(entsprechend etw\.) \[Dativ\]`\1 {+Dat.}`g
 
-s`\[im Genitiv\]`{Gen.}`g
+## Superfluous <.>.
 
-
-## Missing {}
-
-s`\<(die Summe) \+ Gen (\[math\.\])`\1 \{+Gen.\} \2`
+s`\{(adv)\.\}`{\1}`g
 
 
-## Normalization
+## (.) {.} -> (. {.})
 
-# Occurs once only:
-s`\{prep\.\}`{prp}`g
+s`\((sich)\) \{(Dat\.)\} (die Sonnenenergie nutzbar machen)\>`(\1 {\2}) \3`g
+
+
+## {.} . -> . {.}
+
+s`:: (\{adv\}) (idiosyncratically)$`:: \2 \1`
+s`:: (\{adj\}) (conflicting)\;`:: \2 \1\;`
+
+
+## <+> outside {.}
+
+s`\{prp\} \+ (which/what)\; \1 \+ \{prp\}`{prp +} \1; \1 {+ prp}`g
 
 
 ## Consistent spacing and "dotting".
@@ -83,30 +85,6 @@ s`\{prep\.\}`{prp}`g
 #       considered part of the (unique) keyword.
 s`\{\+ *(Gen|Akk|Dat)\.?\}`\{+\1.\}`g
 s`\{\+ *(conj)\}`{+conj}`g
-
-s`\{(adj)\.\}`{\1}`g
-
-
-## Semicolon between prp and {+<case>}.
-
-s`\{(prp) *\+ *(Gen|Akk|Dat)\.\}`{\1\; +\2.}`g
-
-
-
-## Incosistent use of separators between 'vi' and 'vt'.
-
-# There is exactly one occurence of each of <,>, </>, <;>.
-# I decide to use <,>, as between genders (same meaning of the separator: or).
-# Note however the frequent use of "{prop; ...}" (meaning: and).
-# Note that using <,> for all grammar annotations is not an option, since
-# `+<case>' annotations may be further annotated with interogative pronouns,
-# where <,> is used as a separator.
-# One might instead consider to make <;> the default.  This is what the pretty-
-# printer curretly does.  Alternatively, one would have to allow <,> (and </>)
-# only for certain subsets of annotations (in practice: v.*, {m,n,f,pl}).
-
-s`\{(vi)/(vt)\}`\{\1,\2\}`g
-s`\{(vt)\; *(vi)\}`\{\1,\2\}`g
 
 
 # vi: noet
