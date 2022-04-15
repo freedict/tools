@@ -73,7 +73,12 @@ escapeChar :: Char -> String
 escapeChar c = '_' : show (ord c) ++ "_"
 
 
+-- Treat `€' special to work around a libxml2 bug.
+--  - <https://gitlab.gnome.org/GNOME/libxml2/-/issues/364>
+--  - Otherwise, `make validation' would fail.
+--  - TODO: Revert once bug fixed.
 isNCNameStartChar :: Char -> Bool
+isNCNameStartChar '€' = False
 isNCNameStartChar c =
      'A' <= c && c <= 'Z'
   || c == '_'
