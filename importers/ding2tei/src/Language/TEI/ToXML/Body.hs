@@ -1,7 +1,7 @@
 {-
  - Language/TEI/ToXML/Body.hs - convert TEI body to XML (AST)
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -24,6 +24,7 @@
  -}
 module Language.TEI.ToXML.Body (convBody) where
 
+import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Maybe (mapMaybe)
 import Text.XML.Light
@@ -148,7 +149,7 @@ convBody body srcLang tgtLang = convBody' body
           $  (map convUsage       $ senseUsages       sense)
           ++ (map convTranslation $ senseTranslations sense)
           ++ (map convExample     $ senseExamples     sense)
-          ++ (map convReference   $ senseReferences   sense)
+          ++ (map convRefGroup    $ senseReferences   sense)
           ++ (map (unode "note")  $ senseNotes        sense)
     in
       if null content
@@ -192,17 +193,20 @@ convBody body srcLang tgtLang = convBody' body
                 . unode "quote" . (,) xmlLangTgt
 
 
-  -- Notes:
-  --  * Some references do not contain a link to another entry.
-  --  * Such links need to be annotated with '#'.
-  convReference :: Reference -> Element
-  convReference (Reference refType mRef tgt) = unode "xr"
-    ( uattr "type" (show refType)
-    , unode "ref"
-        ( maybe [] (pure . uattr "target" . ('#':) . identToXMLId) mRef
-        , tgt
-        )
+  convRefGroup :: ReferenceGroup -> Element
+  convRefGroup (ReferenceGroup refType refs) = unode "xr"
+    ( [uattr "type" (show refType)]
+    , map convReference $ toList refs
     )
+   where
+    -- Notes:
+    --  * Some references do not contain a link to another entry.
+    --  * Such links need to be annotated with '#'.
+    convReference :: Reference -> Element
+    convReference (Reference mRef tgt) = unode "ref"
+      ( maybe [] (pure . uattr "target" . ('#':) . identToXMLId) mRef
+      , tgt
+      )
 
 
 -- vi: ft=haskell ts=2 sw=2 et

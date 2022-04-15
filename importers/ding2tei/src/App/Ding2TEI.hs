@@ -1,7 +1,7 @@
 {-
  - App/Ding2TEI.hs - translate the Ding to TEI (AST)
  -
- - Copyright 2020,2021 Einhard Leichtfuß
+ - Copyright 2020-2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -26,6 +26,8 @@ module App.Ding2TEI (ding2tei) where
 
 import Control.Monad (liftM)
 import Control.Monad.Trans.State (State, state, evalState)
+import Data.Foldable (toList)
+import Data.List.NonEmpty (NonEmpty((:|)))
 
 -- When laziness is not required, Data.Map.Strict is to be preferred over
 -- the default Data.Map.Lazy.
@@ -267,33 +269,35 @@ makeTEIEntry u ident uRefs gRefs translations = TEI.Entry
         , TEI.senseTranslations = translations
         , TEI.senseExamples     = Ding.unitExamples u
         , TEI.senseReferences   =
-               map makeUnitReference  uRefs
-            ++ map makeGroupReference gRefs
-            ++ map makeTildeReference (Ding.unitReferences u)
+               toList (makeRefGroup TRef.Synonymy
+                 $  map makeLinkedReference uRefs
+               )
+            ++ toList (makeRefGroup TRef.Related
+                 $  map makeLinkedReference gRefs
+                 ++ map makeTildeReference  (Ding.unitReferences u)
+               )
         , TEI.senseNotes        = Ding.unitSuffixes u
         }
     ]
   }
 
 
--- | Create a "related" reference from an identifier.
-makeGroupReference :: TRef.Ident -> TRef.Reference
-makeGroupReference = makeLinkedReference TRef.Related
-
--- | Create a "synonymy" reference from an identifier.
-makeUnitReference :: TRef.Ident -> TRef.Reference
-makeUnitReference = makeLinkedReference TRef.Synonymy
+-- | Create a reference group.
+makeRefGroup :: TRef.RefType -> [TRef.Reference] -> Maybe TRef.ReferenceGroup
+makeRefGroup _       []         = Nothing
+makeRefGroup refType (ref:refs) = Just
+                                $ TRef.ReferenceGroup refType (ref :| refs)
 
 -- | Create a reference with `\@target'.
-makeLinkedReference :: TRef.RefType -> TRef.Ident -> TRef.Reference
-makeLinkedReference refType ident@(TRef.Ident hw _) =
-  TRef.Reference refType (Just ident) hw
+makeLinkedReference :: TRef.Ident -> TRef.Reference
+makeLinkedReference ident@(TRef.Ident hw _) =
+  TRef.Reference (Just ident) hw
 
 -- | Create a reference without `\@target', as is required for \~tilde
 --   references.  (In fact, one could infer such a target, whenever there is
 --   exactly one TEI entry with the headword referred to.)
 makeTildeReference :: String -> TRef.Reference
-makeTildeReference = TRef.Reference TRef.Related Nothing
+makeTildeReference = TRef.Reference Nothing
 
 -- | In TEI, optional prefixes can be encoded as collocates.
 --

@@ -1,7 +1,7 @@
 {-
  - Language/TEI/Syntax.hs - general AST structures
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -48,7 +48,7 @@ import Data.NatLang.Grammar (GrammarInfo)
 import Data.NatLang.Usage (Usage)
 import Data.NatLang.InflectedForms (InflectedForms)
 import qualified Language.Ding.Syntax as Ding (Header)
-import Language.TEI.Syntax.Reference (Ident, Reference)
+import Language.TEI.Syntax.Reference (Ident, ReferenceGroup)
 import Data.NatLang.Example (Example)
 
 
@@ -86,7 +86,9 @@ data Sense = Sense
   , senseUsages       :: [Usage]
   , senseTranslations :: [Translation]
   , senseExamples     :: [Example]
-  , senseReferences   :: [Reference]
+  , senseReferences   :: [ReferenceGroup]
+    -- ^ References, grouped by type.
+    --   No two reference groups with the same type should occur.
   , senseNotes        :: [String]     -- ^ from suffixing Ding-<()>-annotations
   }
  deriving (Show, Eq, Ord)

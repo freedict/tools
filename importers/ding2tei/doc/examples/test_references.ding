@@ -1,0 +1,6 @@
+# Version :: 0 2022-04-15
+# Copyright (c) :: Example Person,
+# 2022
+# License :: AGPL Version 3 or later
+# URL :: https://example.org/
+A; B ~C1 ~D1; C; D ~foo | E; F ~bar :: A2 | E2

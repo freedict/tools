@@ -79,7 +79,7 @@ contributors =
 -- | Date of last output-affecting change of this program.
 --   Must be given as YYYY-MM-DD.
 publicationDate :: String
-publicationDate = "2022-03-14"
+publicationDate = "2022-04-15"
 
 status :: String
 status = "stable"
@@ -174,8 +174,12 @@ changes =
   , Change "1.8.1" "0.2.1" [person_eleichtfuss] "2020-10-28"
       [ "Mark units with annotated inflected forms as verbs."
       ]
-  , Change "1.9" "1" [person_eleichtfuss] "2022-03-14"
+  , Change "1.9" "1" [person_eleichtfuss] "2022-04-15"
       [ "Update to Ding version 1.9."
+      , unwords
+          [ "Unify xr elements by @type."
+          , "(Previously, each xr element contained exactly one ref element.)"
+          ]
       ]
   ]
 

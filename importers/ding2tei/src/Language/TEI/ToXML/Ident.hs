@@ -1,7 +1,7 @@
 {-
  - Language/TEI/ToXML/Ident.hs - encode xml:id's
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -

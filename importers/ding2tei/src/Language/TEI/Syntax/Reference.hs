@@ -1,7 +1,7 @@
 {-
  - Language/TEI/Syntax/Reference.hs - references
  -
- - Copyright 2020 Einhard Leichtfuß
+ - Copyright 2020,2022 Einhard Leichtfuß
  -
  - This file is part of ding2tei-haskell.
  -
@@ -25,9 +25,13 @@
  -}
 module Language.TEI.Syntax.Reference
   ( Ident(..)
+  , ReferenceGroup(..)
   , Reference(..)
   , RefType(..)
   ) where
+
+
+import Data.List.NonEmpty (NonEmpty)
 
 
 -- | An identifier representing `HW.n' where `HW' is a headword and `n'
@@ -36,10 +40,17 @@ data Ident = Ident String Int
  deriving (Show, Eq, Ord)
 
 
--- | A reference of a particular type; corresponds to `xr/ref' in TEI XML.
+-- | A list of references, sharing a type; corresponds to `xr' in TEI XML.
+data ReferenceGroup
+  = ReferenceGroup
+      RefType
+      (NonEmpty Reference)
+ deriving (Show, Eq, Ord)
+
+
+-- | A reference; corresponds to `ref' in TEI XML.
 data Reference
   = Reference
-      RefType
       (Maybe Ident)   -- ^ target identifier
       String          -- ^ target string representation
  deriving (Show, Eq, Ord)
