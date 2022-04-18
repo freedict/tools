@@ -54,9 +54,15 @@ import Language.TEI.ToXML.Ident
 --      ([Attr], String), (Attr, Element), ([Attr], [Element]), Attr.
 --    * If a pair is provided, the left element is always the attribute (list)
 --      and the right element the content.
---  * The placement of the @xml:lang is suggested in the example lg1-lg2.tei
---    file.  (<teiHeader>, <text xml:lang="TGT">, top level <form>, any
---    <quote>)
+--  * The @xml:lang attribute is placed
+--    - on the top-level <text> element (source language), and
+--    - on cit@type="trans" elements (target language).
+--      - This includes translations of examples.
+--    * Reasoning: All but translations are in the source language, this is
+--      the minimal approach.
+--      * Note that there are some fixed abbreviations (e.g., for grammatical
+--        gender, or register), which violate this (usually English; TODO?).
+--    * lg1-lg2.tei suggests otherwise.
 --    * TEI Lex-0 suggests instead to add the attribute to <entry> and <cit>
 --      elements.
 
@@ -78,7 +84,7 @@ convBody body srcLang tgtLang = convBody' body
 
   convBody' :: Body Entry -> Element
   convBody' (Body entries)
-    = unode "text" $ (,) xmlLangTgt
+    = unode "text" $ (,) xmlLangSrc
     $ unode "body"
     $ map convEntry $ entries
 
@@ -122,7 +128,6 @@ convBody body srcLang tgtLang = convBody' body
   --     2020-05-03)
   --     * Nest inside the main form.
   --  b) TEI Lex-0 (3.3): suggests value as content, e.g. <tns>pres</tns>.
-  --     * Not followed.
   --  c) TEI P5
   --     * 9.3.1: grammar tags
   --     * <tns> doc: tns, mood example: <tns value="..."/>
@@ -160,13 +165,9 @@ convBody body srcLang tgtLang = convBody' body
   -- Note: inflected forms are dropped for now - unsure how to encode. (TODO)
   convTranslation :: Translation -> Element
   convTranslation trans = unode "cit"
-    ( [uattr "type" "trans"]
-    , unode "quote"
-        ( xmlLangTgt
-        , translationOrth trans
-        )
-        :
-        (maybe id (:)
+    ( [uattr "type" "trans", xmlLangTgt]
+    ,   unode "quote" (translationOrth trans)
+      : (maybe id (:)
              (convGrammar            $ translationGrammar trans)
           $  (map convUsage          $ translationUsages trans)
           ++ (map (convAbbrev "cit") $ translationAbbrevs trans)
@@ -185,12 +186,12 @@ convBody body srcLang tgtLang = convBody' body
   convExample :: Example -> Element
   convExample (Example srcEx tgtExs) = unode "cit"
     ( [uattr "type" "example"]
-    , unode "quote" (xmlLangSrc, srcEx) : map convExTrans tgtExs
+    , unode "quote" srcEx : map convExTrans tgtExs
     )
    where
     convExTrans :: String -> Element
-    convExTrans = unode "cit"   . (,) (uattr "type" "trans")
-                . unode "quote" . (,) xmlLangTgt
+    convExTrans = unode "cit"   . (,) [uattr "type" "trans", xmlLangTgt]
+                . unode "quote"
 
 
   convRefGroup :: ReferenceGroup -> Element

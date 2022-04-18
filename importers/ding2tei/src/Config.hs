@@ -79,7 +79,7 @@ contributors =
 -- | Date of last output-affecting change of this program.
 --   Must be given as YYYY-MM-DD.
 publicationDate :: String
-publicationDate = "2022-04-15"
+publicationDate = "2022-04-18"
 
 status :: String
 status = "stable"
@@ -174,11 +174,19 @@ changes =
   , Change "1.8.1" "0.2.1" [person_eleichtfuss] "2020-10-28"
       [ "Mark units with annotated inflected forms as verbs."
       ]
-  , Change "1.9" "1" [person_eleichtfuss] "2022-04-15"
+  , Change "1.9" "1" [person_eleichtfuss] "2022-04-18"
       [ "Update to Ding version 1.9."
       , unwords
           [ "Unify xr elements by @type."
           , "(Previously, each xr element contained exactly one ref element.)"
+          ]
+      , unwords
+          [ "Place @xml:lang (more) correctly:"
+          , "at top-level text element (source language)"
+          , "and at cit@type=\"trans\" (target language)."
+          , "(Previously,"
+          , "the target language was given at the top-level text element, and"
+          , "the respective language at each quote element.)"
           ]
       ]
   ]
