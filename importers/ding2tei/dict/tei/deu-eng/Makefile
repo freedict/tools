@@ -1,4 +1,4 @@
-FREEDICT_TOOLS = ../../../../..
+FREEDICT_TOOLS ?= ../../../../..
 
 DISTFILES = deu-eng.tei
 
