@@ -1,10 +1,7 @@
 -e git://github.com/freedict/tools.git#egg=fd_tool&subdirectory=fd_tool
 -e git://github.com/freedict/tools.git#egg=fd_import&subdirectory=importers
 semver==2.8.1
-#ToDo: 2.2 has a bug where setting ICU_VERSION is not enough, it's fixed on
-#latest master; if you read this when 2.3 is out already, please remove this and
-#the notice
-#PyICU>=2.2
+PyICU>=2.3
 -e git://github.com/ovalhub/pyicu@3614198d130273ec4acc029bd7ded083e6309224#egg=pyicu
 ankisync==0.1.6.3
 -e git://github.com/itkach/slob.git#egg=slob

@@ -1,0 +1,10 @@
+[project]
+name = "fd_tool"
+version = "0.1"
+dependencies = [
+    "semver",
+]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
