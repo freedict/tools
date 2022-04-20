@@ -21,7 +21,7 @@ import shutil
 import xml.etree.ElementTree as ET
 from datetime import date
 
-SOURCE_URL = 'http://download.wikdict.com/dictionaries/tei/no-infl/'
+SOURCE_URL = 'https://download.wikdict.com/dictionaries/tei/recommended/'
 # minimal number of words to consider a dictionary for inclusion
 MIN_WORD_COUNT = 10000
 DOWNLOAD_PREFIX = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
