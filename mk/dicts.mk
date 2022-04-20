@@ -328,7 +328,7 @@ $(call gen_release_path,src): $(RELEASE_DIR) $(DISTFILES)
 # empty rule to fit into build system (build-<PLATFORM>)
 build-src: $(dictname).tei
 
-release-src: build-src $(call gen_release_path,src) $(call gen_release_hashpath,src)
+release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 
 ##################################
 #### targets for StarDict platform
