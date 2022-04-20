@@ -12,7 +12,7 @@
         <data type="positiveInteger"/> <!-- 4452 -->
       </attribute>
       <attribute name="edition">
-        <data type="string"> <!-- version in the format 0.1.1 -->
+        <data type="string"> <!-- version in the format 0.1.1 or 0.1.1-anything -->
           <param name="pattern">\d+(\.\d+(\.\d+)?)?(-.+)?</param>
         </data>
       </attribute>
@@ -44,7 +44,7 @@
           </attribute>
           <attribute name="version">
             <data type="string"> <!-- version in the format 0.1.1 -->
-              <param name="pattern">\d+(\.\d+(\.\d+)?)?</param>
+              <param name="pattern">\d+(\.\d+(\.\d+)?)?(-.+)?</param>
             </data>
           </attribute>
           <attribute name="size">
