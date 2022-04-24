@@ -1,4 +1,5 @@
 """This file imports the epo-eng dictionary from
+#!/usr/bin/env python3
 <http://www.denisowski.org/Esperanto/ESPDIC/espdic_readme.htm>. Please see the
 README for more information."""
 
@@ -188,7 +189,7 @@ def translations_to_xml(translations):
     return xml
 
 def write_output(input_file, base_dir, tei_skeleton, body_xml):
-    """This writes the dictionary import into the specified directory."""
+    """This writes the imported dictionary into the specified directory."""
     print("Writing TEI dictionary…")
     with open(tei_skeleton, 'r', encoding='utf-8') as f:
         header = f.read()
