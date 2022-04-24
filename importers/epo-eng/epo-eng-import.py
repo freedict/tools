@@ -229,16 +229,21 @@ def main(input_file, tei_skeleton, output_directory):
             if wp.strip() and not wp.startswith(" "))
 
     word_list = []
-    for word_pair in words:
-        head, trans = word_pair.split(' : ')
-        translations = tokenize(trans)
-        translations = structure_translations(translations)
-        head = tokenize(head)
-        if len(head) == 2: # headword with definition
-            head = HeadWord(head[0][1], head[1][1])
-        else:
-            head = HeadWord(head[0][1])
-        word_list.append((head, translations))
+    for lnum, word_pair in enumerate(words):
+        if word_pair.lstrip().startswith("#"):
+            continue
+        try:
+            head, trans = word_pair.split(' : ')
+            translations = tokenize(trans)
+            translations = structure_translations(translations)
+            head = tokenize(head)
+            if len(head) == 2: # headword with definition
+                head = HeadWord(head[0][1], head[1][1])
+            else:
+                head = HeadWord(head[0][1])
+            word_list.append((head, translations))
+        except ValueError as v:
+            raise ValueError(f"line {lnum+1}: {''.join(v.args)}")
 
     # enrich words with grammatical info, strip "to" and other words *and*
     # convert to XML
