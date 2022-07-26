@@ -169,11 +169,14 @@ def get_latest_tools_release():
     # validate format
     date = datetime.strptime(commit_meta['date'].split('T')[0], '%Y-%m-%d')
     date = date.strftime('%Y-%m-%d')
-    request = urllib.request.Request(latest['tarball_url'],
+    # We don't use the API-provided download URL (latest['tarball']), as it
+    # contains a funny number in the unpacked directory.
+    github_uri = f"https://github.com/freedict/tools/archive/refs/tags/{latest['name']}.tar.gz"
+    request = urllib.request.Request(github_uri,
             headers={'User-Agent': USER_AGENT})
     with urllib.request.urlopen(request) as f:
         checksum = hashlib.sha512(f.read()).hexdigest()
     return {'version': latest['name'],
         'date': date,
-        'URL': latest['tarball_url'],
+        'URL': github_uri,
         'checksum': checksum}
