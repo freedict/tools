@@ -29,7 +29,7 @@ Git and a XML-capable editor are recommended.
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-    sudo apt-get install make xsltproc libicu-dev python3 python3-icu virtualenv python3-virtualenv espeak-ng git
+    sudo apt-get install make xsltproc libicu-dev python3 python3-icu virtualenv python3-virtualenv espeak-ng git dictfmt
 
 #### Windows
 
