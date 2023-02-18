@@ -44,7 +44,7 @@ DISTFILES_BINARY = $(foreach f, README README.md README.txt README.rst \
 		$(wildcard $(f))) # only consider these files if they do exist
 
 PREFIX ?= /usr
-DESTDIR ?= 
+DESTDIR ?=
 
 ################
 # Common Function Definitions
@@ -67,7 +67,7 @@ dict_tei_source = $(dictname).tei
 
 #######################
 #### Phonetics import
-#### 
+####
 #### This needs to come before all others, so that the relevant functions are
 #### defined correctly.
 #######################
@@ -335,44 +335,19 @@ release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 ##################################
 
 # This tool comes with stardict
-DICTD2DIC ?= dictd2dic
+PYGLOSSARY = pyglossary
 
-# This is hardcoded into dictd2dic :(
-stardict_prefix = dictd_www.dict.org_
+# Can we remove this?
+stardict_prefix =
 
-# idxhead is required to preexist by dictd2dic. The reason is not documented.
-$(dictname).idxhead:
-	echo -n "" > $@
-
-$(stardict_prefix)$(dictname).idx $(stardict_prefix)$(dictname).dict.dz \
-	dictd2dic.out: $(dictname).index $(dictname).dict $(dictname).idxhead
-	$(DICTD2DIC) $(dictname) >dictd2dic.out
+$(stardict_prefix)$(dictname).ifo $(stardict_prefix)$(dictname).idx.gz \
+	$(stardict_prefix)$(dictname).dict.dz pyglossary-stardict.out: $(dictname).tei
+	$(PYGLOSSARY) $(dictname).tei $(stardict_prefix)$(dictname).ifo >pyglossary-stardict.out
 	gzip -9 $(stardict_prefix)$(dictname).idx
 
-# $(wordcount) and $(idxfilesize) are a target-specific variables
-$(stardict_prefix)$(dictname).ifo: \
-	wordcount=$(word 2, $(shell tail -n1 dictd2dic.out))
-
-$(stardict_prefix)$(dictname).ifo: \
-	idxfilesize=$(strip $(shell zcat $(stardict_prefix)$(dictname).idx | wc -c))
-
-$(stardict_prefix)$(dictname).ifo: $(stardict_prefix)$(dictname).idx \
-	dictd2dic.out authorresp.out title.out sourceurl.out
-	@echo "Generating $@..."
-	@echo "StarDict's dict ifo file" > $@
-	@echo "version=2.4.2" >> $@
-	@echo "wordcount=$(wordcount)" >> $@
-	@echo "idxfilesize=$(idxfilesize)" >> $@
-	@echo "bookname=$(shell cat title.out)" >> $@
-	@echo "author=$(shell sed -e "s/ <.*>//" <authorresp.out)" >> $@
-	@echo "email=$(shell sed -e "s/.* <\(.*\)>/\1/" <authorresp.out)" >> $@
-	@echo "website=$(shell cat sourceurl.out)" >> $@
-	@echo "description=Converted to StarDict format by freedict.org" >> $@
-	@echo "date=$(shell date +%Y.%m.%d)" >> $@
-	@echo "sametypesequence=m" >> $@
-	@cat $@
 
 stardict: $(stardict_prefix)$(dictname).ifo
+
 
 $(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2: \
        	$(stardict_prefix)$(dictname).ifo \
@@ -388,10 +363,10 @@ release-stardict: \
 	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2
 
 clean::
-	rm -f $(dictname).idxhead $(stardict_prefix)$(dictname).idx.gz \
+	rm -f $(stardict_prefix)$(dictname).idx.gz \
 	$(stardict_prefix)$(dictname).dict.dz $(stardict_prefix)$(dictname).ifo \
 	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2 \
-	dictd2dic.out authorresp.out title.out sourceurl.out
+	pyglossary-stardict.out.out authorresp.out title.out sourceurl.out
 
 #######################
 #### Slob format for the Aard Android  dictionary client
@@ -404,7 +379,7 @@ $(BUILD_DIR)/slob/$(dictname)-$(version).slob: $(call dict_tei_source)
 	rm -f $@
 	$(call exc_pyscript,tei2slob,-w,$(BUILD_DIR)/slob,-o,$@,$<)
 
-$(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR) 
+$(call gen_release_path,slob): $(BUILD_DIR)/slob/$(dictname)-$(version).slob $(RELEASE_DIR)
 	cp $< $@
 
 # make the hash depend on the release file
