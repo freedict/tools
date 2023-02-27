@@ -81,5 +81,12 @@ Now tei2slob will be in your path. For new shells, you will have to execute
 `source env-slob/bin/activate` again, or put env-slob/bin/tei2slob into your
 PATH.
 
+
+For creating StarDict files, you need to install [PyGlossary](https://github.com/ilius/pyglossary):
+
+	pip install git+https://github.com/ilius/pyglossary.git
+
+
+
 Sebastian Humenda, Mar 2018
 

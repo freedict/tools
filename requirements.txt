@@ -6,3 +6,4 @@ PyICU>=2.3
 ankisync==0.1.6.3
 -e git://github.com/itkach/slob.git#egg=slob
 -e git://github.com/itkach/tei2slob.git#egg=tei2slob
+-e git://github.com/ilius/pyglossary.git#egg=pyglossary
