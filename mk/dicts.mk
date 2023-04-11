@@ -22,7 +22,7 @@ UNSUPPORTED_PLATFORMS = evolutionary
 endif
 
 
-available_platforms := src dictd slob
+available_platforms := src dictd slob stardict
 
 dictname ?= $(shell basename "$(shell pwd)")
 xsldir ?= $(FREEDICT_TOOLS)/xsl
@@ -334,25 +334,21 @@ release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 #### targets for StarDict platform
 ##################################
 
-# This tool comes with stardict
 PYGLOSSARY = pyglossary
 
-# Can we remove this?
-stardict_prefix =
-
-$(stardict_prefix)$(dictname).ifo $(stardict_prefix)$(dictname).idx.gz \
-	$(stardict_prefix)$(dictname).dict.dz pyglossary-stardict.out: $(dictname).tei
-	$(PYGLOSSARY) $(dictname).tei $(stardict_prefix)$(dictname).ifo >pyglossary-stardict.out
-	gzip -9 $(stardict_prefix)$(dictname).idx
+$(BUILD_DIR)/stardict/$(dictname).ifo $(BUILD_DIR)/stardict/$(dictname).idx.gz \
+	$(BUILD_DIR)/stardict/$(dictname).dict.dz pyglossary-stardict.out: $(dictname).tei
+	$(PYGLOSSARY) $(dictname).tei $(BUILD_DIR)/stardict/$(dictname).ifo >pyglossary-stardict.out
+	gzip -9 $(BUILD_DIR)/stardict/$(dictname).idx
 
 
-stardict: $(stardict_prefix)$(dictname).ifo
+build-stardict: $(BUILD_DIR)/stardict/$(dictname).ifo
 
 
 $(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2: \
-       	$(stardict_prefix)$(dictname).ifo \
-	$(stardict_prefix)$(dictname).dict.dz \
-	$(stardict_prefix)$(dictname).idx.gz
+       	$(BUILD_DIR)/stardict/$(dictname).ifo \
+	$(BUILD_DIR)/stardict/$(dictname).dict.dz \
+	$(BUILD_DIR)/stardict/$(dictname).idx.gz
 	@if [ ! -d $(BUILD_DIR)/stardict ]; then \
 		mkdir $(BUILD_DIR)/stardict; fi
 	tar -C .. -cvjf \
@@ -363,10 +359,10 @@ release-stardict: \
 	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2
 
 clean::
-	rm -f $(stardict_prefix)$(dictname).idx.gz \
-	$(stardict_prefix)$(dictname).dict.dz $(stardict_prefix)$(dictname).ifo \
+	rm -f $(BUILD_DIR)/stardict/$(dictname).idx.gz \
+	$(BUILD_DIR)/stardict/$(dictname).dict.dz $(BUILD_DIR)/stardict/$(dictname).ifo \
 	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2 \
-	pyglossary-stardict.out.out authorresp.out title.out sourceurl.out
+	pyglossary-stardict.out authorresp.out title.out sourceurl.out
 
 #######################
 #### Slob format for the Aard Android  dictionary client
