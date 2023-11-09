@@ -57,8 +57,10 @@ deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-pa
 
 # This function assists the release-% rules. It generates the release path for
 # each platform; Arg1: platform
-gen_release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(if \
-	$(findstring slob,$(1)),slob,$(1).tar.xz)
+gen_release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(strip \
+	$(if $(findstring slob,$(1)),slob,\
+		$(if $(findstring stardict,$(1)),stardict.tar.xz,\
+			$(1).tar.xz)))
 gen_release_hashpath = $(call gen_release_path,$(1)).sha512
 
 # dictionary source file -- normally just $(dictname).tei, but can be
@@ -345,18 +347,17 @@ $(BUILD_DIR)/stardict/$(dictname).ifo $(BUILD_DIR)/stardict/$(dictname).idx.gz \
 build-stardict: $(BUILD_DIR)/stardict/$(dictname).ifo
 
 
-$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2: \
+$(call gen_release_path,stardict): \
        	$(BUILD_DIR)/stardict/$(dictname).ifo \
 	$(BUILD_DIR)/stardict/$(dictname).dict.dz \
 	$(BUILD_DIR)/stardict/$(dictname).idx.gz
-	@if [ ! -d $(BUILD_DIR)/stardict ]; then \
-		mkdir $(BUILD_DIR)/stardict; fi
-	tar -C .. -cvjf \
-	  $(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2 \
-	  $(addprefix $(notdir $(realpath .))/, $^)
+	tar --dereference --transform='s/build.stardict.//'   -C .. -cJf $@ \
+		$(addprefix $(notdir $(realpath .))/, $^) \
+		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
 
-release-stardict: \
-	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2
+
+release-stardict: $(RELEASE_DIR) $(call gen_release_path,stardict) \
+		$(call gen_release_hashpath,stardict)
 
 clean::
 	rm -f $(BUILD_DIR)/stardict/$(dictname).idx.gz \
