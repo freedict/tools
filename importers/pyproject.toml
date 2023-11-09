@@ -1,0 +1,12 @@
+[project]
+name = "fd_import"
+version = "0.1"
+description = "FreeDict parser and dictionary import helpers"
+classifiers = [
+    "License :: GPL-3.0-or-later",
+    ]
+requires-python = ">=3.5"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
