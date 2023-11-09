@@ -1,5 +1,4 @@
-"""``parsers'' fetching all information about downloadable releases belong in
-here."""
+"""Collect all information about released dictionaries."""
 
 from datetime import datetime
 import distutils.version
@@ -41,7 +40,7 @@ def get_tools_release():
     """Retrieve the latest FreeDicttools release as a tuple with containing
     (version, date, downloadlink)."""
     if not 'FREEDICT_TOOLS' in os.environ or not shutil.which('git'):
-        raise ReleaseError(("Unable to retrieve list of rleases of "
+        raise ReleaseError(("Unable to retrieve list of releases of "
             "FreeDict tools. Either FREEDICT_TOOLS is unset or git not "
             "installed."))
     releases = git(['tag']).split('\n')

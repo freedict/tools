@@ -121,11 +121,13 @@ class DownloadFormat(enum.Enum):
     """The download format, consisting both of the platform and the archive
     format. Some formats might not have a archive format, though."""
 
+    DictTxz = re.compile(r"freedict-%s-(.*?).dictd.tar.xz" % DICTIONARY)
+    Slob = re.compile(r"freedict-%s-(.*?).slob" % DICTIONARY)
+    StardictTxz = re.compile(r"freedict-%s-(.*?).stardict.tar.xz" % DICTIONARY)
     Source = re.compile(
         r"freedict-%s-(.*?).src.(?:zip|tar.bz2|tar.gz|tar.xz)" % DICTIONARY
     )
-    DictTxz = re.compile(r"freedict-%s-(.*?).dictd.tar.xz" % DICTIONARY)
-    Slob = re.compile(r"freedict-%s-(.*?).slob" % DICTIONARY)
+
     # legacy formats
     DictTgz = re.compile(r"freedict-%s-(.*?).dictd.tar.gz" % DICTIONARY)
     DictBz2 = re.compile(r"freedict-%s-(.*?).dictd.tar.bz2" % DICTIONARY)
@@ -147,17 +149,18 @@ class DownloadFormat(enum.Enum):
     def __str__(self):
         """Return a string representation of the enum value, as used in the type
         attribute of the release tag in the FreeDict XML API."""
-        if self is DownloadFormat.Source:
-            return "src"
-        if self is DownloadFormat.DictTgz:
-            return "dict-tgz"
-        if self is DownloadFormat.DictBz2:
-            return "dict-bz2"
-        if self is DownloadFormat.DictTxz:
-            return "dictd"
-        if self is DownloadFormat.Slob:
-            return "slob"
-        raise ValueError("Unsupported format: " + self.name)
+        formats = {
+                DownloadFormat.Source: "src",
+                DownloadFormat.DictTgz: "dict-tgz",
+                DownloadFormat.DictBz2: "dict-bz2",
+                DownloadFormat.DictTxz: "dictd",
+                DownloadFormat.Slob: "slob",
+                DownloadFormat.StardictTxz: 'startdict'
+            }
+        try:
+            return formats[self]
+        except KeyError:
+            raise ValueError("Unsupported format: " + self.name)
 
 
 class Link:
