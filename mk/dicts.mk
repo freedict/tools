@@ -339,8 +339,11 @@ release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 PYGLOSSARY = pyglossary
 
 $(BUILD_DIR)/stardict/$(dictname).ifo $(BUILD_DIR)/stardict/$(dictname).idx.gz \
-	$(BUILD_DIR)/stardict/$(dictname).dict.dz pyglossary-stardict.out: $(dictname).tei
-	$(PYGLOSSARY) $(dictname).tei $(BUILD_DIR)/stardict/$(dictname).ifo >pyglossary-stardict.out
+		$(BUILD_DIR)/stardict/$(dictname).dict.dz \
+		$(BUILD_DIR)/stardict/pyglossary-stardict.out: $(call dict_tei_source)
+	@mkdir -p $(BUILD_DIR)/stardict
+	$(PYGLOSSARY) $(dictname).tei $(BUILD_DIR)/stardict/$(dictname).ifo \
+		> $(BUILD_DIR)/stardict/pyglossary-stardict.out
 	gzip -9 $(BUILD_DIR)/stardict/$(dictname).idx
 
 
