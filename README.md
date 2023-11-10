@@ -4,6 +4,10 @@ FreeDict Tools
 The FreeDict tools are used to import, export (build) and manage FreeDict
 dictionaries.
 
+As a dictionary data provider, our goal is to use our TEI dialect to be able to
+import and export into a variety of output formats. This repository collects the
+tooling for this.
+
 Getting Started
 ---------------
 
@@ -19,23 +23,39 @@ More information is in the wiki at
 
 ### Dependencies
 
-You should have at least the following tools installed, to build the
-dictionaries: make, xsltproc, tar, gzip, dictzip, dictfmt
+FreeDict requires a few essential tools to generate phonemes and compile the XML
+sources. However, most of the tools are determined by the output format.
 
-For proper use of all our tools, Perl, eSpeakNG, Python > 3.4 are required, and
-Git and a XML-capable editor are recommended.
+0.  Basic tooling:
+    perl, python, make, xsltproc, tar, gzip, espeak-ng
+1.  For dictd:
+    dictzip, dictfmt
+2.  For stardict:
+    pyglossary
+3.  For slob:
+    slob, tei2slob
 
 #### Debian/Ubuntu Dependencies
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-    sudo apt-get install make xsltproc libicu-dev python3 python3-icu virtualenv python3-virtualenv espeak-ng git dictfmt
+0.  Basic: `sudo apt install make xsltproc libicu-dev python3 python3-icu virtualenv python3-virtualenv espeak-ng git`
+1.  For dictd: `sudo apt install dictzip dictfmt`
+2.  For stardict: install pyglossary, for instance, `pipx install pyglossary`
+3.  For slob:
+    1.  Get the sources:
+        <https://github.com/itkach/slobn>
+        <https://github.com/itkach/tei2slob/>
+    2.  Use the official installation instructions OR
+    3.  Use a virtualenv; we recommend that to bundle all our tooling
+    4.  fetch the mentioned sources and use `pipx install .`, which is easiest.
 
 #### Windows
 
 On Windows, it is easiest to install [Msys2](https://www.msys2.org/) or
 [Cygwin](https://www.cygwin.com). Both offer an easy method to install the
-required tools.
+required tools. Note that we are not officially using Windows, so your mileage
+will vary.
 
 ### Setting Up The Build System
 
