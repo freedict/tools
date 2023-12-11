@@ -61,7 +61,7 @@ def load_configuration(conffile):
                     % section, conffile)
         path = get_path(config[section])
         if not os.path.exists(path):
-            raise ConfigurationError("path \"%s\" configured in %s doesn't exist" \
+            raise ConfigurationError("path \"%s\" configured in section [%s] doesn't exist" \
                     % (path, section), conffile)
 
     return config

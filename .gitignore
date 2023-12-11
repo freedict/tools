@@ -1,12 +1,13 @@
-# keep that alphabetical please
+# keep this alphabetical please
 *~
 *.bak
-build
 */build/*
+build
 *.egg-info
+fd_tool/dist
 freedict-database.xml
 *.mo
-*__pycache__*
 *.pyc
+*__pycache__*
 *.swo
 *.swp

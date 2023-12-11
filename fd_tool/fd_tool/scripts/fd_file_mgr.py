@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """This script makes remote files available for local processing. Remote files
 are e.g. the released files hosted on a server as downloads or the
 auto-generated dictionaries, kept outside the git repository.
@@ -11,7 +10,7 @@ import subprocess
 import sys
 
 
-from fd_tool import config
+from .. import config
 
 
 def execute(cmd, raise_on_error=False):

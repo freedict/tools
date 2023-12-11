@@ -1,13 +1,22 @@
-File Mgmt
-=========
+FD Tool
+====
 
-The scripts in this directory are able to set up everything required to
+The `fd_tool`and its accompanying scripts in this directory are able to set up
+everything required to
 
 -   release dictionaries
 -   access out-of-VCS auto-imported dictionaries
 -   generate the FD API
 
 As a dictionary developer, you don't need to care about this. :)
+
+Installation
+---------
+
+Create a virtual environment for FreeDict and execute in this directory
+
+    pip install .
+
 
 Configuration
 -------------
