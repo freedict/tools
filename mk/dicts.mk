@@ -57,10 +57,11 @@ deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-pa
 
 # This function assists the release-% rules. It generates the release path for
 # each platform; Arg1: platform
-gen_release_path = $(RELEASE_DIR)/freedict-$(dictname)-$(version).$(strip \
+gen_release_file = freedict-$(dictname)-$(version).$(strip \
 	$(if $(findstring slob,$(1)),slob,\
 		$(if $(findstring stardict,$(1)),stardict.tar.xz,\
 			$(1).tar.xz)))
+gen_release_path = $(RELEASE_DIR)/$(call gen_release_file,$(1))
 gen_release_hashpath = $(call gen_release_path,$(1)).sha512
 
 # dictionary source file -- normally just $(dictname).tei, but can be
@@ -129,11 +130,10 @@ clean:: #! clean build files
 	rm -rf build
 	rm -f valid.stamp
 
-deploy: #! deploy all platforms of a release to the remote file hosting service
-deploy: $(foreach r, $(available_platforms), release-$(r))
-	@MOUNTED=0; \
+define deploy_command =
+	MOUNTED=0; \
 	if command -v mountpoint &> /dev/null; then \
-		if mountpoint -q "$(deploy_to)"; then \
+		if mountpoint -q "$(call deploy_to)"; then \
 			echo "Remote file system mounted, skipping this step."; \
 		else \
 			$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) mount; \
@@ -144,23 +144,44 @@ deploy: $(foreach r, $(available_platforms), release-$(r))
 	if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
 		echo "Creating new release directory for first release of $(dictname)"; \
 		mkdir -p $(call deploy_to,$(dictname)); fi; \
-	if [ -d $(call deploy_to,$(dictname)/$(version)) ]; then \
-		if [ "${FORCE}" = "y" ]; then \
-			echo "Enforcing deployment…"; \
+	for platform in $(1); do \
+		DEPLOY_DIR=$(call deploy_to,$(dictname)/$(version)); \
+		RELEASE_FULL_PATH=$$(make --no-print-directory release-path-$$platform); \
+		RELEASE_FILENAME=$$(basename $$RELEASE_FULL_PATH); \
+		DEPLOY_FILE_PATH=$$DEPLOY_DIR/$$RELEASE_FILENAME;\
+		if [ -d $$DEPLOY_FILE_PATH ]; then \
+			if [ "${FORCE}" = "y" ]; then \
+				echo "Enforcing deployment…"; \
+			else \
+				echo "Release $(version) has been deployed already. Use \`make FORCE=y deploy\` to enforce the deployment."; \
+				exit 2; fi; \
 		else \
-			echo "Release $(version) has been deployed already. Use \`make FORCE=y deploy\` to enforce the deployment."; \
-			exit 2; fi; \
-	else \
-		mkdir -p $(call deploy_to,$(dictname)/$(version)); fi; \
-	chmod a+r $(foreach p,$(available_platforms), $(call gen_release_path,$(p))); \
-	echo "Copying files…";\
-	cp $(foreach p,$(available_platforms), $(call gen_release_path,$(p))) \
-		$(call deploy_to,$(dictname)/$(version)); \
-	cp $(foreach p,$(available_platforms), $(call gen_release_hashpath,$(p))) \
-		$(call deploy_to,$(dictname)/$(version)); \
+			mkdir -p $$DEPLOY_DIR; \
+		fi; \
+		chmod a+r $$RELEASE_FULL_PATH; \
+		echo "Copying files for $$platform…";\
+		cp $$RELEASE_FULL_PATH $$DEPLOY_DIR; \
+		cp $$(make --no-print-directory release-path-hash-$$platform) $$DEPLOY_DIR; \
+	done; \
 	if [ $$MOUNTED -eq 1 ]; then \
 		$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) umount; \
-		fi
+	fi
+endef
+
+release-path-%: #! print the release path from the build directory for the given platform
+	@echo $(call gen_release_path,$(@:release-path-%=%))
+
+release-path-hash-%: #! print the path to the file containing the hash of the release
+	@echo $(call gen_release_hashpath,$(@:release-path-hash-%=%))
+
+
+deploy: #! deploy all platforms of a release to the remote file hosting service
+deploy: $(foreach r, $(available_platforms), release-$(r))
+	$(call deploy_command,$(available_platforms))
+
+deploy-%: #! Deploy a specific platform, e.g. to deploy a newly supported format for an already-released dictionary
+deploy-%: release-%
+	$(call deploy_command,$(@:deploy-%=%))
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
