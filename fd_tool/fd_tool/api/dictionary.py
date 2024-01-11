@@ -155,7 +155,7 @@ class DownloadFormat(enum.Enum):
                 DownloadFormat.DictBz2: "dict-bz2",
                 DownloadFormat.DictTxz: "dictd",
                 DownloadFormat.Slob: "slob",
-                DownloadFormat.StardictTxz: 'startdict'
+                DownloadFormat.StardictTxz: 'stardict'
             }
         try:
             return formats[self]
