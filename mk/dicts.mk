@@ -149,7 +149,7 @@ define deploy_command =
 		RELEASE_FULL_PATH=$$(make --no-print-directory release-path-$$platform); \
 		RELEASE_FILENAME=$$(basename $$RELEASE_FULL_PATH); \
 		DEPLOY_FILE_PATH=$$DEPLOY_DIR/$$RELEASE_FILENAME;\
-		if [ -d $$DEPLOY_FILE_PATH ]; then \
+		if [ -f $$DEPLOY_FILE_PATH ]; then \
 			if [ "${FORCE}" = "y" ]; then \
 				echo "Enforcing deployment…"; \
 			else \
