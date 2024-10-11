@@ -365,7 +365,7 @@ $(BUILD_DIR)/stardict/$(dictname).ifo $(BUILD_DIR)/stardict/$(dictname).idx.gz \
 	@mkdir -p $(BUILD_DIR)/stardict
 	$(PYGLOSSARY) $(dictname).tei $(BUILD_DIR)/stardict/$(dictname).ifo \
 		> $(BUILD_DIR)/stardict/pyglossary-stardict.out
-	gzip -9 $(BUILD_DIR)/stardict/$(dictname).idx
+	gzip -9 -f $(BUILD_DIR)/stardict/$(dictname).idx
 
 
 build-stardict: $(BUILD_DIR)/stardict/$(dictname).ifo
