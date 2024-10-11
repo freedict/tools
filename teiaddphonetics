@@ -18,6 +18,10 @@ import sys
 import xml.sax as sax
 
 ISO_639_TABLE = "/usr/share/iso-codes/json/iso_639-3.json"
+# We rely on espeak-ng to output a single line of output for a given input line.
+# However, there seem to be characters that trigger additional newlines. So a
+# long word list, with a phrase per line, must have a one-to-one mapping on its
+# output. Therefore we replace those characters causing unexpected newlines.
 CHARACTER_REPLACEMENTS = {
     '"',
     "(",
@@ -59,6 +63,7 @@ CHARACTER_REPLACEMENTS = {
     chr(0x60C),  # from ara-eng
     "−",
     "–",
+    "—",
     "↑",
     "→",
     "←",
