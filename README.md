@@ -39,7 +39,7 @@ sources. However, most of the tools are determined by the output format.
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-0.  Basic: `sudo apt install make xsltproc libicu-dev python3 python3-icu virtualenv python3-virtualenv espeak-ng git`
+0.  Basic: `sudo apt install make xsltproc libicu-dev pkg-config python3 python3-icu virtualenv python3-virtualenv espeak-ng git`
 1.  For dictd: `sudo apt install dictzip dictfmt`
 2.  For stardict: install pyglossary, for instance, `pipx install pyglossary`
 3.  For slob:

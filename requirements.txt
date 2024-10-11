@@ -1,9 +1,8 @@
--e git://github.com/freedict/tools.git#egg=fd_tool&subdirectory=fd_tool
--e git://github.com/freedict/tools.git#egg=fd_import&subdirectory=importers
+-e git+https://github.com/freedict/tools#egg=fd_tool&subdirectory=fd_tool
+-e git+https://github.com/freedict/tools#egg=fd_import&subdirectory=importers
 semver==2.8.1
-PyICU>=2.3
--e git://github.com/ovalhub/pyicu@3614198d130273ec4acc029bd7ded083e6309224#egg=pyicu
+pyicu>= 2.10
 ankisync==0.1.6.3
--e git://github.com/itkach/slob.git#egg=slob
--e git://github.com/itkach/tei2slob.git#egg=tei2slob
--e git://github.com/ilius/pyglossary.git#egg=pyglossary
+-e git+https://github.com/itkach/slob#egg=slob
+-e git+https://github.com/itkach/tei2slob#egg=tei2slob
+pyglossary>=4.5.0
