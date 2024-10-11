@@ -38,7 +38,7 @@ def get_fd_api():
     try:
         import fd_tool.config as config
         cnf = config.discover_and_load()
-        js = json.load(open(api_file(cnf)))
+        js = json.load(open(api_file(cnf), encoding="UTF-8"))
     except ImportError:
         # try to activate virtual env, if configured but not sourced yet
         paths = [os.path.join(os.path.expanduser("~"), '.config/freedict/freedictrc')]
@@ -48,10 +48,11 @@ def get_fd_api():
             if conffile:
                 import configparser
                 cnf = configparser.ConfigParser()
-                cnf.read_file(open(conffile[0]))
+                cnf.read_file(open(conffile[0], encoding="UTF-8"))
                 if 'DEFAULT' in cnf and 'api_output_path' in cnf['DEFAULT']:
-                    js = json.load(open(api_file(cnf)))
-    except KeyboardInterrupt: # fd_tool.config.ConfigurationError -- but we don't know whether it wasbe imported before
+                    with open(api_file(cnf), encoding="UTF-8") as fhandle:
+                        js = json.load(fhandle)
+    except KeyboardInterrupt:
         pass
     if not js:
         from urllib.request import urlopen
@@ -101,7 +102,8 @@ def assert_correct_working_directory():
     num_files = sum(1 for fn in os.listdir('.')
             if re.search('^[a-z]{3}-[a-z]{3}$', fn))
     if num_files < 2: # less than two dictionaries, probably not a dictionary root
-        print("Error: must be run from a FreeDict source root, i.e. where all generated dictionaries are stored.")
+        print("Error: must be run from a FreeDict source root, i.e. "
+                "where all generated dictionaries are stored.")
         sys.exit(9)
 
 
@@ -110,12 +112,17 @@ def make_changelog(path):
             'date': date.today(),
             'dict': path,
     }
-    with open(os.path.join(path, 'ChangeLog'), 'w') as f:
-        f.write("""
+    changelog_path = 'ChangeLog'
+    changelog = ''
+    if os.path.exists(changelog_path):
+        with open(os.path.join(path, changelog_path), 'r', encoding="UTF-8") as chlog_file:
+            changelog += chlog_file.read()
+    with open(os.path.join(path, 'ChangeLog'), 'w', encoding="UTF-8") as f:
+        f.write(("""\n
 {date}
 
   * automatic import of {dict} dictionary from WikDict
-        """.strip().format(**tmpl_vars) + '\n')
+        \n""" + changelog).strip().format(**tmpl_vars) + '\n')
 
 
 def update_dict_files(path, shared_file_path):
@@ -138,6 +145,12 @@ def update_dict_files(path, shared_file_path):
 
 
 def dict_exists_from_other_source(api_dump, dictname):
+    """FreeDict dictionaries come from different sources. At the time of writing,
+these are the VCS-tracked, partly hand-written dictionaries and the
+auto-imported dictionaries. WikDict are auto-imported and hence in the bucked of
+non-VCS tracked, generated dictionaries. Before importing a WikDict dictionary,
+we have to check whether a dictionary with the same name exists somewhere
+else."""
     dictionary = [d for d in api_dump if d['name'] == dictname]
 
     return dictionary and ('sourceURL' not in dictionary[0] or \
