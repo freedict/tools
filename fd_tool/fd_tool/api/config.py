@@ -15,7 +15,3 @@ DICTIONARY_PATTERN = re.compile(r'(?:freedict-)?([a-z]{3}-[a-z]{3}).*')
 # Pattern to identify directory names of directories; matches English names of
 # languages, separated by " - "
 DICTIONARY_DIRECTORY_PATTERN = re.compile(r"[A-Z][a-z]+%20-%20[A-z][a-z]+")
-
-# Identification of versions; basically distutils.version.StrictVersion, but
-# permits "-" as separator, too
-

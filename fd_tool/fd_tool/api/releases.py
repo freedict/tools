@@ -1,7 +1,6 @@
 """Collect all information about released dictionaries."""
 
 from datetime import datetime
-import distutils.version
 import hashlib
 import json
 import os
@@ -127,14 +126,12 @@ def get_all_downloads(root):
 
 def get_latest_version(release_information):
     """Iterate over object and return the latest version, as defined by
-    semver. Versions that are valid distutils.version.StrictVersions, but not
-    valid semver versions are converted."""
+    semver."""
     latest = None
     latest_strict = None # might contain '-' replaced through '.'
     for version in release_information:
-        version_strict = version[:]
         try:
-            normalize_version(version_strict)
+            version_strict = normalize_version(version)
         except ValueError as e:
             raise ReleaseError(e.args)
         if not latest:

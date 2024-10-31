@@ -2,7 +2,6 @@
 downloads and a few function to retrieve useful information about these
 objects."""
 import datetime
-import distutils.version
 import enum
 import os
 import re
@@ -122,7 +121,7 @@ class DownloadFormat(enum.Enum):
     format. Some formats might not have a archive format, though."""
 
     DictTxz = re.compile(r"freedict-%s-(.*?).dictd.tar.xz" % DICTIONARY)
-    Slob = re.compile(r"freedict-%s-(.*?).slob" % DICTIONARY)
+    Slob = re.compile(f"freedict-{DICTIONARY}-(.*?).slob")
     StardictTxz = re.compile(r"freedict-%s-(.*?).stardict.tar.xz" % DICTIONARY)
     Source = re.compile(
         r"freedict-%s-(.*?).src.(?:zip|tar.bz2|tar.gz|tar.xz)" % DICTIONARY
@@ -202,11 +201,16 @@ class Link:
 def normalize_version(vers_string):
     """Make a semantic version out of a less strict version number , e.g. 0.5 to
     0.5.0."""
+    parts_count = vers_string.count(".")
+    if parts_count == 1:
+        vers_string = vers_string + ".02"
+    elif parts_count > 2:
+        raise ValueError("Invalid version string " + vers_string)
     try:
         return semver.parse(vers_string)
     except ValueError:
-        return
-    semver.parse(".".join(distutils.version.StrictVersion(vers_string).version))
+        print(f"Invalid version string {vers_string")
+        raise
 
 
 def mklink(full_path, format, version, sha):
