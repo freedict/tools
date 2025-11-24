@@ -1,6 +1,6 @@
 ./fd_tool
 ./importers
-semver==2.8.1
+semver==3.0.1
 pyicu>= 2.10
 ankisync==0.1.6.3
 -e git+https://github.com/itkach/slob#egg=slob

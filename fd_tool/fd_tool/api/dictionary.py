@@ -201,15 +201,18 @@ class Link:
 def normalize_version(vers_string):
     """Make a semantic version out of a less strict version number , e.g. 0.5 to
     0.5.0."""
-    parts_count = vers_string.count(".")
-    if parts_count == 1:
-        vers_string = vers_string + ".02"
-    elif parts_count > 2:
-        raise ValueError("Invalid version string " + vers_string)
+    # strip fd version suffixes
+    if "-" in vers_string:
+        vers_string = vers_string.split("-", 1)[0]
+    parts = vers_string.split(".", 2)
+    if len(parts) == 2: # like 1.9
+        parts.append("0")
+    vers_string = '.'.join((p.lstrip("0") if p != "0" else p) for p in parts)
+    # strip FreeDict suffixes
     try:
-        return semver.parse(vers_string)
+        return semver.Version.parse(vers_string)
     except ValueError:
-        print(f"Invalid version string {vers_string")
+        print("Invalid version string", vers_string)
         raise
 
 
