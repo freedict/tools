@@ -5,4 +5,4 @@ pyicu>= 2.10
 ankisync==0.1.6.3
 -e git+https://github.com/itkach/slob#egg=slob
 -e git+https://github.com/itkach/tei2slob#egg=tei2slob
-pyglossary>=4.5.0
+pyglossary>=5.2.0

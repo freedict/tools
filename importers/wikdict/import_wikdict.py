@@ -8,7 +8,7 @@ FreeDict configuration. This is the preferred way. Then it downloads a version
 from freedict.org.
 """
 
-#pylint: disable=multiple-imports
+import argparse
 import enum
 import html.parser
 import json
@@ -25,6 +25,7 @@ SOURCE_URL = 'https://download.wikdict.com/dictionaries/tei/no-infl/'
 # minimal number of words to consider a dictionary for inclusion
 MIN_WORD_COUNT = 10000
 DOWNLOAD_PREFIX = 'http://{0.netloc}{0.path}'.format(urllib.parse.urlsplit(SOURCE_URL))
+
 def get_fd_api():
     """Read local FreeDict API file or load from given path from configuration
     or download it from freedict.org as fallback.
@@ -178,7 +179,7 @@ class DictionaryStrategy(enum.Enum):
     Imported = 2
     Rubbish = 3
 
-def import_dictionary(api, link):
+def import_dictionary(api, link, shared_dir, force_import: bool):
     """Import a dictionary from WikDict and prepare dictionary directory for a
     release."""
     if not urllib.parse.urlsplit(link)[1]: # no host in URL
@@ -186,7 +187,7 @@ def import_dictionary(api, link):
     base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
     if not re.match(r'\w{3}-\w{3}', base_name):
         return (DictionaryStrategy.Rubbish, None)
-    if dict_exists_from_other_source(api, base_name):
+    if not force_import and dict_exists_from_other_source(api, base_name):
         return (base_name, DictionaryStrategy.ManuallyEdited)
     tei = download(link)
     if not enough_headwords(tei):
@@ -196,7 +197,7 @@ def import_dictionary(api, link):
     if not os.path.exists(base_name):
         os.makedirs(base_name)
     # erase old files, write new ones
-    update_dict_files(base_name, sys.argv[1])
+    update_dict_files(base_name, shared_dir)
     with open(os.path.join(base_name, base_name + '.tei'), 'w',
             encoding='utf-8') as file:
         file.write(tei)
@@ -206,27 +207,38 @@ def import_dictionary(api, link):
 
 def main():
     assert_correct_working_directory()
-    if len(sys.argv) != 2:
-        print("Error, path to shared FreeDict files required as first argument.")
-        sys.exit(1)
-    if not os.path.exists(sys.argv[1]):
-        print("Error, path does not exist",sys.argv[1])
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument("-f", "--force-import", dest="force_import",
+            help=("switch modes to import the given WikDict dictionary, "
+                "independent of whether something is listed in the API"))
+    parser.add_argument('shared_fd_dir', type=str,
+            help="path to the shared FD files")
+    args = parser.parse_args()
+    if not os.path.exists(args.shared_fd_dir):
+        print("Error, path does not exist", args.shared_fd_dir)
         sys.exit(2)
-    # statistics
+    # collect statistics
     too_small, manual = [], []
     api = get_fd_api()
+    wikdict_file_listing = parse_links()
+    if args.force_import is not None:
+        wikdict_file_listing = [d for d in wikdict_file_listing
+                if args.force_import in d]
+    force_import = args.force_import is not None
     with multiprocessing.Pool(5) as p:
         res = p.starmap(import_dictionary, # ↓ pair with api, see import_dictionary
-                ((api, l) for l in sorted(parse_links())))
-        for action in res:
-            dictname, action = action # what has been done with which dictionary
+                ((api, l, args.shared_fd_dir, force_import)
+                for l in sorted(wikdict_file_listing)))
+        for dictname, action in res:
             if action is DictionaryStrategy.TooSmall:
                 too_small.append(dictname)
             elif action == DictionaryStrategy.ManuallyEdited:
                 manual.append(dictname)
     print("The following dictionaries were skipped because:")
-    print("… a non-WikDict version exists:",', '.join(manual))
-    print("… they were too small:", ', '.join(too_small))
+    if manual:
+        print("… a non-WikDict version exists:",', '.join(manual))
+    if too_small:
+        print("… they were too small:", ', '.join(too_small))
 
 
 if __name__ == '__main__':
