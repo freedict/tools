@@ -121,7 +121,7 @@ mk_venv: #! initialise a new (Python) virtual environment; use mk_venv-help for 
 		echo "You don't have a FreeDict configuration yet. Please create one, "; \
 		echo 'as described in the chapter "Build System" of the FreeDict HOWTO';\
 		echo "from the Wiki";fi
-	if ! [ -f $(FREEDICTRC) ]; then \
+	@if ! [ -f $(FREEDICTRC) ]; then \
 		NO_CONF=1; \
 	elif ! grep virtual_env < $(FREEDICTRC) &> /dev/null; then \
 		NO_CONF=1; \
