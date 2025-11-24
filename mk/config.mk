@@ -142,7 +142,7 @@ help:
 	@echo "The following commands are defined:"
 	@echo
 	@IFS=$$'\n'; \
-	help_lines=`fgrep -h "#!" $(MAKEFILE_LIST) | fgrep -v fgrep | fgrep -v help_line | grep -v 'Define the' | sed -e 's/\\$$//' | sort`; \
+	help_lines=`grep -F -h "#!" $(MAKEFILE_LIST) | grep -F -v 'grep -F' | grep -F -v help_line | grep -v 'Define the' | sed -e 's/\\$$//' | sort`; \
 	for help_line in $${help_lines[@]}; do \
 		help_command=`echo $$help_line | sed -e 's/^\(.*\): .*/\1/' -e 's/^ *//' -e 's/ *$$//' -e 's/:$$//'`; \
 		help_info=`echo $$help_line | sed -e 's/.*#!\(.*\)$$/\1/' -e 's/^ *//' -e 's/ *$$//'`; \
