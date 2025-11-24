@@ -1,5 +1,5 @@
--e git+https://github.com/freedict/tools#egg=fd_tool&subdirectory=fd_tool
--e git+https://github.com/freedict/tools#egg=fd_import&subdirectory=importers
+./fd_tool
+./importers
 semver==2.8.1
 pyicu>= 2.10
 ankisync==0.1.6.3
