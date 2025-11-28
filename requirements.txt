@@ -6,3 +6,5 @@ ankisync==0.1.6.3
 -e git+https://github.com/itkach/slob#egg=slob
 -e git+https://github.com/itkach/tei2slob#egg=tei2slob
 pyglossary>=5.2.0
+# for pyglossary:
+lxml>=6.0.2
