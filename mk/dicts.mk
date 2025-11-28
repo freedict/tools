@@ -43,7 +43,7 @@ DISTFILES_BINARY = $(foreach f, README README.md README.txt README.rst \
 					INSTALL INSTALL.md INSTALL.rst INSTALL.txt, \
 		$(wildcard $(f))) # only consider these files if they do exist
 
-PREFIX ?= /usr
+PREFIX ?= /usr/local
 DESTDIR ?=
 
 ################
@@ -303,39 +303,6 @@ release-dictd: $(RELEASE_DIR) $(call gen_release_path,dictd) \
 	$(call gen_release_hashpath,dictd)
 
 
-
-
-######################################
-#### targets for evolutionary platform
-######################################
-
-date=$(shell date +%Y-%m-%d)
-
-install-base: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
-	install -d $(DESTDIR)/$(PREFIX)/share/dictd
-	install -m 644 $^ $(DESTDIR)/$(PREFIX)/share/dictd
-
-
-install: #! install the dictionary
-install: install-base
-	@echo -n 'Sucessfully installed the dictionary. Use `sudo dictdconfig -w` and '
-	@if command -v systemctl 2>&1 > /dev/null; then \
-		echo -n '`systemctl restart dictd`'; \
-	elif command -v service 2>&1 > /dev/null; then \
-		echo -n '`service dictd restart`'; \
-	else \
-		echo -n 'restart your dictd server'; \
-	fi
-	@echo ' to make use of the new dictionary.'
-
-install-restart: #! same as install, but also restart the dict daemon
-install-restart: install-base
-	sh $(FREEDICT_TOOLS)/buildhelpers/dict_restart_helper.sh
-
-uninstall: #! uninstall this dictionary
-	-rm $(DESTDIR)/$(PREFIX)/share/dictd/$(dictname).dict.dz $(DESTDIR)/$(DESTDIR)/$(dictname).index
-	$(DICTD_RESTART_SCRIPT)
-
 ################################################################################
 #### Source 'platform'
 ################################################################################
@@ -358,23 +325,21 @@ release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 ##################################
 
 PYGLOSSARY = pyglossary
-
-$(BUILD_DIR)/stardict/$(dictname).ifo $(BUILD_DIR)/stardict/$(dictname).idx.gz \
-		$(BUILD_DIR)/stardict/$(dictname).dict.dz \
-		$(BUILD_DIR)/stardict/pyglossary-stardict.out: $(call dict_tei_source)
-	@mkdir -p $(BUILD_DIR)/stardict
-	$(PYGLOSSARY) $(dictname).tei $(BUILD_DIR)/stardict/$(dictname).ifo \
-		> $(BUILD_DIR)/stardict/pyglossary-stardict.out
-	gzip -9 -f $(BUILD_DIR)/stardict/$(dictname).idx
+BUILD_STARDICT=$(BUILD_DIR)/stardict
+BUILD_STARDICT_FILES=$(foreach EXT,ifo idx.gz dict,$(BUILD_STARDICT)/$(dictname).$(EXT))
 
 
-build-stardict: $(BUILD_DIR)/stardict/$(dictname).ifo
+$(BUILD_STARDICT_FILES) $(BUILD_STARDICT)/pyglossary-stardict.out: $(call dict_tei_source)
+	@mkdir -p $(BUILD_STARDICT)
+	$(PYGLOSSARY) $< $(BUILD_STARDICT)/$(dictname).ifo \
+		> $(BUILD_STARDICT)/pyglossary-stardict.out
+	gzip -9 -f $(BUILD_STARDICT)/$(dictname).idx
 
 
-$(call gen_release_path,stardict): \
-       	$(BUILD_DIR)/stardict/$(dictname).ifo \
-	$(BUILD_DIR)/stardict/$(dictname).dict.dz \
-	$(BUILD_DIR)/stardict/$(dictname).idx.gz
+build-stardict: $(BUILD_STARDICT_FILES)
+
+
+$(call gen_release_path,stardict): $(BUILD_STARDICT_FILES)
 	tar --dereference --transform='s/build.stardict.//'   -C .. -cJf $@ \
 		$(addprefix $(notdir $(realpath .))/, $^) \
 		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
@@ -384,9 +349,9 @@ release-stardict: $(RELEASE_DIR) $(call gen_release_path,stardict) \
 		$(call gen_release_hashpath,stardict)
 
 clean::
-	rm -f $(BUILD_DIR)/stardict/$(dictname).idx.gz \
-	$(BUILD_DIR)/stardict/$(dictname).dict.dz $(BUILD_DIR)/stardict/$(dictname).ifo \
-	$(BUILD_DIR)/stardict/freedict-$(dictname)-$(version)-stardict.tar.bz2 \
+	rm -f $(BUILD_STARDICT)/$(dictname).idx.gz \
+	$(BUILD_STARDICT)/$(dictname).dict $(BUILD_STARDICT)/$(dictname).ifo \
+	$(BUILD_STARDICT)/freedict-$(dictname)-$(version)-stardict.tar.bz2 \
 	pyglossary-stardict.out authorresp.out title.out sourceurl.out
 
 #######################
@@ -408,6 +373,46 @@ $(call gen_release_hashpath,slob): $(call gen_release_path,slob)
 
 release-slob: $(call gen_release_path,slob) $(call gen_release_hashpath,slob)
 
+######################################
+#### install targets
+######################################
+
+install-dictd-base: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
+	install -d $(DESTDIR)/$(PREFIX)/share/dictd
+	install -m 644 $^ $(DESTDIR)/$(PREFIX)/share/dictd
+
+install-dictd: install-dictd-base
+	@echo -n 'Sucessfully installed the dictionary. Use `sudo dictdconfig -w` and '
+	@if command -v systemctl 2>&1 > /dev/null; then \
+		echo -n '`systemctl restart dictd`'; \
+	elif command -v service 2>&1 > /dev/null; then \
+		echo -n '`service dictd restart`'; \
+	else \
+		echo -n 'restart your dictd server'; \
+	fi
+	@echo ' to make use of the new dictionary.'
+
+STARDICT_INSTDIR=$(DESTDIR)$(PREFIX)/share/stardict/dic
+
+install-stardict: $(BUILD_STARDICT)/$(dictname).idx.gz \
+	$(BUILD_STARDICT)/$(dictname).dict $(BUILD_STARDICT)/$(dictname).ifo
+	install -d $(STARDICT_INSTDIR)
+	install -m 644 $^ $(STARDICT_INSTDIR)
+
+install-slob:
+
+install: #! install the dictionary
+install: $(foreach P,$(filter-out src,$(available_platforms)),install-$(P))
+
+install-restart: #! same as install, but also restart the dict daemon
+install-restart: install-dictd-base
+	sh $(FREEDICT_TOOLS)/buildhelpers/dict_restart_helper.sh
+
+uninstall: #! uninstall this dictionary
+	-rm $(DESTDIR)/$(PREFIX)/share/dictd/$(dictname).dict.dz $(DESTDIR)/$(DESTDIR)/$(dictname).index
+	$(DICTD_RESTART_SCRIPT)
+
+
 #######################
 #### Makefile-technical
 #######################
@@ -415,6 +420,7 @@ release-slob: $(call gen_release_path,slob) $(call gen_release_hashpath,slob)
 # should be default, but is not for make-historic reasons
 .DELETE_ON_ERROR:
 
-.PHONY: all build-dictd build-slob build-src clean dist find-homographs \
-	install pos-statistics print-unsupported query-% releaase-src release release-dictd \
+.PHONY: all build-dictd build-slob build-src build-stardict clean dist find-homographs \
+	install $(foreach P,$(filter-out src,$(available_platforms)),install-$(P)) \
+	pos-statistics print-unsupported query-% releaase-src release release-dictd \
 	test test-reverse tests uninstall validation version
