@@ -83,7 +83,7 @@ source_lang = $(firstword $(subst -, ,$(dictname)))
 ifeq ($(supported_phonetics_lang),)
 phoneme_generation_supported=$(shell $(TEIADDPHONETICS) --supports-lang $(source_lang) 2> /dev/null;echo $$?)
 ifneq ($(phoneme_generation_supported),0)
-$(warning Unable to run teiaddphonetics, phoneme generation disabled. Check installed dependencies.)
+$(warning Unable to run teiaddphonetics, phoneme generation disabled for $(dictname). Check installed dependencies.)
 endif
 
 ifeq ($(phoneme_generation_supported),0) # supported language
