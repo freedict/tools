@@ -56,7 +56,7 @@ class UnisonFileAccess:
         if 'UNISON' in os.environ:
             oldunison = os.environ['UNISON']
         os.environ['UNISON'] = os.path.join(path, '.unison')
-        ret = os.system("unison -auto -log -times -contactquietly -terse " + \
+        ret = os.system("unison -terse -auto -batch -log -times -contactquietly -terse " + \
                 "-ignore 'Regex .*.swp' -ignore 'Regex .*.swo' " + \
                 "-ignore 'Regex .*/build' " + \
                 "-ignore 'Regex .*~' -ignore 'Regex .unison.*' " + \
