@@ -1,5 +1,6 @@
-"""This file imports the epo-eng dictionary from
 #!/usr/bin/env python3
+
+"""This file imports the epo-eng dictionary from
 <http://www.denisowski.org/Esperanto/ESPDIC/espdic_readme.htm>. Please see the
 README for more information."""
 
