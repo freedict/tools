@@ -222,7 +222,7 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
 
 def main(input_file, tei_skeleton, output_directory):
     print("Parsing dictionary…")
-    with open(input_file, 'r', encoding='utf-8') as f:
+    with open(input_file, 'r', encoding='utf-8-sig') as f:
         # gnerator with word pairs; ignore indented lines (only file header,
         # ATM)
         words = (wp for wp in f.read().split('\n')
