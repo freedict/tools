@@ -1,24 +1,15 @@
---- epo-eng.orig	2017-07-09 11:40:36.611728286 +0200
-+++ epo-eng	2017-07-03 15:58:11.599154598 +0200
-@@ -189,7 +189,7 @@
- Abisenujo : Abyssinia, Ethiopia
- abisma : abysmal
- abisme : abysmally
--abismejo : (the) abyss
-+abismejo : abyss
- abismo : abyss, chasm, gulf, precipice, oblivion
- abiŝag : Abishag
- abiturienta : baccalaureate; related to high school graduation
-@@ -1515,7 +1515,7 @@
+--- espdic.orig	2026-05-23 19:08:29.762970112 +0300
++++ espdic.txt	2026-05-24 14:12:05.914321884 +0300
+@@ -1460,7 +1460,7 @@
  agordiĝemo : manageability, tractability
  agordiĝi : to be tuned (up)
  agordilaro : control panel
 -agordilo : configurator, tuner (device), tuning fork, setup program, (software), wizard (software), assistant (installation)
-+agordilo : configurator, tuner (device), tuning fork, setup program, wizard (software), assistant (installation)
++agordilo : configurator, tuner (device), tuning fork, setup program (software), wizard (software), assistant (installation)
  agordindikoj al la fenestroadministrilo : window manager hints
  agordinformoj : configuration information
  agordisto : tuner (person)
-@@ -7751,7 +7751,7 @@
+@@ -7706,7 +7706,7 @@
  batraka : batrachian
  batrako : batrachian
  batrakoj : anura
@@ -27,88 +18,88 @@
  batuo : battue, hunt, shoot
  Batuo : Batu
  baŭdo : baud
-@@ -11769,7 +11769,7 @@
- ĉonmago : chonmage
- ĉopsuo : chop suey
- ĉoto : bullhead, sculpin
+@@ -11742,7 +11742,7 @@
+ ĉu ... aŭ : whether ... or
+ ĉu bone aŭ malbone : for better or for worse
+ ĉu ... ĉu : whether ... or, whether ... whether
 -ĉu : either, if, is it, whether, (asks a question)
 +ĉu : either, if, is it, whether
- ĉu ... aŭ : whether ... or
- ĉu ... ĉu : whether ... or, whether ... whether
- ĉu aŭ ne danĝere : dangerous or not
-@@ -26216,7 +26216,7 @@
- inviti : to invite
+ Ĉukĉa Duoninsulo : Chukot(ski) Peninsula
+ Ĉukĉa Maro : Chukchee Sea
+ ĉukĉo : Chukchi man
+@@ -26241,7 +26241,7 @@
  invitiĝi : to be invited
  invitilo : invitation, prompt
+ inviti : to invite
 -invito : bidding, invitation, (command), prompt
 +invito : bidding, invitation, prompt
  involucia : involuntary
  involucie : involuntarily
  involucio : involution
-@@ -32568,7 +32568,7 @@
- kutimiĝo : adjustment
+@@ -32611,7 +32611,7 @@
  kutimita : accustomed to, used to
+ kutimi : to accustom, be accustomed to, be in the habit of
  kutimo : custom, habit, way, practice, routine
 -kutimulo : (a) regular (guest, customer, etc.)
 +kutimulo : regular (guest, customer, etc.)
  kutro : cutter
  kuvajta : Kuwaiti
  kuvajtano : Kuwaiti
-@@ -37771,7 +37771,7 @@
- melopepo : spaghetti squash, summer squash, yellow squash
- melopsitako : budgerigar
- melotrono : mellotron
+@@ -37993,7 +37993,7 @@
+ memriproĉo : compunction, remorse, self-reproach
+ memsaniga : self-healing
+ memsaniga teknologio : self-healing technology
 -mem : self, (puts emphasis on the noun or pronoun it follows)
 +mem : self (puts emphasis on the noun or pronoun it follows)
- mem-malkompaktiga : self-extracting
- mem-malkompaktiga arkivo : self-extracting archive
- mem-malkompaktiga exe-dosiero : self-extracting EXE file
-@@ -38625,7 +38625,7 @@
+ memserva : self-service
+ memserva vendejo : supermarket
+ memsignado : autonymy
+@@ -38672,7 +38672,7 @@
  minidisko : MD, MiniDisc
  minikamerao : minicamera
  minimuma : minimal, minimum
 -minimume : at (the) least
-+minimume : at least
++minimume : at least, at the least
  minimumejo : point of minimum
  minimumiganto : point of minimum
  minimumigi : to minimize
-@@ -38670,7 +38670,7 @@
- minuso : minus (sign)
- minussigno : minus sign
- minuto : minuet (time)
+@@ -38729,7 +38729,7 @@
+ mi opinias same : I’m of the same opinion
+ miopsito : monk parakeet, quaker parrot
+ miosotono : water chickweed
 -mio : (the) self, one’s self
-+mio : self, one’s self
- Mioceno : Miocene
- miogalo : desman, muskrat
- miopa : myopic, near-sighted, short-sighted
-@@ -42407,7 +42407,7 @@
- Okeano : Oceanus
- okedro : octahedron
++mio : self, the self, one’s self
+ miozoto : forget-me-not, myosotis
+ mi pensu : Let me think
+ mi petas : please, you’re welcome
+@@ -42480,7 +42480,7 @@
+ oke : eighthly
+ ok : eight
  okej : agreed, okay
 -okera voko : (the) eightfold path (of Buddhism)
 +okera voko : eightfold path (of Buddhism)
  Okinavo : Okinawa
- oklahoma : Oklahoman
  oklahomano : Oklahoman
-@@ -44859,7 +44859,7 @@
- pezoforto : gravitation, gravity
+ oklahoma : Oklahoman
+@@ -44942,7 +44942,7 @@
+ pezo : significance, weight
  Pfalzo : Palatinate
  pfenigo : pfennig
 -PGKD : (plej granda komuna divizoro) GCD (greatest common denominator)
 +PGKD (plej granda komuna divizoro) : GCD (greatest common denominator)
  pĝ : paĝo
- pia : pious, righteous
  piamatro : pia mater
-@@ -46314,7 +46314,7 @@
- porko : hog, pig, swine
+ pianisto : pianist
+@@ -46385,7 +46385,7 @@
  porkocervo : babirusa, deer-hog
  porkograso : lard
+ porko : hog, pig, swine
 -porkomerca : (for) commercial (use, purposes)
 +porkomerca : commercial (use, purposes)
+ por komuna bono : for the common good
  porkostalo : sty
  porkstalo : sty
- porkviro : boar, hog
-@@ -47192,7 +47192,7 @@
+@@ -47283,7 +47283,7 @@
  pridiskuti : to discuss
  pridisputi : to argue, dispute, query, question
  pridubebla : doubtful
@@ -117,12 +108,21 @@
  prienketi : to investigate
  prierara : error, about errors
  prierara raportilo : error report tool
-@@ -50975,7 +50975,7 @@
+@@ -51072,7 +51072,7 @@
+ ronda ekkrampo : opening parenthesis, “(”
+ ronda finkrampo : closing parenthesis, “)”
  ronda hoketo : breve
+-rondaj krampoj : round parentheses, ()
++rondaj krampoj : round parentheses "()"
  ronda kanao : hiragana
  ronda krampo : parenthesis, round bracket
--rondaj krampoj : round parentheses, ()
-+rondaj krampoj : round parentheses
- rondbuŝuloj : cyclostomes
- rondcifere : round numbers (in)
- ronde : roundly
+ ronda : round
+@@ -63732,7 +63732,7 @@
+ kontraŭrevoluciulo : counter-revolutionary
+ kiel ofte okazis : as often happened
+ estreco : leadership
+-netuŝeblulo ; untouchable (person)
++netuŝeblulo : untouchable (person)
+ en proksimeco al : in the vicinity of, near to
+ laŭ la supozo ke : supposing that
+ nanaspektigi : to dwarf (something), make something appear very small
