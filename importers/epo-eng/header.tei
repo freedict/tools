@@ -20,16 +20,16 @@
         </respStmt>
       </titleStmt>
       <editionStmt>
-        <edition>1.0.1</edition>
+        <edition>2024-10-06.01</edition>
       </editionStmt>
-      <extent>63477 headwords</extent>
+      <extent>63895 headwords</extent>
       <publicationStmt>
         <publisher>FreeDict</publisher>
         <availability>
           <p>Available under the terms of the the Creative Commons Attribution
           3.0 Unported License.</p>
         </availability>
-        <date when="2017-08-10">10th of September 2017</date>
+        <date when="2026-05-24">24th of May 2026</date>
         <pubPlace>
           <ref>http://freedict.org/</ref>
         </pubPlace>
@@ -56,6 +56,10 @@
       </projectDesc>
     </encodingDesc>
     <revisionDesc>
+      <change n="2026-07-01" when="2026-07-01">
+        Import new version dated 2024-10-06. Thanks to Teemu Hukkanen for
+        updating the patch and for adjusting importer to new file.
+      </change>
       <change n="1.0.1" when="2017-09-10" who="#humenda">
         The importer script omitted characters at the beginning of words, if a
         headword started with &quot;to&quot;. The newly imported versions has fixed this
