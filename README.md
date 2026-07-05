@@ -27,7 +27,7 @@ FreeDict requires a few essential tools to generate phonemes and compile the XML
 sources. However, most of the tools are determined by the output format.
 
 0.  Basic tooling:
-    perl, python, make, xsltproc, tar, gzip, espeak-ng
+    perl, python, make, xsltproc, (libxml2-utils | jing), tar, gzip, espeak-ng
 1.  For dictd:
     dictzip, dictfmt
 2.  For stardict:

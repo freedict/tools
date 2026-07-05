@@ -3,7 +3,13 @@
 # with the latest tools included.
 
 FREEDICT_TOOLS ?= .
+ifeq ($(wildcard $(FREEDICT_TOOLS)/mk/config.mk),)
+FREEDICT_TOOLS := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+endif
 include $(FREEDICT_TOOLS)/mk/config.mk
+
+XMLLINT ?= xmllint
+JING ?= jing
 
 VERSION = 0.4
 PREFIX ?= usr
@@ -26,8 +32,12 @@ get_api_path=$(call exc_pyscript,fd_file_mgr,-a) | tr -d '\n'
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
 	@$(call get_api_path)
 
-api-validation: #! validate the freedict-database.xml against its RNG schema
-	xmllint --noout --relaxng freedict-database.rng $(shell $(call get_api_path))/freedict-database.xml
+api-validation: #! validate the freedict-database.xml against its RNG schema (set USE_JING=1 to use jing instead of xmllint)
+	@if [ -n "$(USE_JING)" ]; then \
+		$(JING) $(FREEDICT_TOOLS)/freedict-database.rng $(FREEDICT_TOOLS)/freedict-database.xml; \
+	else \
+		$(XMLLINT) --noout --relaxng $(FREEDICT_TOOLS)/freedict-database.rng $(FREEDICT_TOOLS)/freedict-database.xml; \
+	fi
 
 
 
