@@ -1,0 +1,73 @@
+<?xml version="1.0" ?>
+<!-- vim: set expandtab shiftwidth=2 tw=160 sts=2 ft=xml: -->
+<?xml-stylesheet type="text/css" href="freedict-dictionary.css"?>
+<?oxygen RNGSchema="freedict-P5.rng" type="xml"?>
+<!DOCTYPE TEI
+  SYSTEM 'freedict-P5.dtd'>
+<TEI version="5.0" xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>English-Hindi FreeDict dictionary</title>
+        <respStmt>
+          <resp>created by</resp>
+          <name>Florian Babl</name>
+        </respStmt>
+        <respStmt>
+          <!-- for the freedict database -->
+          <resp>Maintainer</resp>
+          <name>Michael Bunk &lt;michael.bunk@gmail.com></name>
+        </respStmt>
+      </titleStmt>
+      <editionStmt>
+        <edition>2024.10.06+fd1</edition>
+      </editionStmt>
+      <extent> headwords</extent>
+      <publicationStmt>
+        <publisher>FreeDict</publisher>
+        <availability>
+          <p>Available under the terms of the GNU Free Documentation License .</p>
+        </availability>
+        <date when="2026-06-08">8th of August 2026</date>
+        <pubPlace>
+          <ref>http://freedict.org/</ref>
+        </pubPlace>
+      </publicationStmt>
+      <notesStmt>
+        <note type="status">big enough to be useful</note>
+        <note xml:lang="en">
+          <p>This dictionary has been parsed from a plain text file.
+        Please report these issues to the maintainer or to the FreeDict project.</p>
+        </note>
+      </notesStmt>
+      <sourceDesc>
+        <p>The dictionary was downloaded from
+        https://www.cfilt.iitb.ac.in/~hdict/webinterface_user/download.php?get=UW_Hindi_Dict_20131003.zip</p>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <projectDesc>
+        <p>This dictionary comes to you through nice people making it available for free and for good. It is part of the FreeDict project, http://www.freedict.org. This project aims to make many translating dictionaries available for free. Your contributions are welcome!</p>
+      </projectDesc>
+    </encodingDesc>
+    <revisionDesc>
+      <change n="2026-07-01" when="2026-07-01">
+        Import new version dated 2024-10-06. Thanks to Teemu Hukkanen for
+        updating the patch and for adjusting importer to new file.
+      </change>
+      <change n="1.0.1" when="2017-09-10" who="#humenda">
+        The importer script omitted characters at the beginning of words, if a
+        headword started with &quot;to&quot;. The newly imported versions has fixed this
+        bug.
+      </change>
+      <change n="1.0" when="2017-07-09" who="#humenda">
+      Initial conversion of the dictionary. At the moment, the dictionary
+      needs a bit of patching to be transformed correctly. When there's enough interest, that might hchange.
+      </change>
+    </revisionDesc>
+  </teiHeader>
+  <text>
+    <body>
+    </body>
+  </text>
+</TEI>
