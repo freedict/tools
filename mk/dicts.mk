@@ -324,19 +324,21 @@ release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 #### targets for StarDict platform
 ##################################
 
-PYGLOSSARY = pyglossary
+PYGLOSSARY ?= pyglossary
 BUILD_STARDICT=$(BUILD_DIR)/stardict
 BUILD_STARDICT_FILES=$(foreach EXT,ifo idx.gz dict,$(BUILD_STARDICT)/$(dictname).$(EXT))
 
+# One producer checks its manifest, including optional files, once per invocation.
+.PHONY: check-stardict
+check-stardict:
 
-$(BUILD_STARDICT_FILES) $(BUILD_STARDICT)/pyglossary-stardict.out: $(call dict_tei_source)
-	@mkdir -p $(BUILD_STARDICT)
-	$(PYGLOSSARY) $< $(BUILD_STARDICT)/$(dictname).ifo \
-		> $(BUILD_STARDICT)/pyglossary-stardict.out
-	gzip -9 -f $(BUILD_STARDICT)/$(dictname).idx
+$(BUILD_STARDICT)/.complete: $(call dict_tei_source) check-stardict
+	$(call exc_pyscript,$(PYTHON),"$(BUILDHELPERS_DIR)/build_stardict.py","$(call dict_tei_source)","$(BUILD_STARDICT)","$(dictname)",--pyglossary,"$(PYGLOSSARY)")
 
+$(BUILD_STARDICT_FILES): $(BUILD_STARDICT)/.complete
+	@test -f "$@"
 
-build-stardict: $(BUILD_STARDICT_FILES)
+build-stardict: $(BUILD_STARDICT)/.complete
 
 
 $(call gen_release_path,stardict): $(BUILD_STARDICT_FILES)
