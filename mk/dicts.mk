@@ -324,19 +324,36 @@ release-src: $(call gen_release_path,src) $(call gen_release_hashpath,src)
 #### targets for StarDict platform
 ##################################
 
-PYGLOSSARY = pyglossary
+PYGLOSSARY ?= pyglossary
 BUILD_STARDICT=$(BUILD_DIR)/stardict
 BUILD_STARDICT_FILES=$(foreach EXT,ifo idx.gz dict,$(BUILD_STARDICT)/$(dictname).$(EXT))
 
+# Force the shared producer when a required output is missing.
+stardict_required_files := $(BUILD_STARDICT_FILES) $(if $(shell \
+	grep -E '^synwordcount=[1-9][0-9]*$$' $(BUILD_STARDICT)/$(dictname).ifo 2>/dev/null),\
+	$(BUILD_STARDICT)/$(dictname).syn)
+check-stardict:
 
-$(BUILD_STARDICT_FILES) $(BUILD_STARDICT)/pyglossary-stardict.out: $(call dict_tei_source)
-	@mkdir -p $(BUILD_STARDICT)
-	$(PYGLOSSARY) $< $(BUILD_STARDICT)/$(dictname).ifo \
-		> $(BUILD_STARDICT)/pyglossary-stardict.out
-	gzip -9 -f $(BUILD_STARDICT)/$(dictname).idx
+$(BUILD_STARDICT)/build.stamp: $(call dict_tei_source) \
+		$(if $(filter-out $(wildcard $(stardict_required_files)),$(stardict_required_files)),check-stardict)
+	@mkdir -p "$(BUILD_STARDICT)/tmp"
+	rm -f "$(BUILD_STARDICT)/tmp/"*
+	$(call exc_pyscript,$(PYGLOSSARY),--ui=cmd --read-format=FreeDict --write-format=Stardict \
+		--write-options='dictzip=false;dictzip_syn=false' "$<" "$(BUILD_STARDICT)/tmp/$(dictname).ifo") \
+		> "$(BUILD_STARDICT)/tmp/pyglossary-stardict.out" 2>&1
+	for ext in ifo idx dict; do \
+		test -f "$(BUILD_STARDICT)/tmp/$(dictname).$$ext" || exit 1; done
+	if grep -Eq '^synwordcount=[1-9][0-9]*$$' "$(BUILD_STARDICT)/tmp/$(dictname).ifo"; then \
+		test -f "$(BUILD_STARDICT)/tmp/$(dictname).syn"; fi
+	gzip -n -9 -f "$(BUILD_STARDICT)/tmp/$(dictname).idx"
+	rm -f "$@" $(addprefix $(BUILD_STARDICT)/$(dictname).,syn syn.dz dict.dz)
+	mv "$(BUILD_STARDICT)/tmp/"* "$(BUILD_STARDICT)/"
+	touch "$@"
 
+$(BUILD_STARDICT_FILES): $(BUILD_STARDICT)/build.stamp
+	@test -f "$@"
 
-build-stardict: $(BUILD_STARDICT_FILES)
+build-stardict: $(BUILD_STARDICT)/build.stamp
 
 
 $(call gen_release_path,stardict): $(BUILD_STARDICT_FILES)
@@ -420,7 +437,7 @@ uninstall: #! uninstall this dictionary
 # should be default, but is not for make-historic reasons
 .DELETE_ON_ERROR:
 
-.PHONY: all build-dictd build-slob build-src build-stardict clean dist find-homographs \
+.PHONY: all build-dictd build-slob build-src build-stardict check-stardict clean dist find-homographs \
 	install $(foreach P,$(filter-out src,$(available_platforms)),install-$(P)) \
 	pos-statistics print-unsupported query-% releaase-src release release-dictd \
 	test test-reverse tests uninstall validation version

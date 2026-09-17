@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader><fileDesc>
+    <titleStmt><title>English-German test</title></titleStmt>
+    <editionStmt><edition>1.0.0</edition></editionStmt>
+    <extent>3 headwords</extent>
+    <publicationStmt><p>Test</p></publicationStmt>
+    <sourceDesc><p>Regression fixture</p></sourceDesc>
+  </fileDesc></teiHeader>
+  <text><body>
+    <entry><form><orth>apple</orth></form><sense><cit type="trans"><quote>Apfel</quote></cit></sense></entry>
+    <entry><form><orth>house</orth><orth>home</orth></form><sense><cit type="trans"><quote>Haus</quote></cit></sense></entry>
+    <entry><form><orth>über</orth></form><sense><cit type="trans"><quote>über &amp; darüber</quote></cit></sense></entry>
+  </body></text>
+</TEI>
