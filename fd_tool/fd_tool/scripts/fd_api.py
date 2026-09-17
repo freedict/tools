@@ -67,10 +67,10 @@ def find_outdated_releases(dictionaries):
         else:
             released = max(
                 (l.version for l in dict.get_downloads()),
-                key=dictionary.normalize_version,
+                key=dictionary.version_key,
             )
-            if dictionary.normalize_version(dict['edition']) > \
-                    dictionary.normalize_version(released):
+            if dictionary.version_key(dict['edition']) > \
+                    dictionary.version_key(released):
                 candidates.append((dict.get_name(), dict['edition'], released))
     return candidates
 

@@ -199,21 +199,30 @@ class Link:
 
 
 def normalize_version(vers_string):
-    """Make a semantic version out of a less strict version number , e.g. 0.5 to
-    0.5.0."""
-    # strip fd version suffixes
-    if "-" in vers_string:
-        vers_string = vers_string.split("-", 1)[0]
-    parts = vers_string.split(".", 2)
-    if len(parts) == 2: # like 1.9
-        parts.append("0")
-    vers_string = '.'.join((p.lstrip("0") if p != "0" else p) for p in parts)
-    # strip FreeDict suffixes
-    try:
-        return semver.Version.parse(vers_string)
-    except ValueError:
-        print("Invalid version string", vers_string)
-        raise
+    """Normalize historical numeric versions without losing SemVer suffixes."""
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+){0,2})([-+].+)?", vers_string)
+    if not match:
+        raise ValueError(f"Invalid version: {vers_string!r}")
+    core, suffix = match.groups()
+    parts = [str(int(part)) for part in core.split('.')]
+    parts.extend(['0'] * (3 - len(parts)))
+    suffix = suffix or ''
+    # Historical -fd revisions are downstream releases, not prereleases.
+    if re.fullmatch(r'-fd[0-9]+(?:\.[0-9]+)*', suffix):
+        suffix = '+' + suffix[1:]
+    return semver.Version.parse('.'.join(parts) + suffix)
+
+
+def version_key(version):
+    """Order FreeDict revisions after upstream SemVer precedence."""
+    normalized = normalize_version(version)
+    revision = (0,)
+    if normalized.build and re.fullmatch(r'fd[0-9]+(?:\.[0-9]+)*', normalized.build):
+        revision = tuple(int(part) for part in normalized.build[2:].split('.'))
+        # Treat fd1 and fd1.0 as equivalent, just like a missing fd0 suffix.
+        while len(revision) > 1 and revision[-1] == 0:
+            revision = revision[:-1]
+    return normalized, revision
 
 
 def mklink(full_path, format, version, sha):

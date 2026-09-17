@@ -13,7 +13,7 @@ import urllib.request
 import semver
 
 from .config import RELEASE_HTTP_TOOL_BASE
-from .dictionary import DownloadFormat, normalize_version
+from .dictionary import DownloadFormat, version_key
 
 # relative to github.com/freedict/
 TOOLS_REPO = 'tools'
@@ -57,14 +57,14 @@ def get_release_info_for_dict(path, version):
     """Retrieve information about the releases of a dictionary."""
     files = {}
     name = None
-    version = normalize_version(version)
+    version = version_key(version)
     for file in os.listdir(path):
         format = DownloadFormat.get_type(file)
         if not format:
             continue # ignore unknown file naming, possibly outdated or unsupported formats
 
         parsed_name, file_version_str = format.value.search(file).groups()
-        file_version = normalize_version(file_version_str)
+        file_version = version_key(file_version_str)
 
         if file_version != version:
             raise ReleaseError('Version from file name "%s" did not match version of directory "%s"' \
@@ -131,7 +131,7 @@ def get_latest_version(release_information):
     latest_strict = None # might contain '-' replaced through '.'
     for version in release_information:
         try:
-            version_strict = normalize_version(version)
+            version_strict = version_key(version)
         except ValueError as e:
             raise ReleaseError(e.args)
         if not latest:
@@ -142,7 +142,7 @@ def get_latest_version(release_information):
                 latest = version
                 latest_strict = version_strict
     if not latest:
-        raise ReleaseError("No versions found for " % repr(release_information))
+        raise ReleaseError(f"No versions found for {release_information!r}")
     return latest
 
 def github_request(path):
