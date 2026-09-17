@@ -134,6 +134,15 @@ umount_or_keep = \
 		$(call exc_pyscript,fd_file_mgr,-u); \
 	fi
 
+# Retain the producer's status while still synchronizing/unmounting its files.
+run_with_files = $(call exc_pyscript,fd_file_mgr,-m); status=$$?; \
+	if [ $$status -ne 0 ] && [ $$status -ne 201 ]; then exit $$status; fi; \
+	STAY_MOUNTED=$$([ $$status -eq 201 ] && echo 1 || echo 0); \
+	$(call exc_pyscript,$(1),$(2)); status=$$?; \
+	$(call umount_or_keep); cleanup_status=$$?; \
+	if [ $$status -ne 0 ]; then exit $$status; fi; exit $$cleanup_status
+
+
 ################################################################################
 # Define the help system, use #! after the colon of a rule to add a
 # documentation string
