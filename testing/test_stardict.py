@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tarfile
 import unittest
 
 REPO = Path(__file__).resolve().parents[1]
@@ -76,3 +77,28 @@ sys.exit(int(os.environ.get('CONVERSION_STATUS', '0')))
         config = self.root / 'freedictrc'
         config.write_text(f'[DEFAULT]\nvirtual_env = {venv}\n')
         self.successful('build-stardict', 'PYGLOSSARY=pyglossary', f'FREEDICTRC={config}')
+
+    def test_archive_and_install_include_synonyms(self):
+        self.successful('-j4', 'release-stardict')
+        archive = next((self.dictionary / 'build/release').glob('*.tar.xz'))
+        with tarfile.open(archive) as tar:
+            self.assertIn('eng-deu/eng-deu.syn', tar.getnames())
+        timestamp = archive.stat().st_mtime_ns
+        self.successful('release-stardict')
+        self.assertEqual(archive.stat().st_mtime_ns, timestamp)
+        stage = self.root / 'stage'
+        self.successful('install-stardict', f'DESTDIR={stage}')
+        self.assertTrue((stage / 'usr/local/share/stardict/dic/eng-deu.syn').exists())
+
+    def test_stale_synonyms_are_removed(self):
+        stage = self.root / 'stage'
+        self.successful('install-stardict', f'DESTDIR={stage}')
+        script = self.converter.read_text().replace('synwordcount=1', 'synwordcount=0')
+        script = '\n'.join(line for line in script.splitlines()
+                           if "with_suffix('.syn')" not in line) + '\n'
+        self.converter.write_text(script)
+        with (self.dictionary / 'eng-deu.tei').open('a') as source:
+            source.write('\n')
+        self.successful('install-stardict', f'DESTDIR={stage}')
+        self.assertFalse((self.output / 'eng-deu.syn').exists())
+        self.assertFalse((stage / 'usr/local/share/stardict/dic/eng-deu.syn').exists())
