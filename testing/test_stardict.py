@@ -102,3 +102,28 @@ sys.exit(int(os.environ.get('CONVERSION_STATUS', '0')))
         self.successful('install-stardict', f'DESTDIR={stage}')
         self.assertFalse((self.output / 'eng-deu.syn').exists())
         self.assertFalse((stage / 'usr/local/share/stardict/dic/eng-deu.syn').exists())
+
+    def test_install_and_uninstall_all_formats(self):
+        for relative in ['build/dictd/eng-deu.c5', 'build/dictd/eng-deu.dict',
+                         'build/dictd/eng-deu.dict.dz', 'build/dictd/eng-deu.index',
+                         'build/slob/eng-deu-1.0.0.slob']:
+            path = self.dictionary / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'prebuilt fixture')
+        stage = self.root / 'stage with spaces'
+        restart = self.root / 'restart'
+        restart.write_text(f'#!/bin/sh\ntouch "{self.root}/restarted"\n')
+        restart.chmod(0o755)
+        overrides = [f'DESTDIR={stage}', 'PREFIX=/opt/freedict',
+                     f'DICTD_RESTART_SCRIPT={restart}',
+                     '--old-file=build/dictd/eng-deu.dict.dz',
+                     '--old-file=build/dictd/eng-deu.index']
+        self.successful('install-restart', *overrides)
+        expected = ['dictd/eng-deu.dict.dz', 'dictd/eng-deu.index',
+                    'stardict/dic/eng-deu.ifo', 'stardict/dic/eng-deu.idx.gz',
+                    'stardict/dic/eng-deu.dict', 'stardict/dic/eng-deu.syn', 'slob/eng-deu.slob']
+        for name in expected:
+            self.assertTrue((stage / 'opt/freedict/share' / name).is_file(), name)
+        self.successful('uninstall', *overrides)
+        self.assertFalse(any(path.is_file() for path in stage.rglob('*')))
+        self.assertFalse((self.root / 'restarted').exists())

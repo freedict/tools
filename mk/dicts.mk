@@ -382,9 +382,11 @@ release-slob: $(call gen_release_path,slob) $(call gen_release_hashpath,slob)
 #### install targets
 ######################################
 
+DICTD_INSTDIR ?= $(PREFIX)/share/dictd
+
 install-dictd-base: $(BUILD_DICTD)/$(dictname).dict.dz $(BUILD_DICTD)/$(dictname).index
-	install -d $(DESTDIR)/$(PREFIX)/share/dictd
-	install -m 644 $^ $(DESTDIR)/$(PREFIX)/share/dictd
+	install -d "$(DESTDIR)$(DICTD_INSTDIR)"
+	install -m 644 $^ "$(DESTDIR)$(DICTD_INSTDIR)"
 
 install-dictd: install-dictd-base
 	@echo -n 'Sucessfully installed the dictionary. Use `sudo dictdconfig -w` and '
@@ -397,26 +399,39 @@ install-dictd: install-dictd-base
 	fi
 	@echo ' to make use of the new dictionary.'
 
-STARDICT_INSTDIR=$(DESTDIR)$(PREFIX)/share/stardict/dic
+STARDICT_INSTDIR ?= $(PREFIX)/share/stardict/dic
 
 install-stardict: $(BUILD_STARDICT_FILES)
-	install -d "$(STARDICT_INSTDIR)"
-	install -m 644 $(stardict_distribution_files) "$(STARDICT_INSTDIR)"
+	install -d "$(DESTDIR)$(STARDICT_INSTDIR)"
+	install -m 644 $(stardict_distribution_files) "$(DESTDIR)$(STARDICT_INSTDIR)"
 	@if [ ! -f "$(BUILD_STARDICT)/$(dictname).syn" ]; then \
-		rm -f "$(STARDICT_INSTDIR)/$(dictname).syn"; fi
+		rm -f "$(DESTDIR)$(STARDICT_INSTDIR)/$(dictname).syn"; fi
 
-install-slob:
+SLOB_INSTDIR ?= $(PREFIX)/share/slob
+
+install-slob: $(BUILD_DIR)/slob/$(dictname)-$(version).slob
+	install -d "$(DESTDIR)$(SLOB_INSTDIR)"
+	install -m 644 "$<" "$(DESTDIR)$(SLOB_INSTDIR)/$(dictname).slob"
 
 install: #! install the dictionary
 install: $(foreach P,$(filter-out src,$(available_platforms)),install-$(P))
 
-install-restart: #! same as install, but also restart the dict daemon
-install-restart: install-dictd-base
-	sh $(FREEDICT_TOOLS)/buildhelpers/dict_restart_helper.sh
+install-restart: #! install all formats and restart dictd unless staging with DESTDIR
+install-restart: install
+	@if [ -z "$(DESTDIR)" ]; then sh "$(DICTD_RESTART_SCRIPT)"; fi
 
-uninstall: #! uninstall this dictionary
-	-rm $(DESTDIR)/$(PREFIX)/share/dictd/$(dictname).dict.dz $(DESTDIR)/$(DESTDIR)/$(dictname).index
-	$(DICTD_RESTART_SCRIPT)
+uninstall-dictd:
+	rm -f "$(DESTDIR)$(DICTD_INSTDIR)/$(dictname).dict.dz" \
+		"$(DESTDIR)$(DICTD_INSTDIR)/$(dictname).index"
+
+uninstall-stardict:
+	rm -f $(foreach EXT,ifo idx.gz dict syn dict.dz syn.dz,"$(DESTDIR)$(STARDICT_INSTDIR)/$(dictname).$(EXT)")
+
+uninstall-slob:
+	rm -f "$(DESTDIR)$(SLOB_INSTDIR)/$(dictname).slob"
+
+uninstall: #! remove all installed binary formats without restarting host services
+uninstall: $(foreach P,$(filter-out src,$(available_platforms)),uninstall-$(P))
 
 
 #######################
@@ -426,6 +441,7 @@ uninstall: #! uninstall this dictionary
 # should be default, but is not for make-historic reasons
 .DELETE_ON_ERROR:
 
+.PHONY: install-dictd-base install-restart uninstall-dictd uninstall-stardict uninstall-slob
 .PHONY: all build-dictd build-slob build-src build-stardict clean dist find-homographs \
 	install $(foreach P,$(filter-out src,$(available_platforms)),install-$(P)) \
 	pos-statistics print-unsupported query-% releaase-src release release-dictd \
