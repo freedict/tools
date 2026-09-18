@@ -89,7 +89,7 @@ PYTHON_VERSION_FULL := $(wordlist 2,4,$(subst ., ,$(shell $(PYTHON) --version 2>
 PYTHON_VERSION_MAJOR := $(word 1,${PYTHON_VERSION_FULL})
 
 ifneq ($(PYTHON_VERSION_MAJOR),3)
-$(error a python Version >= 3.4 is required, current python major is $(PYTHON_VERSION_MAJOR))
+$(error Python 3.12 or newer is required, current python major is $(PYTHON_VERSION_MAJOR))
 endif
 
 # exc_pyscript is meant to either call a system-wide installed version or one

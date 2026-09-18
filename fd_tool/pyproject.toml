@@ -1,8 +1,9 @@
 [project]
 name = "fd_tool"
 version = "0.1"
+requires-python = ">=3.12"
 dependencies = [
-    "semver",
+    "semver>=3.0.4,<4",
 ]
 
 [project.scripts]
@@ -10,8 +11,8 @@ fd_api = "fd_tool.scripts.fd_api:main"
 fd_file_mgr = "fd_tool.scripts.fd_file_mgr:main"
 
 
-[tool.setuptools.packages]
-find = {}  # Scan the project directory with the default parameters
+[tool.setuptools.packages.find]
+include = ["fd_tool*"]
 
 [build-system]
 requires = ["setuptools"]

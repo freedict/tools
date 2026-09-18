@@ -95,10 +95,9 @@ free to do so. The mk_venv command will make sure that the virtual environment
 is created at the correct place; use "P=/some/path" to specify the path.
 Example:
     make mk_venv P=../fd-venv
-NOTE: If you have not pkg-config on your system, you need to manually set the
-	environment variable ICU_VERSION to the version of libicu on your system.
-	This is due to some internal restructuring of the libicu library that we
-	depend on.
+Python 3.12 or newer is required. The built-in venv module creates the environment.
+PyICU needs ICU headers, pkg-config, a C++ compiler, and Python development headers.
+On Debian/Ubuntu install libicu-dev pkg-config build-essential python3-dev python3-venv.
 After installation, you will be asked whether the virtual environment should be
 added to the FreeDict configuration. This is generally a good idea, because this
 means that the FreeDict build system will take care of all the required steps.
@@ -111,45 +110,12 @@ mk_venv: #! initialise a new (Python) virtual environment; use mk_venv-help for 
 	@if [ "${P}" = '' ]; then \
 		echo Need to give a path with P=, e.g. "make mk_venv P=/some/dir"; \
 		exit 222; fi
-	@if ! command -v virtualenv &> /dev/null; then \
-		echo '`virtualenv` not found, please install it and try again.'; exit 10; \
-		fi
-	@virtualenv -q -p $(PYTHON) ${P}
-	@if [ -z "$(ICU_VERSION)" ]; then \
-		if ! command -v pkg-config; then \
-			echo "Environment variable ICU_VERSION unset and 'pkg-config' not found.";  \
-			echo "Please set ICU_VERSION to the version of libicu installed on your system."; \
-			exit 127; \
-		fi; \
-		export ICU_VERSION=`pkg-config --modversion icu-i18n`; \
-	fi; \
-	source ${P}/bin/activate; pip install -r requirements.txt
-	@if [ "$(FREEDICTRC)" = "" ]; then \
-		echo "You don't have a FreeDict configuration yet. Please create one, "; \
-		echo 'as described in the chapter "Build System" of the FreeDict HOWTO';\
-		echo "from the Wiki";fi
-	@if ! [ -f $(FREEDICTRC) ]; then \
-		NO_CONF=1; \
-	elif ! grep virtual_env < $(FREEDICTRC) &> /dev/null; then \
-		NO_CONF=1; \
-	else NO_CONF=0; \
-	fi; \
-	if [ $$NO_CONF -eq 1 ]; then \
-		echo -n "Do you want to add the virtual_env to the FreeDict configuration? [y|n] "; \
-		read CHOICE;\
-		if [ "$$CHOICE" = "y" ]; then \
-			mkdir -p $(dir $(FREEDICTRC));\
-			touch $(FREEDICTRC);\
-			PATH=$(abspath ${P}); \
-			if ! grep -r '[DEFAULT]' $(FREEDICTRC) &> /dev/null; then \
-				echo >> $(FREEDICTRC);\
-				echo '[DEFAULT]' >> $(FREEDICTRC); \
-				echo "virtual_env = $$PATH" >> $(FREEDICTRC) ;\
-			else \
-				sed -i 's|\[DEFAULT\]|[DEFAULT]\nvirtual_env = '$$PATH'|' $(FREEDICTRC); \
-			fi; \
-			echo done; \
-		fi; \
+	@"$(PYTHON)" "$(FREEDICT_TOOLS)/buildhelpers/create_venv.py" "${P}"
+	@if [ -n "$(FREEDICTRC)" ]; then \
+		"$(PYTHON)" "$(FREEDICT_TOOLS)/buildhelpers/register_venv.py" \
+			"$(FREEDICTRC)" "${P}" --choice "$${REGISTER_VENV:-auto}"; \
+	else \
+		echo "No FreeDict configuration found; set FREEDICTRC to register this environment."; \
 	fi
 
 # NOTE: the directories below HAVE to be on one line

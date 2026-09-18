@@ -39,7 +39,7 @@ sources. However, most of the tools are determined by the output format.
 
 If you use Debian/Ubuntu, you should install the following packages:
 
-0.  Basic: `sudo apt install make xsltproc libicu-dev pkg-config python3 python3-icu virtualenv python3-virtualenv espeak-ng git`
+0.  Basic: `sudo apt install make xsltproc libicu-dev pkg-config python3 python3-dev python3-venv build-essential espeak-ng git`
 1.  For dictd: `sudo apt install dictzip dictfmt`
 2.  For stardict: install pyglossary, for instance, `pipx install pyglossary`
 3.  For slob:
@@ -62,12 +62,13 @@ will vary.
 You should clone this repository to a path with no spaces and add an environment
 variable `FREEDICT_TOOLS` to point to this directory.
 
+The complete toolchain requires Python 3.12 or newer.
 A lot of the internal scripts need additional Python libraries. To fully make
 use of them, you should set up a Python virtual environment for that. To help
 you getting started, `make mk_venv` is there to guide you through the process
 and `make mk_venv-help` will explain you why and how you should use `make mk_venv`.
 
-Hint: It is possible to set up a environment without virtualenv. See the file
+Hint: It is possible to set up an environment without a virtual environment. See the file
 requirements.txt for more details.
 
 Once done, you can get help on the available actions in any directory containing a
@@ -92,7 +93,7 @@ Additional Output Formats
 
 For creating slob files, you need to install tei2slob:
 
-	virtualenv env-slob -p python3 --system-site-packages  # create self contained python env
+	python3 -m venv env-slob  # create self contained python env
 	source env-slob/bin/activate  # activate it
 	pip install git+https://github.com/itkach/slob.git  # install general slob tools
 	pip install git+https://github.com/itkach/tei2slob.git  # install tei2slob converter
