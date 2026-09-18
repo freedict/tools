@@ -1,6 +1,5 @@
 """Configuration registration regression tests."""
 
-import configparser
 import importlib.util
 from pathlib import Path
 import tempfile
@@ -16,13 +15,14 @@ class RegisterTests(unittest.TestCase):
     def test_preserves_existing_settings_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp:
             config = Path(tmp) / 'freedictrc'
-            config.write_text('[DEFAULT]\napi_output_path = /tmp/api\n[release]\nuser = test\n')
+            config.write_text('# keep this comment\n[DEFAULT]\napi_output_path = /tmp/api\n[release]\nuser = test\n')
             self.assertTrue(register_venv.register(config, Path(tmp) / 'venv', 'yes'))
             self.assertTrue(register_venv.register(config, Path(tmp) / 'venv', 'yes'))
-            parser = configparser.ConfigParser(); parser.read(config)
-            self.assertEqual(parser['DEFAULT']['api_output_path'], '/tmp/api')
-            self.assertEqual(parser['DEFAULT']['virtual_env'], str((Path(tmp) / 'venv').resolve()))
-            self.assertEqual(parser['release']['user'], 'test')
+            result = config.read_text()
+            self.assertIn('# keep this comment\n', result)
+            self.assertIn('api_output_path = /tmp/api\n', result)
+            self.assertIn(f'virtual_env = {(Path(tmp) / "venv").resolve()}\n', result)
+            self.assertIn('[release]\nuser = test\n', result)
 
     def test_noninteractive_auto_skips(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(register_venv.sys.stdin, 'isatty', return_value=False):

@@ -56,16 +56,19 @@ class UnisonFileAccess:
         if 'UNISON' in os.environ:
             oldunison = os.environ['UNISON']
         os.environ['UNISON'] = os.path.join(path, '.unison')
-        ret = os.system("unison -terse -auto -batch -log -times -contactquietly -terse " + \
-                "-ignore 'Regex .*.swp' -ignore 'Regex .*.swo' " + \
-                "-ignore 'Regex .*/build' " + \
-                "-ignore 'Regex .*~' -ignore 'Regex .unison.*' " + \
-                "ssh://{}@{}/{}/ {}".format(user, server,
-                    remote_path, path))
-        if ret:
-            raise OSError("Process gave error code %d" % ret)
-        if oldunison:
-            os.environ['UNISON'] = oldunison
+        try:
+            ret = os.system("unison -terse -auto -batch -log -times -contactquietly " + \
+                    "-ignore 'Regex .*.swp' -ignore 'Regex .*.swo' " + \
+                    "-ignore 'Regex .*/build' -ignore 'Regex .*~' " + \
+                    "-ignore 'Regex .unison.*' ssh://{}@{}/{}/ {}".format(
+                        user, server, remote_path, path))
+            if ret:
+                raise OSError("Process gave error code %d" % ret)
+        finally:
+            if oldunison is None:
+                os.environ.pop('UNISON', None)
+            else:
+                os.environ['UNISON'] = oldunison
 
     #pylint: disable=unused-argument
     def make_unavailable(self, path):

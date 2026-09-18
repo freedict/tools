@@ -9,6 +9,7 @@ from freedict.org.
 """
 
 import argparse
+import configparser
 import enum
 import html.parser
 import json
@@ -18,6 +19,7 @@ import re
 import sys
 import urllib.request, urllib.parse
 import shutil
+import tempfile
 import xml.etree.ElementTree as ET
 from datetime import date
 
@@ -39,15 +41,15 @@ def get_fd_api():
     try:
         import fd_tool.config as config
         cnf = config.discover_and_load()
-        js = json.load(open(api_file(cnf), encoding="UTF-8"))
-    except ImportError:
+        with open(api_file(cnf), encoding="UTF-8") as api_handle:
+            js = json.load(api_handle)
+    except (ImportError, FileNotFoundError, KeyError, configparser.Error):
         # try to activate virtual env, if configured but not sourced yet
         paths = [os.path.join(os.path.expanduser("~"), '.config/freedict/freedictrc')]
         if os.environ.get('LOCALAPPDATA'):
             paths.append(os.path.join(os.environ['LOCALAPPDATA'], 'freedict/freedict.ini'))
             conffile = [path for path in paths if os.path.exists(path)]
             if conffile:
-                import configparser
                 cnf = configparser.ConfigParser()
                 cnf.read_file(open(conffile[0], encoding="UTF-8"))
                 if 'DEFAULT' in cnf and 'api_output_path' in cnf['DEFAULT']:
@@ -162,8 +164,11 @@ def enough_headwords(tei):
     dictionary contains more than the minimal required number of headwords."""
     tei = ET.fromstring(tei)
     node = tei.find('*//{http://www.tei-c.org/ns/1.0}extent')
-    count = re.search(r'(\d+\s*,?\.?\d*)\s+.*word', node.text).groups()[0]
-    return int(count.strip(' ,.')) >= MIN_WORD_COUNT
+    match = re.search(r'([\d\s,.]+)\s+.*word', node.text)
+    if not match:
+        return False
+    count = int(re.sub(r'\D', '', match.group(1)))
+    return count >= MIN_WORD_COUNT
 
 def parse_links():
     with urllib.request.urlopen(SOURCE_URL) as src:
@@ -185,7 +190,7 @@ def import_dictionary(api, link, shared_dir, force_import: bool):
     if not urllib.parse.urlsplit(link)[1]: # no host in URL
         link = urllib.parse.urljoin(DOWNLOAD_PREFIX, link)
     base_name = os.path.splitext(link.split('/')[-1])[0] # name without .tei
-    if not re.match(r'\w{3}-\w{3}', base_name):
+    if not re.fullmatch(r'[a-z]{3}-[a-z]{3}', base_name):
         return (DictionaryStrategy.Rubbish, None)
     if not force_import and dict_exists_from_other_source(api, base_name):
         return (base_name, DictionaryStrategy.ManuallyEdited)
@@ -194,19 +199,29 @@ def import_dictionary(api, link, shared_dir, force_import: bool):
         return (base_name, DictionaryStrategy.TooSmall)
 
     print('Importing', base_name)
-    if not os.path.exists(base_name):
-        os.makedirs(base_name)
-    # erase old files, write new ones
-    update_dict_files(base_name, shared_dir)
-    with open(os.path.join(base_name, base_name + '.tei'), 'w',
+    parent = os.path.dirname(os.path.abspath(base_name)) or '.'
+    with tempfile.TemporaryDirectory(prefix=f'.{base_name}.', dir=parent) as temporary:
+        staged = os.path.join(temporary, base_name)
+        update_dict_files(staged, shared_dir)
+        with open(os.path.join(staged, base_name + '.tei'), 'w',
             encoding='utf-8') as file:
-        file.write(tei)
-    make_changelog(base_name)
+            file.write(tei)
+        make_changelog(staged)
+        old = f'{base_name}.old'
+        shutil.rmtree(old, ignore_errors=True)
+        if os.path.exists(base_name):
+            os.replace(base_name, old)
+        try:
+            os.replace(staged, base_name)
+        except Exception:
+            if os.path.exists(old):
+                os.replace(old, base_name)
+            raise
+        shutil.rmtree(old, ignore_errors=True)
     return (base_name, DictionaryStrategy.Imported)
 
 
 def main():
-    assert_correct_working_directory()
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("-f", "--force-import", dest="force_import",
             help=("switch modes to import the given WikDict dictionary, "
@@ -214,6 +229,7 @@ def main():
     parser.add_argument('shared_fd_dir', type=str,
             help="path to the shared FD files")
     args = parser.parse_args()
+    assert_correct_working_directory()
     if not os.path.exists(args.shared_fd_dir):
         print("Error, path does not exist", args.shared_fd_dir)
         sys.exit(2)
@@ -222,8 +238,11 @@ def main():
     api = get_fd_api()
     wikdict_file_listing = parse_links()
     if args.force_import is not None:
+        requested = f'{args.force_import}.tei'
         wikdict_file_listing = [d for d in wikdict_file_listing
-                if args.force_import in d]
+                if d.rsplit('/', 1)[-1] == requested]
+        if not wikdict_file_listing:
+            parser.error(f'No WikDict dictionary named {args.force_import!r}')
     force_import = args.force_import is not None
     with multiprocessing.Pool(5) as p:
         res = p.starmap(import_dictionary, # ↓ pair with api, see import_dictionary
@@ -243,4 +262,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
