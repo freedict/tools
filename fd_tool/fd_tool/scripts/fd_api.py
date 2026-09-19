@@ -10,6 +10,7 @@ For usage of the script, try the -h option.
 import argparse
 import os
 import sys
+import subprocess
 import time
 
 from fd_tool.api import dictionary, jsonhandlers, metadata, releases, xmlhandlers
@@ -21,10 +22,10 @@ from fd_tool.config import get_path
 def exec_or_fail(command):
     """If command is not None, execute command. Exit upon failure."""
     if command:
-        ret = os.system(command)
+        ret = subprocess.run(command, shell=True).returncode
         if ret:
             print("Failed to execute `%s`:" % command)
-            sys.exit(ret)
+            sys.exit(ret if ret > 0 else 128 - ret)
 
 
 def read_dict_info(conf, generate_api=True):
@@ -92,37 +93,37 @@ def main_body(args):
 
     exec_or_fail(args.prexec) # mount / synchronize release files
 
-    dictionaries = read_dict_info(conf, not args.check_for_unreleased_dicts)
+    try:
+        dictionaries = read_dict_info(conf, not args.check_for_unreleased_dicts)
 
-    if args.check_for_unreleased_dicts:
-        outdated = find_outdated_releases(dictionaries)
-        if not outdated:
-            print("Everything up-to-date.")
+        if args.check_for_unreleased_dicts:
+            outdated = find_outdated_releases(dictionaries)
+            if not outdated:
+                print("Everything up-to-date.")
+            else:
+                print("\nName      Source Version    Release Version")
+                print("-------   ---------------   --------------------------")
+                for data in sorted(outdated, key=lambda x: x[0]):
+                    name, v1, v2 = [str(e if e else 'unknown') for e in data]
+                    print('{}   {:<15}   {:<15}'.format(name, v1, v2))
         else:
-            print("\nName      Source Version    Release Version")
-            print("-------   ---------------   --------------------------")
-            for data in sorted(outdated, key=lambda x: x[0]):
-                name, v1, v2 = [str(e if e else 'unknown') for e in data]
-                print('{}   {:<15}   {:<15}'.format(name, v1, v2))
-    else:
-        # remove dictionaries without download links
-        dictionaries = sorted((d for d in dictionaries if d.get_downloads() != []),
-            key=lambda entry: entry.get_name())
-        tools = releases.get_latest_tools_release()
-        api_path = config.get_path(conf['DEFAULT'], key='api_output_path')
-        xml_path = os.path.join(api_path, 'freedict-database.xml')
-        json_path = os.path.join(api_path, 'freedict-database.json')
-        if not os.path.exists(api_path):
-            os.makedirs(os.path.dirname(api_path))
-        print("Writing XML API file to",xml_path)
-        xmlhandlers.write_freedict_database(xml_path, dictionaries, tools)
-        print("Writing JSON API file to",json_path)
-        jsonhandlers.write_freedict_database(json_path, dictionaries, tools)
+            # remove dictionaries without download links
+            dictionaries = sorted((d for d in dictionaries if d.get_downloads() != []),
+                key=lambda entry: entry.get_name())
+            tools = releases.get_latest_tools_release()
+            api_path = config.get_path(conf['DEFAULT'], key='api_output_path')
+            xml_path = os.path.join(api_path, 'freedict-database.xml')
+            json_path = os.path.join(api_path, 'freedict-database.json')
+            os.makedirs(api_path, exist_ok=True)
+            print("Writing XML API file to",xml_path)
+            xmlhandlers.write_freedict_database(xml_path, dictionaries, tools)
+            print("Writing JSON API file to",json_path)
+            jsonhandlers.write_freedict_database(json_path, dictionaries, tools)
 
-    # if the files had been mounted with sshfs, it's a good idea to give it some
-    # time to synchronize its state, otherwise umounting fails
-    time.sleep(2)
-    exec_or_fail(args.postexc) # umount or unison files, if required
+    finally:
+        # Let SSHFS flush before cleanup, including when generation failed.
+        time.sleep(2)
+        exec_or_fail(args.postexc)
 
 def main():
     """Wrapper for nicer error case handling."""

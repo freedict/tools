@@ -22,21 +22,21 @@ TARGET_INSTALL_DIRS = $(addprefix $(INSTALLDIR)/tools/, $(dirs))
 
 api: #! generate the api with information about all dictionaries and their downloads at the configured api path
 api:
-	$(call mount_or_reuse); \
-		$(call exc_pyscript,fd_api) || sleep 1; \
-		$(call umount_or_keep)
+	$(call run_with_files,fd_api)
 	@$(MAKE) -C $(FREEDICT_TOOLS) --no-print-directory api-validation
 
 # allow retrieval of API path from Makefile and from rule below
-get_api_path=$(call exc_pyscript,fd_file_mgr,-a) | tr -d '\n'
+get_api_path=$(call exc_pyscript,fd_file_mgr,-a)
 api-path: #! print the output directory to the generated API file (read from configuration) (trailing newline is removed)
 	@$(call get_api_path)
 
 api-validation: #! validate the freedict-database.xml against its RNG schema (set USE_JING=1 to use jing instead of xmllint)
-	@if [ -n "$(USE_JING)" ]; then \
-		$(JING) $(FREEDICT_TOOLS)/freedict-database.rng $(FREEDICT_TOOLS)/freedict-database.xml; \
+	@api_dir="$$( $(call get_api_path) )" || exit $$?; \
+	test -n "$$api_dir" || { echo "Empty API output path" >&2; exit 1; }; \
+	if [ "$(USE_JING)" = "1" ]; then \
+		$(JING) "$(FREEDICT_TOOLS)/freedict-database.rng" "$$api_dir/freedict-database.xml"; \
 	else \
-		$(XMLLINT) --noout --relaxng $(FREEDICT_TOOLS)/freedict-database.rng $(FREEDICT_TOOLS)/freedict-database.xml; \
+		$(XMLLINT) --noout --relaxng "$(FREEDICT_TOOLS)/freedict-database.rng" "$$api_dir/freedict-database.xml"; \
 	fi
 
 
@@ -46,10 +46,7 @@ mount: #! mount or synchronize FreeDict releases / generated dictionaries
 	$(call exc_pyscript,fd_file_mgr,-m)
 
 need-update: #! queries for unreleased dictionaries or for those with newer source changes
-	@$(call mount_or_reuse); \
-		$(call exc_pyscript,fd_api,-n)\
-			|| sleep 1; \
-		$(call umount_or_keep)
+	@$(call run_with_files,fd_api,-n)
 
 umount: #! runs umount / clean up actions for unmounting remote volumes (if SSH is used)
 	@$(call exc_pyscript,fd_file_mgr,-u)
