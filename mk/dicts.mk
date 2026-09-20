@@ -356,9 +356,12 @@ $(BUILD_STARDICT_FILES): $(BUILD_STARDICT)/build.stamp
 build-stardict: $(BUILD_STARDICT)/build.stamp
 
 
-$(call gen_release_path,stardict): $(BUILD_STARDICT_FILES)
-	tar --dereference --transform='s/build.stardict.//'   -C .. -cJf $@ \
-		$(addprefix $(notdir $(realpath .))/, $^) \
+# all files for distribution, evaluated lazily
+stardict_distribution_files = $(BUILD_STARDICT_FILES) $(wildcard $(BUILD_STARDICT)/$(dictname).syn)
+
+$(call gen_release_path,stardict): $(BUILD_STARDICT_FILES) | $(RELEASE_DIR)
+	tar --dereference --transform='s|build/stardict/||' -C .. -cJf "$@" \
+		$(addprefix $(notdir $(realpath .))/, $(stardict_distribution_files)) \
 		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
 
 
@@ -411,10 +414,11 @@ install-dictd: install-dictd-base
 
 STARDICT_INSTDIR=$(DESTDIR)$(PREFIX)/share/stardict/dic
 
-install-stardict: $(BUILD_STARDICT)/$(dictname).idx.gz \
-	$(BUILD_STARDICT)/$(dictname).dict $(BUILD_STARDICT)/$(dictname).ifo
-	install -d $(STARDICT_INSTDIR)
-	install -m 644 $^ $(STARDICT_INSTDIR)
+install-stardict: $(BUILD_STARDICT_FILES)
+	install -d "$(STARDICT_INSTDIR)"
+	install -m 644 $(stardict_distribution_files) "$(STARDICT_INSTDIR)"
+	@if [ ! -f "$(BUILD_STARDICT)/$(dictname).syn" ]; then \
+		rm -f "$(STARDICT_INSTDIR)/$(dictname).syn"; fi
 
 install-slob:
 
