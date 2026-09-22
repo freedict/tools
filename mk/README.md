@@ -37,3 +37,17 @@ touched:
     Note: an exception is the dictd format, which builds to without the
     -PLATFORM suffix for historical reasons.
 
+
+## Installing dictionaries
+
+`make install` installs dictd, StarDict, and SLOB outputs; use
+`make install-stardict` (or `install-dictd` / `install-slob`) for one format.
+`make uninstall` removes all three formats; matching `uninstall-PLATFORM`
+targets are available. The default prefix is `/usr/local`.
+
+Use `make install DESTDIR=/tmp/package PREFIX=/usr` to stage a package.
+`DICTD_INSTDIR`, `STARDICT_INSTDIR`, and `SLOB_INSTDIR` override destinations
+beneath `DESTDIR`; their defaults are `$(PREFIX)/share/dictd`,
+`$(PREFIX)/share/stardict/dic`, and `$(PREFIX)/share/slob`.
+SLOB is installed as `xxx-yyy.slob` so upgrades replace the previous version.
+Only `install-restart` restarts dictd, and never when `DESTDIR` is set.
