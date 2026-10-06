@@ -131,41 +131,9 @@ clean:: #! clean build files
 	rm -f valid.stamp
 
 define deploy_command =
-	MOUNTED=0; \
-	if command -v mountpoint &> /dev/null; then \
-		if mountpoint -q "$(call deploy_to)"; then \
-			echo "Remote file system mounted, skipping this step."; \
-		else \
-			$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) mount; \
-			MOUNTED=1; \
-		fi; \
-	else  \
-		$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) mount; fi; \
-	if [ ! -d "$(call deploy_to,$(dictname))" ]; then \
-		echo "Creating new release directory for first release of $(dictname)"; \
-		mkdir -p $(call deploy_to,$(dictname)); fi; \
-	for platform in $(1); do \
-		DEPLOY_DIR=$(call deploy_to,$(dictname)/$(version)); \
-		RELEASE_FULL_PATH=$$(make --no-print-directory release-path-$$platform); \
-		RELEASE_FILENAME=$$(basename $$RELEASE_FULL_PATH); \
-		DEPLOY_FILE_PATH=$$DEPLOY_DIR/$$RELEASE_FILENAME;\
-		if [ -f $$DEPLOY_FILE_PATH ]; then \
-			if [ "${FORCE}" = "y" ]; then \
-				echo "Enforcing deployment…"; \
-			else \
-				echo "Release $(version) has been deployed already. Use \`make FORCE=y deploy\` to enforce the deployment."; \
-				exit 2; fi; \
-		else \
-			mkdir -p $$DEPLOY_DIR; \
-		fi; \
-		chmod a+r $$RELEASE_FULL_PATH; \
-		echo "Copying files for $$platform…";\
-		cp $$RELEASE_FULL_PATH $$DEPLOY_DIR; \
-		cp $$(make --no-print-directory release-path-hash-$$platform) $$DEPLOY_DIR; \
-	done; \
-	if [ $$MOUNTED -eq 1 ]; then \
-		$(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) umount; \
-	fi
+	$(call run_with_files,sh,"$(FREEDICT_TOOLS)/buildhelpers/deploy.sh" \
+		"$(dictname)" "$(version)" "$(FORCE)" \
+		$(foreach platform,$(1),"$(call gen_release_path,$(platform))"))
 endef
 
 release-path-%: #! print the release path from the build directory for the given platform

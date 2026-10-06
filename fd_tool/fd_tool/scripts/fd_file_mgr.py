@@ -9,31 +9,27 @@ import os
 import subprocess
 import sys
 
-
 from .. import config
 
 
-def execute(cmd, raise_on_error=False):
-    """Execute a command; if the return value is != 0, the program either
-    terminates or an exception is raised."""
-    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-    text = (e.decode(sys.getdefaultencoding()) for e in proc.communicate())
-    ret = proc.wait()
-    if ret:
-        text = '\n'.join(text).strip()
-        if text.startswith('fusermount: ') and 'not found in /etc/mtab' in text:
-            return # umounting something which isn't mounted is not harmful, ignore
+class FileAccessError(OSError):
+    """A remote-access command failed with a process exit status."""
 
-        text = ('Subcommand failed with exit code %s\n'
-                 'Command: %s\n%s\n') % (ret, cmd, text)
-        if raise_on_error:
-            raise OSError(text)
-        else:
-            print(text)
-            if ret >= 255:
-                ret = 1
-            sys.exit(ret)
+    def __init__(self, message, returncode=1):
+        super().__init__(message)
+        self.returncode = returncode if returncode > 0 else 128 - returncode
+
+
+def execute(command):
+    """Run a remote-access command without shell interpolation."""
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    if result.returncode:
+        text = (result.stdout + result.stderr).strip()
+        if command[0] == 'fusermount' and 'not found in /etc/mtab' in text:
+            return
+        raise FileAccessError(
+            f'Subcommand failed: {command!r}\n{text}', result.returncode)
+
 
 class UnisonFileAccess:
     """This class is one of two classes to allow access to remote files using
@@ -60,7 +56,8 @@ class UnisonFileAccess:
             f'ssh://{user}@{server}/{remote_path}/', path],
             env={**os.environ, 'UNISON': os.path.join(path, '.unison')}, check=False)
         if result.returncode:
-            raise OSError(f"Process gave error code {result.returncode}")
+            raise FileAccessError(f"Unison failed with exit code {result.returncode}",
+                                  result.returncode)
 
     #pylint: disable=unused-argument
     def make_unavailable(self, path):
@@ -81,101 +78,124 @@ class SshfsAccess:
         if os.path.ismount(path): # mounted, -m help says we need to return 201
             return 201 # and no action
         if len(os.listdir(path)) > 0:
-            print("Error: %s has to be empty, otherwise mounting impossible." % path)
-            sys.exit(41)
-        return execute('sshfs {}@{}:{} {}'.format(user, server, remote_path, path))
+            raise FileAccessError(f'{path} has to be empty before mounting', 41)
+        execute(['sshfs', f'{user}@{server}:{remote_path}', path])
 
     def make_unavailable(self, path):
-        execute('fusermount -u {}'.format(path), raise_on_error=True)
+        execute(['fusermount', '-u', path])
 
+
+
+def create_access_sessions(conf):
+    """Create independent access objects for the configured remote sections."""
+    sessions = []
+    for section in ('release', 'generated'):
+        options = conf[section]
+        if options.getboolean('skip'):
+            continue
+        arguments = (options['user'], options['server'], options['remote_path'],
+                     config.get_path(options))
+        if conf['DEFAULT']['file_access_via'] == 'sshfs':
+            access = SshfsAccess()
+        else:
+            access = UnisonFileAccess()
+            # Standalone -u has no earlier process's in-memory state.
+            access.args = arguments
+        sessions.append((access, arguments))
+    return sessions
+
+
+def cleanup(sessions):
+    """Clean up every session, retaining the first failure status."""
+    status = 0
+    for access, arguments in reversed(sessions):
+        try:
+            access.make_unavailable(arguments[-1])
+        except OSError as error:
+            print(error, file=sys.stderr)
+            status = status or getattr(error, 'returncode', 1)
+    return status
+
+
+def acquire(sessions):
+    """Acquire access, rolling back newly mounted sections on failure."""
+    owned = []
+    try:
+        for access, arguments in sessions:
+            if access.make_available(*arguments) != 201:
+                owned.append((access, arguments))
+    except BaseException:
+        # Unison synchronization owns no mount to roll back.
+        cleanup([session for session in owned if isinstance(session[0], SshfsAccess)])
+        raise
+    return owned
+
+
+def run_with_files(conf, command):
+    """Run a command with remote access and preserve its failure status."""
+    owned = acquire(create_access_sessions(conf))
+    status = 0
+    try:
+        try:
+            status = subprocess.run(command, check=False).returncode
+            if status < 0:
+                status = 128 - status
+        except OSError as error:
+            print(error, file=sys.stderr)
+            status = 1
+    finally:
+        cleanup_status = cleanup(owned)
+    return status or cleanup_status
 
 
 def setup():
-    """Find freedict directory and parse command line arguments. Return a tuple
-    with the freedict directory and the configuration object."""
-    # parse command line options
+    """Parse a single remote-access operation."""
     parser = argparse.ArgumentParser(description='FreeDict build setup utility')
-    parser.add_argument('-a', dest="print_api_path", action='store_true',
-            help=("print output directory where the freedict-database.xml and "
-                "json are stored;  the value is read from the local "
-                "configuration"))
-    parser.add_argument('-m', dest="make_available", action='store_true',
-            help='''make files in generated/ and release/ available; this will \
-                    use internally either sshfs or unison, depending on the \
-                    configuration. The script will exit with 0 on success, \
-                    with 201 if remote filesystem was mounted already and with \
-                    the error code of the appropriate subcommand otherwise.''')
-    parser.add_argument('-r', dest="print_release_path", action='store_true',
-            default=False, help=("print output directory to which releases are "
-                "deployed. the value is read from the local configuration"))
-    parser.add_argument('-u', dest='umount', action='store_true',
-        help='clean up actions for release/ and generated/, e.g. umount of fuse mount points, etc.')
+    actions = parser.add_mutually_exclusive_group(required=True)
+    actions.add_argument('-a', dest='print_api_path', action='store_true',
+                         help='print the configured API output directory')
+    actions.add_argument('-r', dest='print_release_path', action='store_true',
+                         help='print the configured release directory')
+    actions.add_argument('-m', dest='make_available', action='store_true',
+                         help='make files available; exit 201 if all mounts already exist')
+    actions.add_argument('-u', dest='umount', action='store_true',
+                         help='unmount or synchronize configured remote sections')
+    actions.add_argument('--run', nargs=argparse.REMAINDER, metavar='COMMAND',
+                         help='run a command with remote access and cleanup')
     args = parser.parse_args()
-
-    # check for contradicting options
-    if args.umount and args.make_available:
-        print("Error: you can only specify -u or -m exclusively.")
-        sys.exit(44)
-    if not any((args.umount, args.make_available, args.print_api_path,
-            args.print_release_path)):
-        print("Error: No option specified")
-        parser.print_help()
+    if args.run == []:
+        parser.error('--run requires a command')
     return args
 
 
 def main():
     args = setup()
-    try: # load configuration
+    try:
         conf = config.discover_and_load()
-    except config.ConfigurationError as e:
-        print(e)
-        sys.exit(42)
+        if args.print_api_path:
+            print(config.get_path(conf['DEFAULT'], key='api_output_path'))
+            status = 0
+        elif args.print_release_path:
+            print(config.get_path(conf['release']))
+            status = 0
+        elif args.run:
+            status = run_with_files(conf, args.run)
+        elif args.make_available:
+            sessions = create_access_sessions(conf)
+            owned = acquire(sessions)
+            status = 201 if sessions and not owned else 0
+        else:
+            status = cleanup(create_access_sessions(conf))
+    except config.ConfigurationError as error:
+        print(error, file=sys.stderr)
+        status = 42
+    except OSError as error:
+        print(error, file=sys.stderr)
+        status = getattr(error, 'returncode', 1)
+    except KeyboardInterrupt:
+        status = 130
+    sys.exit(status)
 
-    if args.print_api_path:
-        print(config.get_path(conf['DEFAULT'],
-            key='api_output_path'))
-        sys.exit(0)
-    elif args.print_release_path:
-        print(config.get_path(conf['release'],
-            key='local_path'))
-        sys.exit(0)
-
-    access_method = UnisonFileAccess()
-    if conf['DEFAULT']['file_access_via'] == 'sshfs':
-        access_method = SshfsAccess()
-
-    release_directory = config.get_path(conf['release'])
-    if not os.path.exists(release_directory):
-        try:
-            os.makedirs(release_directory)
-        except OSError:
-            # if the file does exist, but the fuse endpoint is _not_ connected,
-            # we could try running fusermount -u:
-            subprocess.run(['fusermount', '-u', release_directory], check=False)
-
-    ret = 0
-    if args.make_available:
-        for section in ('release', 'generated'):
-            if conf[section].getboolean('skip'):
-                print("Skipping",section)
-                continue
-            print('Making files for "%s" available...' % section)
-            options = conf[section]
-            target_path = config.get_path(options)
-            ret = access_method.make_available(options['user'], options['server'],
-                options['remote_path'], target_path)
-    elif args.umount:
-        for section in ('generated', 'release'):
-            if conf[section].getboolean('skip'):
-                print("Skipping",section)
-                continue
-            target_path = config.get_path(conf[section])
-            try:
-                access_method.make_unavailable(target_path)
-            except OSError as e:
-                print(e.args[0])
-                continue
-    sys.exit(ret)
 
 if __name__ == '__main__':
     main()

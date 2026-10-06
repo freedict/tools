@@ -147,6 +147,8 @@ release: #! build a release tarball in $$BUILD_DIR, ../build by default
 release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
 
 release-path: #! print the output directory to which releases are deployed (read from configuration); trailing newline is removed
-	@$(call exc_pyscript,fd_file_mgr,-r) | tr -d '\n'
+	@release_dir="$$( $(call exc_pyscript,fd_file_mgr,-r) )" || exit $$?; \
+	test -n "$$release_dir" || { echo "Empty release output path" >&2; exit 1; }; \
+	printf '%s' "$$release_dir"
 
-.PHONY: release install api all mount umount api-validation test
+.PHONY: all api api-validation install mount release test umount

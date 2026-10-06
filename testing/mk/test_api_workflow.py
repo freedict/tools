@@ -18,13 +18,26 @@ class ApiMakeTests(unittest.TestCase):
         self.env = dict(os.environ, PATH=f'{self.root}{os.pathsep}{os.environ["PATH"]}',
                         REVIEW_LOG=str(self.root / 'calls'), API_DIR=str(self.root / 'api dir'))
         script = f'''#!{sys.executable}
-import os, sys
+import os, subprocess, sys
 from pathlib import Path
 name = Path(sys.argv[0]).name
-with open(os.environ['REVIEW_LOG'], 'a') as f:
-    f.write(name + ' ' + ' '.join(sys.argv[1:]) + '\\n')
+def log(message):
+    with open(os.environ['REVIEW_LOG'], 'a') as f:
+        f.write(message + '\\n')
+if name == 'fd_file_mgr' and sys.argv[1] == '--run':
+    log('fd_file_mgr -m')
+    status = int(os.environ.get('MOUNT_STATUS', '0'))
+    if status not in (0, 201):
+        sys.exit(status)
+    child = subprocess.run(sys.argv[2:], check=False).returncode
+    cleanup = 0
+    if status != 201:
+        log('fd_file_mgr -u')
+        cleanup = int(os.environ.get('CLEANUP_STATUS', '0'))
+    sys.exit(child or cleanup)
+log(name + ' ' + ' '.join(sys.argv[1:]))
 if name == 'fd_file_mgr':
-    if sys.argv[1] == '-a':
+    if sys.argv[1] in ('-a', '-r'):
         print(os.environ['API_DIR'])
         sys.exit(int(os.environ.get('PATH_STATUS', '0')))
     if sys.argv[1] == '-m':
@@ -71,3 +84,9 @@ sys.exit(int(os.environ.get('API_STATUS', '0')) if name == 'fd_api' else 0)
                 (self.root / 'calls').write_text('')
                 self.assertEqual(self.make('api-validation', USE_JING=value).returncode, 0)
                 self.assertEqual('--relaxng' in self.calls(), value == '0')
+
+
+    def test_release_path_failure_and_empty_path_propagate(self):
+        for env in [{'PATH_STATUS': '9'}, {'API_DIR': ''}]:
+            with self.subTest(env=env):
+                self.assertNotEqual(self.make('release-path', **env).returncode, 0)
