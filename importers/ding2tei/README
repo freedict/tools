@@ -1,7 +1,7 @@
 ding2tei-haskell
 ================
 
-A program to convert the Ding [0] dictionary into the TEI [1] format, to be
+A program to convert the Ding deu-eng [0] dictionary into the TEI [1] format, to be
 used within the FreeDict project [2].
 
 This program was written as part of a Bachelor's thesis.  See doc/thesis.pdf.
