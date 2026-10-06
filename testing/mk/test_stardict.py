@@ -178,3 +178,51 @@ sys.exit(int(os.environ.get('CONVERSION_STATUS', '0')))
         self.successful('uninstall', *overrides)
         self.assertFalse(any(path.is_file() for path in stage.rglob('*')))
         self.assertFalse((self.root / 'restarted').exists())
+
+
+    def test_unsupported_stardict_is_rejected_before_conversion(self):
+        for target in ['build-stardict', 'release-stardict', 'install-stardict', 'deploy-stardict']:
+            with self.subTest(target=target):
+                result = self.make('-j4', target, 'UNSUPPORTED_PLATFORMS=stardict')
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('does not support', result.stdout)
+                self.assertFalse((self.root / 'calls').exists())
+        self.successful('build-stardict')
+        result = self.make('release-stardict', 'UNSUPPORTED_PLATFORMS=stardict')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(len((self.root / 'calls').read_text().splitlines()), 1)
+
+    def test_aggregate_operations_skip_unsupported_formats(self):
+        for target in ['build', 'release', 'deploy', 'install']:
+            with self.subTest(target=target):
+                result = self.make('-n', target, 'UNSUPPORTED_PLATFORMS=dictd slob stardict',
+                                   'DISTFILES=eng-deu.tei')
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn('--write-format=Stardict', result.stdout)
+                self.assertNotIn('install-stardict', result.stdout)
+        result = self.make('list-platforms', 'UNSUPPORTED_PLATFORMS=stardict')
+        self.assertEqual(result.stdout.strip(), 'src dictd slob')
+        result = self.make('query-star')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Unknown platform', result.stdout)
+
+    def test_archive_layout_with_custom_build_directory(self):
+        (self.dictionary / 'README').write_text('fixture documentation')
+        for build in ['output', str(self.root / 'absolute-output')]:
+            with self.subTest(build=build):
+                self.successful('-j4', 'release-stardict', f'BUILD_DIR={build}')
+                directory = self.dictionary / build
+                archive = next((directory / 'release').glob('*.tar.xz'))
+                with tarfile.open(archive) as tar:
+                    self.assertEqual(set(tar.getnames()),
+                                     {'eng-deu/eng-deu.' + suffix for suffix in ['ifo', 'idx.gz', 'dict', 'syn']}
+                                     | {'eng-deu/README'})
+                    self.assertEqual(tar.extractfile('eng-deu/README').read(), b'fixture documentation')
+                self.successful('install-stardict', f'BUILD_DIR={build}', f'DESTDIR={self.root}/stage')
+                self.assertTrue((self.root / 'stage/usr/local/share/stardict/dic/eng-deu.syn').exists())
+
+    def test_uninstall_removes_formats_even_when_marked_unsupported(self):
+        stage = self.root / 'stage'
+        self.successful('install-stardict', f'DESTDIR={stage}')
+        self.successful('uninstall', 'UNSUPPORTED_PLATFORMS=stardict', f'DESTDIR={stage}')
+        self.assertFalse(any(path.is_file() for path in stage.rglob('*')))

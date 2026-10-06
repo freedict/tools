@@ -22,7 +22,8 @@ UNSUPPORTED_PLATFORMS = evolutionary
 endif
 
 
-available_platforms := src dictd slob stardict
+known_platforms := src dictd slob stardict
+available_platforms := $(filter-out $(UNSUPPORTED_PLATFORMS),$(known_platforms))
 
 dictname ?= $(shell basename "$(shell pwd)")
 xsldir ?= $(FREEDICT_TOOLS)/xsl
@@ -49,11 +50,6 @@ DESTDIR ?=
 ################
 # Common Function Definitions
 ################
-
-# Helper function to retrieve the release path. We cannot declare the value
-# statically, because it is only required for the deploy target and this is only
-# executed by admins. The first argument is "optional".
-deploy_to = $(shell $(MAKE) --no-print-directory -C $(FREEDICT_TOOLS) release-path)/$(1)
 
 # This function assists the release-% rules. It generates the release path for
 # each platform; Arg1: platform
@@ -147,9 +143,8 @@ deploy: #! deploy all platforms of a release to the remote file hosting service
 deploy: $(foreach r, $(available_platforms), release-$(r))
 	$(call deploy_command,$(available_platforms))
 
-deploy-%: #! Deploy a specific platform, e.g. to deploy a newly supported format for an already-released dictionary
-deploy-%: release-%
-	$(call deploy_command,$(@:deploy-%=%))
+$(addprefix deploy-,$(known_platforms)): deploy-%: release-%
+	$(call deploy_command,$*)
 
 find-homographs: #! find all homographs and list them, one per line
 find-homographs: $(dictname).tei
@@ -180,11 +175,12 @@ pos-statistics: $(dictname).tei
 # 0 for dict supported on this platform
 # 1 for dict unsupported on this platform
 # 2 FOR unknown platform
-query-%: #! query platform support status; 0=dictd supported, 1=dictd unsupported, 2=UNKNOWN platform
-	@if [ -z "$(findstring $*,$(available_platforms))" ]; then \
-	  echo "Unknown platform: $*"; exit 2; fi
-	@if [ -n "$(findstring $*,$(UNSUPPORTED_PLATFORMS))" ]; then \
-	  echo "Platform $* does not support this dictionary module."; exit 1; fi
+query-%: #! query platform support; 0=supported, 1=unsupported, 2=unknown
+	@echo "Unknown platform: $*"; exit 2
+
+$(addprefix query-,$(known_platforms)): query-%:
+	@if [ -n "$(filter $*,$(UNSUPPORTED_PLATFORMS))" ]; then \
+		echo "Platform $* does not support this dictionary module."; exit 1; fi
 	@echo "Platform $* supports this dictionary module."
 
 
@@ -303,7 +299,7 @@ stardict_required_files := $(BUILD_STARDICT_FILES) $(if $(shell \
 check-stardict:
 
 $(BUILD_STARDICT)/build.stamp: $(call dict_tei_source) \
-		$(if $(filter-out $(wildcard $(stardict_required_files)),$(stardict_required_files)),check-stardict)
+		$(if $(filter-out $(wildcard $(stardict_required_files)),$(stardict_required_files)),check-stardict) | query-stardict
 	@mkdir -p "$(BUILD_STARDICT)/tmp"
 	rm -f "$(BUILD_STARDICT)/tmp/"*
 	$(call exc_pyscript,$(PYGLOSSARY),--ui=cmd --read-format=FreeDict --write-format=Stardict \
@@ -328,9 +324,9 @@ build-stardict: $(BUILD_STARDICT)/build.stamp
 stardict_distribution_files = $(BUILD_STARDICT_FILES) $(wildcard $(BUILD_STARDICT)/$(dictname).syn)
 
 $(call gen_release_path,stardict): $(BUILD_STARDICT_FILES) | $(RELEASE_DIR)
-	tar --dereference --transform='s|build/stardict/||' -C .. -cJf "$@" \
-		$(addprefix $(notdir $(realpath .))/, $(stardict_distribution_files)) \
-		$(addprefix $(notdir $(realpath .))/, $(DISTFILES_BINARY))
+	tar --dereference --transform='s|^|$(dictname)/|' -cJf "$@" \
+		-C "$(abspath $(BUILD_STARDICT))" $(notdir $(stardict_distribution_files)) \
+		$(if $(strip $(DISTFILES_BINARY)),-C "$(CURDIR)" $(DISTFILES_BINARY))
 
 
 release-stardict: $(RELEASE_DIR) $(call gen_release_path,stardict) \
@@ -414,7 +410,7 @@ uninstall-slob:
 	rm -f "$(DESTDIR)$(SLOB_INSTDIR)/$(dictname).slob"
 
 uninstall: #! remove all installed binary formats without restarting host services
-uninstall: $(foreach P,$(filter-out src,$(available_platforms)),uninstall-$(P))
+uninstall: $(foreach P,$(filter-out src,$(known_platforms)),uninstall-$(P))
 
 
 #######################
@@ -424,8 +420,10 @@ uninstall: $(foreach P,$(filter-out src,$(available_platforms)),uninstall-$(P))
 # should be default, but is not for make-historic reasons
 .DELETE_ON_ERROR:
 
-.PHONY: install-dictd-base install-restart uninstall-dictd uninstall-stardict uninstall-slob
-.PHONY: all build-dictd build-slob build-src build-stardict check-stardict clean dist find-homographs \
-	install $(foreach P,$(filter-out src,$(available_platforms)),install-$(P)) \
-	pos-statistics print-unsupported query-% releaase-src release release-dictd \
-	test test-reverse tests uninstall validation version
+.PHONY: $(sort all build $(addprefix build-,$(known_platforms)) check-stardict clean \
+	deploy $(addprefix deploy-,$(known_platforms)) dist find-homographs install \
+	install-dictd-base install-restart $(addprefix install-,$(filter-out src,$(known_platforms))) \
+	pos-statistics print-unsupported $(addprefix query-,$(known_platforms)) \
+	release $(addprefix release-,$(known_platforms)) \
+	test test-reverse tests uninstall $(addprefix uninstall-,$(filter-out src,$(known_platforms))) \
+	validation version)

@@ -24,9 +24,10 @@ Platforms
 To add a new platform or delete an existing one, the following parts have to be
 touched:
 
--   The variable `available_platforms` lists all defined platforms, so adding or
-    removing a a name from there will automatically remove the dictionary from
-    the build and the release target (and from a few more).
+-   The variable `known_platforms` lists all defined formats.
+    `available_platforms` excludes those named in `UNSUPPORTED_PLATFORMS`.
+    The build, release, deploy, and install targets use all supported formats;
+    uninstall removes all known binary formats, including disabled ones.
 -   Each platform needs to provide a build-PLATFORM and a release-PLATFORM rule,
     where PLATFORM is replaced by the name present in `available_platforms`.\
     Ideally, the release-PLATFORM target depends on the distribution archive, so
