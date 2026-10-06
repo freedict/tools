@@ -1,7 +1,7 @@
 """This script makes remote files available for local processing. Remote files
 are e.g. the released files hosted on a server as downloads or the
 auto-generated dictionaries, kept outside the git repository.
-This script requires a configuration. Please see the README for more details.
+This script requires a configuration. See README.release for more details.
 Running this script with the `-h` option will give an overview about its usage."""
 
 import argparse

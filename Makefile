@@ -11,7 +11,7 @@ include $(FREEDICT_TOOLS)/mk/config.mk
 XMLLINT ?= xmllint
 JING ?= jing
 
-VERSION = 0.4
+export TAG
 PREFIX ?= usr
 DESTDIR ?= 
 INSTALLDIR ?= $(abspath $(DESTDIR)/$(PREFIX)/share/freedict)
@@ -54,17 +54,6 @@ need-update: #! queries for unreleased dictionaries or for those with newer sour
 umount: #! runs umount / clean up actions for unmounting remote volumes (if SSH is used)
 	@$(call exc_pyscript,fd_file_mgr,-u)
 
-$(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2: Makefile* *.pl
-ifeq ($(wildcard $(BUILD_DIR)),)
-	mkdir -p $(BUILD_DIR)
-endif
-	tar --totals --exclude="*/.svn/*" --exclude="*/.*" \
-	  --exclude="*/charlint*" --exclude="*/UnicodeData.txt" \
-	  --exclude="*/ergane/jet4/*" \
-	  --exclude="*/ergane/unzip/*" \
-	  --exclude="*/ergane/zip/*" \
-	  --exclude="*/__pycache__/*" \
-	  -cvjf $@ ../tools
 
 install-deps: #! probe current operating system to install build prerequisites for dictionary development
 	echo -n "Do you want to use unison or sshfs? Enter one of them or nothing: "; \
@@ -143,8 +132,8 @@ install:
 
 
 
-release: #! build a release tarball in $$BUILD_DIR, ../build by default
-release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
+release: #! export an existing tools tag as a release archive; TAG=<tag> is required
+	"$(PYTHON)" "$(FREEDICT_TOOLS)/buildhelpers/release.py" "$(FREEDICT_TOOLS)" "$(BUILD_DIR)"
 
 release-path: #! print the output directory to which releases are deployed (read from configuration); trailing newline is removed
 	@release_dir="$$( $(call exc_pyscript,fd_file_mgr,-r) )" || exit $$?; \

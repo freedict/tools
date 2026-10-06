@@ -1,0 +1,25 @@
+# Release maintenance
+
+## Tools releases
+
+Run `make release TAG=0.8.0` after the selected tag exists. `TAG` is mandatory
+and must identify a Git tag, not a branch or commit hash. The command exports
+that tag's committed tree into `build/freedict-tools-0.8.0.tar.xz`, with a
+`tools/` directory inside. Use `BUILD_DIR=/path/to/output` to change the output
+directory. Hierarchical tag names use hyphens in the archive filename.
+
+HEAD may have newer commits; a warning is printed and the tagged tree is still
+exported. Untracked files and uncommitted edits are excluded. Each invocation
+regenerates the archive, replacing an existing file only after export succeeds.
+
+## Remote access
+
+All dictionaries, both from the fd-dictionaries repository and the generated
+dictionaries need to be present for release operations.
+Hence, `make api`, `make need-update`, and dictionary deployment acquire remote
+access and clean up within one process. `fd_tool` manages this in the
+background. Depending on the FreeDict configuration, it either uses SSHFS or
+Unison for making files available.
+
+`fd_file_mgr --run COMMAND [ARGS...]` exists to perform manual operations with all dictionaries available.
+On a failure, `fd_file_mgr -m` and `fd_file_mgr -u` perform mounting and unmounting, respectively.

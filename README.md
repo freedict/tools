@@ -74,17 +74,6 @@ requirements.txt for more details.
 Once done, you can get help on the available actions in any directory containing a
 `Makefile` by typing `make help`.
 
-### Remote access
-
-`make api`, `make need-update`, and dictionary deployment acquire remote
-access and clean up within one process. Existing SSHFS mounts remain mounted;
-new mounts are cleaned up after success or failure. Unison synchronizes each
-configured section again during cleanup to upload local changes. Setup, copy,
-and cleanup failures cause Make to fail.
-
-Use `fd_file_mgr --run COMMAND [ARGS...]` for other commands needing the same
-lifecycle. Standalone `fd_file_mgr -m` and `fd_file_mgr -u` remain available.
-
 ### Tests
 
 Run all automated tests with `make test`, or run the component suites in
