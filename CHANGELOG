@@ -1,0 +1,37 @@
+# 0.8 UNRELEASED
+
+-   Require Python 3.12 or newer and PyGlossary 5.4.2 or newer.
+-   Improve virtual environment creation and configuration registration,
+    including actionable ICU dependency errors.
+-   Make StarDict builds safe under parallel Make execution, rebuild
+    missing outputs, and preserve existing outputs when conversion fails.
+-   Preserve StarDict synonyms in release archives and installations.
+-   Install and uninstall all supported binary dictionary formats.
+-   Preserve semantic version suffixes, correctly order FreeDict revisions,
+    and align API schema validation with supported dictionary versions.
+-   Validate the configured API output, propagate generation failures,
+    and clean up remote access after failures. Support Jing through
+    `USE_JING=1`, with xmllint remaining the default validator.
+-   Add forced WikDict downloads and preserve existing dictionaries when
+    replacement fails.
+-   Run Unison synchronization noninteractively and preserve the caller's
+    environment when remote access fails.
+-   Update the Esperanto-English importer for the October 2024 source,
+    including UTF-8 byte order mark handling and corrected metadata.
+-   Add `make test` and parallel component runners through `make -j4 test`,
+    with support for selecting the Python interpreter.
+
+# 0.7
+
+-   Replace the legacy StarDict converter with PyGlossary and produce
+    compressed release archives with checksums.
+-   Include StarDict downloads in the generated dictionary API.
+-   Support deploying individual dictionary formats, including adding a
+    format to an existing release.
+-   Use tools release archive URLs with predictable extracted directory
+    names for packaging.
+-   Update the WikDict download source and prepend import changelog entries
+    instead of replacing previous entries.
+-   Report tokenization errors with line information in the
+    Esperanto-English importer.
+-   Prevent em dashes from disrupting phonetic output alignment.
