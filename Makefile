@@ -20,6 +20,9 @@ dirs = api JMdict lib mk xquery xsl/inc
 TARGET_INSTALL_DIRS = $(addprefix $(INSTALLDIR)/tools/, $(dirs))
 
 
+test: #! run all automated tests (use -j to run component suites in parallel)
+	$(MAKE) -C "$(FREEDICT_TOOLS)/testing" test
+
 api: #! generate the api with information about all dictionaries and their downloads at the configured api path
 api:
 	$(call run_with_files,fd_api)
@@ -146,4 +149,4 @@ release: $(BUILD_DIR)/freedict-tools-$(VERSION).tar.bz2
 release-path: #! print the output directory to which releases are deployed (read from configuration); trailing newline is removed
 	@$(call exc_pyscript,fd_file_mgr,-r) | tr -d '\n'
 
-.PHONY: release install api all mount umount api-validation
+.PHONY: release install api all mount umount api-validation test

@@ -74,6 +74,18 @@ requirements.txt for more details.
 Once done, you can get help on the available actions in any directory containing a
 `Makefile` by typing `make help`.
 
+### Tests
+
+Run all automated tests with `make test`, or run the component suites in
+parallel with `make -j4 test`. Select a Python environment with
+`make -j4 test PYTHON=/path/to/venv/bin/python`; it must have the project's
+Python dependencies installed. The runners import packages from this checkout.
+
+Run one component with `make -C testing/mk test` (also available for
+`buildhelpers`, `fd_tool`, and `importers`). The `fd_tool` and `importers`
+runners include their existing package suites. Fixtures and the legacy
+stylesheet in `testing/xsl/` remain manual test assets.
+
 ### Documentation
 
 Most of the documentation can be found in the FreeDict HOWTO at
