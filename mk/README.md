@@ -24,9 +24,10 @@ Platforms
 To add a new platform or delete an existing one, the following parts have to be
 touched:
 
--   The variable `available_platforms` lists all defined platforms, so adding or
-    removing a a name from there will automatically remove the dictionary from
-    the build and the release target (and from a few more).
+-   The variable `known_platforms` lists all defined formats.
+    `available_platforms` excludes those named in `UNSUPPORTED_PLATFORMS`.
+    Aggregate build, release, deploy, and install targets use supported formats;
+    uninstall removes all known binary formats, including disabled ones.
 -   Each platform needs to provide a build-PLATFORM and a release-PLATFORM rule,
     where PLATFORM is replaced by the name present in `available_platforms`.\
     Ideally, the release-PLATFORM target depends on the distribution archive, so
@@ -51,3 +52,7 @@ beneath `DESTDIR`; their defaults are `$(PREFIX)/share/dictd`,
 `$(PREFIX)/share/stardict/dic`, and `$(PREFIX)/share/slob`.
 SLOB is installed as `xxx-yyy.slob` so upgrades replace the previous version.
 Only `install-restart` restarts dictd, and never when `DESTDIR` is set.
+
+Explicit StarDict operations reject dictionaries marked with
+`UNSUPPORTED_PLATFORMS=stardict`. StarDict archives retain the same dictionary
+layout when `BUILD_DIR` is a custom relative or absolute directory.

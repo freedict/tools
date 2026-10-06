@@ -3,9 +3,11 @@
 -   Require Python 3.12 or newer and PyGlossary 5.4.2 or newer.
 -   Improve virtual environment creation and configuration registration,
     including actionable ICU dependency errors.
--   Make StarDict builds safe under parallel Make execution, rebuild
+-   dicts.mk: Make StarDict builds safe under parallel Make execution, rebuild
     missing outputs, and preserve existing outputs when conversion fails.
--   Preserve StarDict synonyms in release archives and installations.
+-   dicts.mk: Preserve StarDict synonyms in release archives and installations.
+    Honor unsupported formats and retain the archive layout with custom
+    build directories.
 -   Install and uninstall all supported binary dictionary formats.
 -   Preserve semantic version suffixes, correctly order FreeDict revisions,
     and align API schema validation with supported dictionary versions.
