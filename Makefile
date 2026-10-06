@@ -95,7 +95,7 @@ free to do so. The mk_venv command will make sure that the virtual environment
 is created at the correct place; use "P=/some/path" to specify the path.
 Example:
     make mk_venv P=../fd-venv
-The built-in venv module creates the environment.
+Python 3.12 or newer is required.
 PyICU needs ICU headers, pkg-config, a C++ compiler, and Python development headers.
 On Debian/Ubuntu install libicu-dev pkg-config build-essential python3-dev python3-venv.
 After installation, you will be asked whether the virtual environment should be

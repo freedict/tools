@@ -5,7 +5,6 @@ pyicu>= 2.10
 ankisync==0.1.6.3
 -e git+https://github.com/itkach/slob#egg=slob
 -e git+https://github.com/itkach/tei2slob#egg=tei2slob
-# These releases use Python 3.12 syntax but declare support for Python 3.10.
-pyglossary>=5.2.0,!=5.3.0,!=5.4.0
+pyglossary>=5.4.2
 # for pyglossary:
 lxml>=6.0.2

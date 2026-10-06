@@ -62,6 +62,7 @@ will vary.
 You should clone this repository to a path with no spaces and add an environment
 variable `FREEDICT_TOOLS` to point to this directory.
 
+The toolchain requires Python 3.12 or newer, as required by PyGlossary.
 A lot of the internal scripts need additional Python libraries. To fully make
 use of them, you should set up a Python virtual environment for that. To help
 you getting started, `make mk_venv` is there to guide you through the process
