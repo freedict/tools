@@ -51,21 +51,16 @@ class UnisonFileAccess:
     def make_available(self, user, server, remote_path, path):
         """Synchronize files to have them available locally."""
         self.args = (user, server, remote_path, path)
-        # set UNISON=`path` to avoid usage of any $HOME/.unison/default.prf
-        oldunison = None
-        if 'UNISON' in os.environ:
-            oldunison = os.environ['UNISON']
-        os.environ['UNISON'] = os.path.join(path, '.unison')
-        ret = os.system("unison -terse -auto -batch -log -times -contactquietly -terse " + \
-                "-ignore 'Regex .*.swp' -ignore 'Regex .*.swo' " + \
-                "-ignore 'Regex .*/build' " + \
-                "-ignore 'Regex .*~' -ignore 'Regex .unison.*' " + \
-                "ssh://{}@{}/{}/ {}".format(user, server,
-                    remote_path, path))
-        if ret:
-            raise OSError("Process gave error code %d" % ret)
-        if oldunison:
-            os.environ['UNISON'] = oldunison
+        # Use a child-specific UNISON directory instead of $HOME/.unison.
+        result = subprocess.run([
+            'unison', '-terse', '-auto', '-batch', '-log', '-times', '-contactquietly',
+            '-ignore', 'Regex .*.swp', '-ignore', 'Regex .*.swo',
+            '-ignore', 'Regex .*/build', '-ignore', 'Regex .*~',
+            '-ignore', 'Regex .unison.*',
+            f'ssh://{user}@{server}/{remote_path}/', path],
+            env={**os.environ, 'UNISON': os.path.join(path, '.unison')}, check=False)
+        if result.returncode:
+            raise OSError(f"Process gave error code {result.returncode}")
 
     #pylint: disable=unused-argument
     def make_unavailable(self, path):
@@ -156,7 +151,7 @@ def main():
         except OSError:
             # if the file does exist, but the fuse endpoint is _not_ connected,
             # we could try running fusermount -u:
-            os.system('fusermount -u "%s"' % release_directory)
+            subprocess.run(['fusermount', '-u', release_directory], check=False)
 
     ret = 0
     if args.make_available:
