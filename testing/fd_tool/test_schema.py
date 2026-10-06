@@ -13,7 +13,7 @@ try:
 except ImportError:
     etree = None
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 
 
 def api_xml(version):

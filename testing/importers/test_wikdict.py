@@ -1,49 +1,18 @@
-"""Regression tests for importer replacement and remote-environment cleanup."""
+"""Regression tests for safe WikDict importer replacement."""
 
 import importlib.util
 import os
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from fd_tool.scripts.fd_file_mgr import UnisonFileAccess
-
-spec = importlib.util.spec_from_file_location('wikdict', Path(__file__).parents[1] / 'importers/wikdict/import_wikdict.py')
+spec = importlib.util.spec_from_file_location('wikdict', Path(__file__).parents[2] / 'importers/wikdict/import_wikdict.py')
 wikdict = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(wikdict)
 
 
 class SafetyTests(unittest.TestCase):
-    def test_unison_restores_environment_on_failure(self):
-        for environment in [{}, {'UNISON': ''}, {'UNISON': 'original'}]:
-            with self.subTest(environment=environment), \
-                    patch.dict(os.environ, environment, clear=True), \
-                    patch('fd_tool.scripts.fd_file_mgr.subprocess.run',
-                          return_value=subprocess.CompletedProcess([], 1)):
-                with self.assertRaises(OSError):
-                    UnisonFileAccess().make_available('user', 'host', 'remote', '/tmp/local')
-                self.assertEqual(dict(os.environ), environment)
-
-    def test_unison_passes_paths_and_environment_to_child(self):
-        with patch.dict(os.environ, {'UNISON': 'original'}, clear=True), \
-                patch('fd_tool.scripts.fd_file_mgr.subprocess.run',
-                      return_value=subprocess.CompletedProcess([], 0)) as run:
-            UnisonFileAccess().make_available('user', 'host', 'remote path', '/tmp/local path')
-            self.assertEqual(run.call_args.args[0][-2:],
-                             ['ssh://user@host/remote path/', '/tmp/local path'])
-            self.assertEqual(run.call_args.kwargs['env']['UNISON'], '/tmp/local path/.unison')
-            self.assertEqual(os.environ['UNISON'], 'original')
-
-    def test_unison_startup_failure_preserves_environment(self):
-        with patch.dict(os.environ, {'UNISON': 'original'}, clear=True), \
-                patch('fd_tool.scripts.fd_file_mgr.subprocess.run',
-                      side_effect=FileNotFoundError('unison')):
-            with self.assertRaises(FileNotFoundError):
-                UnisonFileAccess().make_available('user', 'host', 'remote', '/tmp/local')
-            self.assertEqual(os.environ['UNISON'], 'original')
-
     def test_headword_count_accepts_common_separators(self):
         for count in ['10000', '10,000', '10.000', '10 000']:
             tei = f'<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><fileDesc><extent>{count} headwords</extent></fileDesc></teiHeader></TEI>'

@@ -9,7 +9,7 @@ import tempfile
 import tarfile
 import unittest
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 
 
 class StarDictTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class StarDictTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.dictionary = self.root / 'eng-deu'
         self.dictionary.mkdir()
-        shutil.copy2(REPO / 'testing/data/eng-deu.tei', self.dictionary)
+        shutil.copy2(REPO / 'testing/mk/data/eng-deu.tei', self.dictionary)
         (self.dictionary / 'Makefile').write_text(
             f'FREEDICT_TOOLS := {REPO}\nsupported_phonetics_lang := 2\n'
             'include $(FREEDICT_TOOLS)/mk/dicts.mk\n')
