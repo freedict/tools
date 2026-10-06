@@ -15,8 +15,8 @@
 -   Validate the configured API output, propagate generation failures,
     and clean up remote access after failures. Support Jing through
     `USE_JING=1`, with xmllint remaining the default validator.
--   Add forced WikDict downloads and preserve existing dictionaries when
-    replacement fails.
+-   Add forced WikDict downloads, preserve existing dictionaries when
+    replacement fails, and retain changelog history after successful imports.
 -   Run Unison synchronization noninteractively and preserve the caller's
     environment when remote access fails.
 -   Update the Esperanto-English importer for the October 2024 source,

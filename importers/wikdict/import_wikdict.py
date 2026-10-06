@@ -110,22 +110,18 @@ def assert_correct_working_directory():
         sys.exit(9)
 
 
-def make_changelog(path):
-    tmpl_vars = {
-            'date': date.today(),
-            'dict': path,
-    }
-    changelog_path = 'ChangeLog'
-    changelog = ''
-    if os.path.exists(changelog_path):
-        with open(os.path.join(path, changelog_path), 'r', encoding="UTF-8") as chlog_file:
-            changelog += chlog_file.read()
-    with open(os.path.join(path, 'ChangeLog'), 'w', encoding="UTF-8") as f:
-        f.write(("""\n
-{date}
-
-  * automatic import of {dict} dictionary from WikDict
-        \n""" + changelog).strip().format(**tmpl_vars) + '\n')
+def make_changelog(path, previous_path=None):
+    """Prepend an import entry while preserving the old history verbatim."""
+    source = os.path.join(previous_path if previous_path is not None else path, 'ChangeLog')
+    try:
+        with open(source, 'rb') as file:
+            history = file.read()
+    except FileNotFoundError:
+        history = b''
+    entry = (f'{date.today()}\n\n'
+             f'  * automatic import of {os.path.basename(path)} dictionary from WikDict\n\n')
+    with open(os.path.join(path, 'ChangeLog'), 'wb') as file:
+        file.write(entry.encode('utf-8') + history)
 
 
 def update_dict_files(path, shared_file_path):
@@ -206,7 +202,7 @@ def import_dictionary(api, link, shared_dir, force_import: bool):
         with open(os.path.join(staged, base_name + '.tei'), 'w',
             encoding='utf-8') as file:
             file.write(tei)
-        make_changelog(staged)
+        make_changelog(staged, base_name)
         old = f'{base_name}.old'
         shutil.rmtree(old, ignore_errors=True)
         if os.path.exists(base_name):
