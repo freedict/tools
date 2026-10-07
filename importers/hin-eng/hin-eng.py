@@ -1,5 +1,5 @@
 """
-This scipt converts the https://www.cfilt.iitb.ac.in/~hdict/webinterface_user/download.php?get=UW_Hindi_Dict_20131003.zip
+This script converts the https://www.cfilt.iitb.ac.in/~hdict/webinterface_user/download.php?get=UW_Hindi_Dict_20131003.zip
  to TEI5 required format.
 """
 
