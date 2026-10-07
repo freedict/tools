@@ -1,6 +1,5 @@
 """Collect all information about released dictionaries."""
 
-from datetime import datetime
 import hashlib
 import json
 import os
@@ -9,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+from datetime import datetime
 
 import semver
 
@@ -35,23 +35,28 @@ def git(cmd):
                 (' '.join(cmd), ret))
     return stdout.decode(sys.getdefaultencoding())
 
+def latest_tools_tag(tags):
+    """Select the newest SemVer tools tag, ignoring unrelated tag names."""
+    versions = []
+    for tag in tags:
+        try:
+            version = semver.Version.parse(tag)
+        except ValueError:
+            continue
+        versions.append((tag, version))
+    if not versions:
+        raise ReleaseError('No semantic tools release tags found.')
+    return max(versions, key=lambda item: item[1])[0]
+
+
 def get_tools_release():
-    """Retrieve the latest FreeDicttools release as a tuple with containing
-    (version, date, downloadlink)."""
-    if not 'FREEDICT_TOOLS' in os.environ or not shutil.which('git'):
-        raise ReleaseError(("Unable to retrieve list of releases of "
-            "FreeDict tools. Either FREEDICT_TOOLS is unset or git not "
-            "installed."))
-    releases = git(['tag']).split('\n')
-    max_ver = '0.0.0'
-    for tag in releases:
-        max_ver = semver.max_ver(max_ver, tag)
-    if max_ver == '0.0.0':
-        raise ReleaseError("No tools releases found.")
-    date = re.search('^([0-9]{4}-[0-9]{2}-[0-9]{2})',
-            git(['show', '-s', '--pretty=format:%ci'])).groups()[0]
-    return (max_ver, date, '{}/freedict-tools-{}.tar.xz'.format(
-            RELEASE_HTTP_TOOL_BASE, max_ver))
+    """Retrieve the latest tools tag, its commit date and local archive URL."""
+    if 'FREEDICT_TOOLS' not in os.environ or not shutil.which('git'):
+        raise ReleaseError('FREEDICT_TOOLS must be set and Git must be installed.')
+    version = latest_tools_tag(git(['tag']).splitlines())
+    date = git(['show', '-s', '--format=%cs', f'refs/tags/{version}^{{commit}}'])
+    return (version, date, f'{RELEASE_HTTP_TOOL_BASE}/freedict-tools-{version}.tar.xz')
+
 
 def get_release_info_for_dict(path, version):
     """Retrieve information about the releases of a dictionary."""
@@ -154,11 +159,9 @@ def github_request(path):
         return json.loads(f.read().decode('UTF-8'))
 
 def get_latest_tools_release():
-    latest = {'name': '0.0.0'}
-    for tag in github_request("repos/freedict/{}/tags".format(TOOLS_REPO)):
-        latest = max(latest, tag, key=lambda t: t['name'])
-    if latest['name'] == '0.0.0':
-        raise ValueError("could not find a release for FreeDict tools")
+    tags = github_request(f"repos/freedict/{TOOLS_REPO}/tags")
+    version = latest_tools_tag(tag['name'] for tag in tags)
+    latest = next(tag for tag in tags if tag['name'] == version)
     commit_url = latest['commit']['url']
     api_suffix = commit_url[commit_url.find('.com/') + 5:]
     commit_meta = github_request(api_suffix)['commit']['committer']

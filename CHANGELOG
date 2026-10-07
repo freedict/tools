@@ -9,6 +9,7 @@
 -   Install and uninstall all supported binary dictionary formats.
 -   Preserve semantic version suffixes, correctly order FreeDict revisions,
     and align API schema validation with supported dictionary versions.
+    Select tools releases by semantic version and use the selected tag's date.
 -   Validate the configured API output, propagate generation failures,
     and clean up remote access after failures. Support Jing through
     `USE_JING=1`, with xmllint remaining the default validator.
