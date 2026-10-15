@@ -115,6 +115,7 @@ INSTALL_DIRS := api api/generator api/file_manager api/generator/apigen mk xquer
 INSTALL_PATHS := $(wildcard api/*.py api/generator/*.py api/generator/apigen/*.py api/file_manager/*.py \
 	freedict-database.rng \
 	mk/*.mk xsl/inc/* \
+	teiaddphonetics \
 	xquery/* xsl/tei2c5.xsl)
 install: #! install the tools to $$DESTDIR/$PREFIX/share/freedict (default /usr/local/share/freedict)
 install:

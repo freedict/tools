@@ -1,4 +1,8 @@
-# 0.8 UNRELEASED
+# 0.8.0
+
+-   install teiaddphonetics script
+
+# 0.8.0-beta.1
 
 -   Require Python 3.12 or newer and PyGlossary 5.4.2 or newer.
 -   Improve virtual environment creation and configuration registration,
