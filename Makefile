@@ -111,8 +111,8 @@ mk_venv: #! initialise a new (Python) virtual environment; use mk_venv-help for 
 	fi
 
 # NOTE: the directories below HAVE to be on one line
-INSTALL_DIRS := api api/generator api/file_manager api/generator/apigen mk xquery xsl/inc
-INSTALL_PATHS := $(wildcard api/*.py api/generator/*.py api/generator/apigen/*.py api/file_manager/*.py \
+INSTALL_DIRS := fd_tool/fd_tool/api fd_tool/fd_tool/scripts mk xquery xsl/inc
+INSTALL_PATHS := $(wildcard fd_tool/fd_tool/api/*.py fd_tool/fd_tool/scripts/*.py fd_tool/fd_tool/*.py fd_tool/*.py \
 	freedict-database.rng \
 	mk/*.mk xsl/inc/* \
 	teiaddphonetics \
