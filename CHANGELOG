@@ -1,6 +1,8 @@
 # 0.8.0
 
 -   install teiaddphonetics script
+-   fix install paths
+-   pyglossary (StarDict): do not surpress error output, even though it makes the build chatty
 
 # 0.8.0-beta.1
 
