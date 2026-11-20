@@ -303,8 +303,7 @@ $(BUILD_STARDICT)/build.stamp: $(call dict_tei_source) \
 	@mkdir -p "$(BUILD_STARDICT)/tmp"
 	rm -f "$(BUILD_STARDICT)/tmp/"*
 	$(call exc_pyscript,$(PYGLOSSARY),--ui=cmd --read-format=FreeDict --write-format=Stardict \
-		--write-options='dictzip=false;dictzip_syn=false' "$<" "$(BUILD_STARDICT)/tmp/$(dictname).ifo") \
-		> "$(BUILD_STARDICT)/tmp/pyglossary-stardict.out" 2>&1
+		--write-options='dictzip=false;dictzip_syn=false' "$<" "$(BUILD_STARDICT)/tmp/$(dictname).ifo")
 	for ext in ifo idx dict; do \
 		test -f "$(BUILD_STARDICT)/tmp/$(dictname).$$ext" || exit 1; done
 	if grep -Eq '^synwordcount=[1-9][0-9]*$$' "$(BUILD_STARDICT)/tmp/$(dictname).ifo"; then \
