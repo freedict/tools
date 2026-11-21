@@ -6,13 +6,14 @@ README for more information."""
 
 import enum
 import os
+import re
 import sys
 import urllib.request
-import xml.sax.saxutils as saxutils
+from xml.dom import minidom
+from xml.sax import saxutils
 
-# allow tokenizer import
-from fd_import.tokenizer import ChunkType, tokenize
 import fd_import
+from fd_import.tokenizer import ChunkType, tokenize
 
 
 class WordType(enum.Enum):
@@ -189,11 +190,32 @@ def translations_to_xml(translations):
         xml.append('</sense>')
     return xml
 
-def write_output(input_file, base_dir, tei_skeleton, body_xml):
+def parse_attribution(line):
+    match = re.fullmatch(
+        r"# ESPDIC \([^)]+\)\s+[-–]\s+\d{1,2} [A-Za-z]+ (\d{4})"
+        r"\s+[-–]\s+([^()]+?)\s+\([^)]+\)", line.strip())
+    if not match:
+        raise ValueError("line 1: expected the ESPDIC edition date and author")
+    year, author = match.groups()
+    return f"Copyright (C) {year} {author}."
+
+
+def write_output(attribution, base_dir, tei_skeleton, body_xml):
     """This writes the imported dictionary into the specified directory."""
     print("Writing TEI dictionary…")
-    with open(tei_skeleton, 'r', encoding='utf-8') as f:
-        header = f.read()
+    with minidom.parse(os.fspath(tei_skeleton)) as skeleton:
+        availability, = skeleton.getElementsByTagName('availability')
+        notice = skeleton.createElement('p')
+        notice.appendChild(skeleton.createTextNode(attribution))
+        for paragraph in availability.childNodes:
+            if (paragraph.nodeName == 'p' and paragraph.firstChild
+                    and paragraph.firstChild.nodeType == paragraph.TEXT_NODE
+                    and paragraph.firstChild.data.lstrip().startswith('Copyright (C) ')):
+                availability.replaceChild(notice, paragraph)
+                break
+        else:
+            availability.insertBefore(notice, availability.firstChild)
+        header = skeleton.toxml()
     body_start = header.find('<body>') + 6
     tei_file = os.path.join(base_dir, 'epo-eng.tei')
     if not os.path.exists(base_dir):
@@ -224,13 +246,12 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
 def main(input_file, tei_skeleton, output_directory):
     print("Parsing dictionary…")
     with open(input_file, 'r', encoding='utf-8-sig') as f:
-        # gnerator with word pairs; ignore indented lines (only file header,
-        # ATM)
-        words = (wp for wp in f.read().split('\n')
-            if wp.strip() and not wp.startswith(" "))
+        attribution = parse_attribution(f.readline())
+        words = [(n, line.rstrip('\n')) for n, line in enumerate(f, start=2)
+                 if line.strip() and not line.startswith(' ')]
 
     word_list = []
-    for lnum, word_pair in enumerate(words):
+    for lnum, word_pair in words:
         if word_pair.lstrip().startswith("#"):
             continue
         try:
@@ -244,7 +265,7 @@ def main(input_file, tei_skeleton, output_directory):
                 head = HeadWord(head[0][1])
             word_list.append((head, translations))
         except ValueError as v:
-            raise ValueError(f"line {lnum+1}: {''.join(v.args)}")
+            raise ValueError(f"line {lnum}: {''.join(v.args)}")
 
     # enrich words with grammatical info, strip "to" and other words *and*
     # convert to XML
@@ -257,7 +278,7 @@ def main(input_file, tei_skeleton, output_directory):
             xml.append(f'<gramGrp>\n{gram}\n</gramGrp>')
         xml += translations_to_xml(trans) + ['</entry>']
 
-    write_output(input_file, output_directory, tei_skeleton, '\n'.join(xml))
+    write_output(attribution, output_directory, tei_skeleton, '\n'.join(xml))
     print("Done. Now it's time to copy DTD, CSS and RNG and validate the dictionary.")
 
 def check_args():
