@@ -29,7 +29,7 @@ class Definition:
         self.definition = definition
 
     def as_xml(self):
-        return '<cit>\n<def>%s</def>\n</cit>' % saxutils.escape(self.definition)
+        return f'<cit>\n<def>{saxutils.escape(self.definition)}</def>\n</cit>'
 
 class Word:
     #pylint: disable=too-few-public-methods
@@ -41,8 +41,7 @@ class Word:
         self.word_type = type
 
     def __repr__(self):
-        return ('%s (%s)' % (self.word, self.usage_info) if self.usage_info else
-                self.word)
+        return f'{self.word} ({self.usage_info})' if self.usage_info else self.word
 
     def __get_gram_info(self, usage_info):
         """Figure out, whether text is a collocating word or a usage hint.
@@ -53,10 +52,9 @@ class Word:
         if not usage_info:
             return (None, None)
         elif usage_info in collocations:
-            return (['<colloc>%s</colloc>' % saxutils.escape(usage_info)], None)
+            return ([f'<colloc>{saxutils.escape(usage_info)}</colloc>'], None)
         else:
-            return (None, '<usg type="hint">%s</usg>' %
-                    saxutils.escape(usage_info))
+            return (None, f'<usg type="hint">{saxutils.escape(usage_info)}</usg>')
 
     def as_xml(self):
         xml = ['<cit type="trans">\n<quote>', saxutils.escape(self.word),
@@ -64,7 +62,8 @@ class Word:
         if self.usage_info:
             xml.append('\n' + self.usage_info) # already escaped
         if self.gramGrp:
-            xml.append('\n<gramGrp>\n%s\n</gramGrp>' % '\n'.join(self.gramGrp))
+            grammar = '\n'.join(self.gramGrp)
+            xml.append(f'\n<gramGrp>\n{grammar}\n</gramGrp>')
         return ''.join(xml + ['\n</cit>'])
 
 #pylint: disable=redefined-variable-type
@@ -84,14 +83,15 @@ class HeadWord(Word):
 
     def as_xml(self):
         extent = ''
-        if not self.type == WordType.Full:
-            extent = ' extent="%s"' % self.type.value
-        orth = '<orth%s>%s</orth>' % (extent, saxutils.escape(self.word))
+        if self.type != WordType.Full:
+            extent = f' extent="{self.type.value}"'
+        orth = f'<orth{extent}>{saxutils.escape(self.word)}</orth>'
         if self.gramGrp:
-            orth += '\n<gramGrp>\n%s</gramGrp>' % '\n'.join(self.gramGrp)
+            grammar = '\n'.join(self.gramGrp)
+            orth += f'\n<gramGrp>\n{grammar}</gramGrp>'
         if self.usage_info:
             orth += '\n' + self.usage_info
-        return '<form>\n%s\n</form>' % orth
+        return f'<form>\n{orth}\n</form>'
 
 def structure_translations(unordered_list):
     """Take a list of chunks (see docs of parse_meanings) and return a list of
@@ -115,9 +115,10 @@ def structure_translations(unordered_list):
                     translations[-1].append(Definition(chunk[1]))
                 else:
                     print(',',repr(translations))
-                    raise ValueError(("Couldn't parse translations; tokens "
-                        "parsed: %s\nCurrent token: %s\nTokens left: %s") % \
-                                (translations,chunk,unordered_list))
+                    raise ValueError(
+                        f"Couldn't parse translations; tokens parsed: {translations}\n"
+                        f"Current token: {chunk}\nTokens left: {unordered_list}"
+                    )
         elif chunk[0] == ChunkType.Word:
             # word with usage info / colloc
             if unordered_list and unordered_list[0][0] == ChunkType.Paren:
@@ -162,8 +163,7 @@ def guess_grammar_details(translations):
         gram = '<pos>v</pos>'
         for deflist in translations:
             for word in deflist:
-                if word.word.startswith('to '):
-                    word.word = word.word[3:]
+                word.word = word.word.removeprefix('to ')
     # remove wrongly parsed colloc's
     collocs = ['<colloc>%s</colloc>' % c for c in ['to', 'a', 'an']]
     for deflist in translations:
@@ -208,8 +208,8 @@ def write_output(input_file, base_dir, tei_skeleton, body_xml):
         # retrieve copyright information
         print("Downloading CC unported 3.0 license")
         with open(os.path.join(base_dir, 'COPYING'), 'wb') as f:
-            req = req = urllib.request.Request(
-                    'https://creativecommons.org/licenses/by/3.0/legalcode.txt',
+            req = urllib.request.Request(
+                'https://creativecommons.org/licenses/by/3.0/legalcode.txt',
                 data=None,
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0'
@@ -254,7 +254,7 @@ def main(input_file, tei_skeleton, output_directory):
         gram, trans = guess_grammar_details(trans)
         xml += ['<entry>', head.as_xml()]
         if gram:
-            xml.append('<gramGrp>\n%s\n</gramGrp>' % gram)
+            xml.append(f'<gramGrp>\n{gram}\n</gramGrp>')
         xml += translations_to_xml(trans) + ['</entry>']
 
     write_output(input_file, output_directory, tei_skeleton, '\n'.join(xml))
@@ -265,8 +265,7 @@ def check_args():
     if len(sys.argv) != 4:
         print("Error: invalid command line parameters.")
         import textwrap
-        print("Usage: %s <INPUT_FILE> <TEI SKELETON> <OUTPUT_DIRECTORY>\n    "\
-                % sys.argv[0], end="")
+        print(f"Usage: {sys.argv[0]} <INPUT_FILE> <TEI SKELETON> <OUTPUT_DIRECTORY>\n    ", end="")
         print('\n    '.join(textwrap.wrap(("TEI SKELETON has to be a FreeDict TEI file, with an empty "
                 "body tag. The opening and closing body tags have to be on "
                 "separate lines.\n"
@@ -282,10 +281,10 @@ def check_args():
         sys.exit(4)
     for file in sys.argv[1:3]:
         if not os.path.exists(file):
-            print('Sorry, but the file "%s" does not exist.' % file)
+            print(f'Sorry, but the file "{file}" does not exist.')
             sys.exit(2)
     dictdir = os.path.basename(os.path.abspath(sys.argv[3]))
-    if not len(dictdir) == 7 or '-' not in dictdir:
+    if len(dictdir) != 7 or '-' not in dictdir:
         print("The output directory has to be named with the usual FreeDict naming scheme. Otherwise, the Make rules will fail.")
         sys.exit(5)
 

@@ -31,7 +31,7 @@ class ChunkType(enum.Enum):
     Slash = 7 # optional; example usage include abbreviations "/ETC/"
 
     def __repr__(self):
-        return '<%s.%s>' % (self.__class__.__name__, self.name)
+        return f'<{self.__class__.__name__}.{self.name}>'
 
 def space_before_slash(string, i):
     """The tokenizer can recognize chunks enclosed by slashes. To avoid to many
