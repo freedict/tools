@@ -151,29 +151,24 @@ def structure_translations(unordered_list):
             raise NotImplementedError("Unhandled case: " + repr(chunk))
     return translations
 
+def looks_like_infinitive(text):
+    """Exclude common prepositional phrases such as 'to the end'."""
+    return text.startswith('to ') and not re.match(
+        r'to\s+(?:the|a|an|my|what|some|both|one\s+another)\b', text)
+
+
 def guess_grammar_details(translations):
-    """This function inspects the English translations to infer grammatical
-    information. Definitions starting with "to " are verbs in the infinitive
-    form, etc. The translations might get altered, for instance, to strip the
-    "to " from the actual definition."""
+    """Infer verb status from the first equivalent and strip infinitive markers."""
     gram = ''
     firstword = translations[0][0]
     if isinstance(firstword, Definition):
         return (None, translations) # don't fiddle around with def's
-    if firstword.word.startswith('to '):
+    if looks_like_infinitive(firstword.word):
         gram = '<pos>v</pos>'
         for deflist in translations:
             for word in deflist:
-                word.word = word.word.removeprefix('to ')
-    # remove wrongly parsed colloc's
-    collocs = ['<colloc>%s</colloc>' % c for c in ['to', 'a', 'an']]
-    for deflist in translations:
-        for word in deflist:
-            if word.gramGrp: # it need to have a colloc, otherwise no checks
-                for colloc in collocs:
-                    if colloc in word.gramGrp:
-                        idx = collocs.index(colloc)
-                        del word.gramGrp[idx]
+                if isinstance(word, Word) and looks_like_infinitive(word.word):
+                    word.word = word.word.removeprefix('to ')
     return (gram, translations)
 
 

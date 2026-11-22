@@ -25,6 +25,30 @@ def import_entries(*lines):
 
 
 class EntryTests(unittest.TestCase):
+    def test_prepositional_to_is_part_of_the_translation(self):
+        phrases = [('ĝisfine', 'to the end'), ('certagrade', 'to a certain degree'),
+                   ('al si reciproke', 'to one another')]
+        entries = import_entries(*(f'{head} : {quote}' for head, quote in phrases))
+        for entry, (_, quote) in zip(entries, phrases, strict=True):
+            self.assertIsNone(entry.find('gramGrp/pos', NS))
+            self.assertEqual(entry.findtext('sense/cit/quote', namespaces=NS), quote)
+
+    def test_later_equivalents_keep_prepositional_to(self):
+        entry, = import_entries('provi : to attempt, to the end')
+        self.assertEqual(entry.findtext('gramGrp/pos', namespaces=NS), 'v')
+        self.assertEqual([q.text for q in entry.findall('sense/cit/quote', NS)],
+                         ['attempt', 'to the end'])
+
+    def test_to_collocation_stays_with_its_translation(self):
+        verb, preposition = import_entries('aspiri : to aspire (to), hope for',
+                                           'apud : at, beside, by, near (to), nearby, next to')
+        self.assertEqual(verb.findtext('gramGrp/pos', namespaces=NS), 'v')
+        self.assertIsNone(preposition.find('gramGrp/pos', NS))
+        for entry, expected in [(verb, 'aspire'), (preposition, 'near')]:
+            qualified = [cit for cit in entry.findall('sense/cit', NS)
+                         if cit.findtext('gramGrp/colloc', namespaces=NS) == 'to']
+            self.assertEqual([cit.findtext('quote', namespaces=NS) for cit in qualified], [expected])
+
     def test_literal_brackets_are_separate_translations(self):
         for symbol in ('{', '}', '{}', '[', ']', '[]', '(', ')', '()'):
             with self.subTest(symbol=symbol):
