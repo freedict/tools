@@ -256,7 +256,7 @@ def main(input_file, tei_skeleton, output_directory):
             continue
         try:
             head, trans = word_pair.split(' : ')
-            translations = tokenize(trans)
+            translations = tokenize(trans, literal_brackets=True)
             translations = structure_translations(translations)
             annotation = re.fullmatch(r'(.+?)\s+\(([^()]+)\)', head.strip())
             if annotation:

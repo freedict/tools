@@ -25,6 +25,17 @@ def import_entries(*lines):
 
 
 class EntryTests(unittest.TestCase):
+    def test_literal_brackets_are_separate_translations(self):
+        for symbol in ('{', '}', '{}', '[', ']', '[]', '(', ')', '()'):
+            with self.subTest(symbol=symbol):
+                entry, suffix = import_entries(f'krampo : bracket, {symbol}; support',
+                                               '-a : (adjective ending)')
+                translations, support = entry.findall('sense', NS)
+                self.assertEqual([q.text for q in translations.findall('cit/quote', NS)],
+                                 ['bracket', symbol])
+                self.assertEqual(support.findtext('cit/quote', namespaces=NS), 'support')
+                self.assertEqual(suffix.findtext('sense/cit/def', namespaces=NS), 'adjective ending')
+
     def test_headword_punctuation_and_annotations(self):
         phrase, abbreviation, suffix = import_entries(
             'fino bona, ĉio bona : all’s well that ends well',

@@ -15,6 +15,7 @@ For the usage, please see the functions and classes defined in this module."""
 
 import enum
 import inspect
+import re
 
 
 class ChunkType(enum.Enum):
@@ -47,7 +48,10 @@ def space_before_slash(string, i):
 
 FRAMING = {'(': ChunkType.Paren, '[': ChunkType.Bracket, '{': ChunkType.Brace}
 CLOSING = {')':'(', '}':'{', ']':'['}
-def tokenize(source, parse_slash=False):
+LITERAL_BRACKET = re.compile(r'(?:\(\)?|\[\]?|\{\}?)\s*(?=[,;]|$)')
+
+
+def tokenize(source, parse_slash=False, *, literal_brackets=False):
     #pylint: disable=redefined-variable-type,too-many-branches
     """Tokenize a line (of translations) into chunks, where each chunk is a tuple of (ChunkType,
 content). This only works with either the headword or the translation part,
@@ -58,6 +62,9 @@ It either parses "abc" or "a,  b; c".
 
 Chunk types with no value (as for instance Comma) return a tuple with None as
 second element.
+
+With literal_brackets, a standalone bracket or empty bracket pair can itself
+be a translation, as in "curly braces, {}".
 
 Parenthesis have precedence over commas and ;. So
 
@@ -105,6 +112,12 @@ will result in
             # beginning of string; handle slash separately
             if is_new_word() and (ch in FRAMING or (parse_slash and \
                     ch == '/' and not space_before_slash(source, idx))):
+                if (literal_brackets and LITERAL_BRACKET.match(source, idx)
+                        and not ''.join(tmp_storage).strip()
+                        and (not chunks or chunks[-1][0] in (ChunkType.Comma, ChunkType.Semicolon))):
+                    tmp_storage.append(ch)
+                    prevchar = ch
+                    continue
                 # above tests that / is followed by characters only, no spaces
                 # and hence no straying slashes are detected
                 if ch == '/' and parse_slash:

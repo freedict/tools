@@ -108,15 +108,6 @@
  prienketi : to investigate
  prierara : error, about errors
  prierara raportilo : error report tool
-@@ -51072,7 +51072,7 @@
- ronda ekkrampo : opening parenthesis, “(”
- ronda finkrampo : closing parenthesis, “)”
- ronda hoketo : breve
--rondaj krampoj : round parentheses, ()
-+rondaj krampoj : round parentheses "()"
- ronda kanao : hiragana
- ronda krampo : parenthesis, round bracket
- ronda : round
 @@ -63732,7 +63732,7 @@
  kontraŭrevoluciulo : counter-revolutionary
  kiel ofte okazis : as often happened
