@@ -258,11 +258,11 @@ def main(input_file, tei_skeleton, output_directory):
             head, trans = word_pair.split(' : ')
             translations = tokenize(trans)
             translations = structure_translations(translations)
-            head = tokenize(head)
-            if len(head) == 2: # headword with definition
-                head = HeadWord(head[0][1], head[1][1])
+            annotation = re.fullmatch(r'(.+?)\s+\(([^()]+)\)', head.strip())
+            if annotation:
+                head = HeadWord(*annotation.groups())
             else:
-                head = HeadWord(head[0][1])
+                head = HeadWord(head.strip())
             word_list.append((head, translations))
         except ValueError as v:
             raise ValueError(f"line {lnum}: {''.join(v.args)}")
