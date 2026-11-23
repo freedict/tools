@@ -121,20 +121,10 @@ def structure_translations(unordered_list):
                         f"Current token: {chunk}\nTokens left: {unordered_list}"
                     )
         elif chunk[0] == ChunkType.Word:
-            # word with usage info / colloc
+            qualifier = None
             if unordered_list and unordered_list[0][0] == ChunkType.Paren:
-                # in some cases definitions are written as "to (be in) a
-                # position", this is poor markup. ignore those parenthesis and
-                # add it as a whole word:
-                if len(unordered_list) >= 2 and unordered_list[1][0] == ChunkType.Word:
-                    translations[-1].append(Word(chunk[1] +" " + \
-                            unordered_list.pop(0)[1] + " " + \
-                            unordered_list.pop(0)[1]))
-                else:
-                    translations[-1].append(Word(chunk[1],
-                        unordered_list.pop(0)[1]))
-            else:
-                translations[-1].append(Word(chunk[1]))
+                qualifier = unordered_list.pop(0)[1]
+            translations[-1].append(Word(chunk[1], qualifier))
         elif chunk[0] == ChunkType.Comma: # new word starts, ignore
             pass
         elif chunk[0] == ChunkType.Semicolon: # homonym, new sense
@@ -251,7 +241,7 @@ def main(input_file, tei_skeleton, output_directory):
             continue
         try:
             head, trans = word_pair.split(' : ')
-            translations = tokenize(trans, literal_brackets=True)
+            translations = tokenize(trans, literal_brackets=True, keep_medial_parentheses=True)
             translations = structure_translations(translations)
             annotation = re.fullmatch(r'(.+?)\s+\(([^()]+)\)', head.strip())
             if annotation:

@@ -49,9 +49,10 @@ def space_before_slash(string, i):
 FRAMING = {'(': ChunkType.Paren, '[': ChunkType.Bracket, '{': ChunkType.Brace}
 CLOSING = {')':'(', '}':'{', ']':'['}
 LITERAL_BRACKET = re.compile(r'(?:\(\)?|\[\]?|\{\}?)\s*(?=[,;]|$)')
+MEDIAL_PARENTHESES = re.compile(r'(?:\([^()]*\)\s*)+(?=[^\s,;|()[\]{}])')
 
 
-def tokenize(source, parse_slash=False, *, literal_brackets=False):
+def tokenize(source, parse_slash=False, *, literal_brackets=False, keep_medial_parentheses=False):
     #pylint: disable=redefined-variable-type,too-many-branches
     """Tokenize a line (of translations) into chunks, where each chunk is a tuple of (ChunkType,
 content). This only works with either the headword or the translation part,
@@ -65,6 +66,8 @@ second element.
 
 With literal_brackets, a standalone bracket or empty bracket pair can itself
 be a translation, as in "curly braces, {}".
+With keep_medial_parentheses, parentheses inside a translation such as
+"hardly (barely) visible" remain in its Word chunk, including their spacing.
 
 Parenthesis have precedence over commas and ;. So
 
@@ -96,8 +99,11 @@ will result in
     prevchar = ''
 
     is_new_word = lambda: prevchar == '' or prevchar.isspace()
+    literal_end = 0
     for idx, ch in enumerate(source):
-        if state in FRAMING.values() or (parse_slash and state == ChunkType.Slash):
+        if idx < literal_end:
+            tmp_storage.append(ch)
+        elif state in FRAMING.values() or (parse_slash and state == ChunkType.Slash):
             if ch in CLOSING and state == FRAMING[CLOSING[ch]]:
                 save_parsed_chunk(FRAMING[CLOSING[ch]])
                 state = ChunkType.Word
@@ -112,6 +118,13 @@ will result in
             # beginning of string; handle slash separately
             if is_new_word() and (ch in FRAMING or (parse_slash and \
                     ch == '/' and not space_before_slash(source, idx))):
+                if keep_medial_parentheses and ch == '(' and ''.join(tmp_storage).strip():
+                    medial = MEDIAL_PARENTHESES.match(source, idx)
+                    if medial:
+                        literal_end = medial.end()
+                        tmp_storage.append(ch)
+                        prevchar = ch
+                        continue
                 if (literal_brackets and LITERAL_BRACKET.match(source, idx)
                         and not ''.join(tmp_storage).strip()
                         and (not chunks or chunks[-1][0] in (ChunkType.Comma, ChunkType.Semicolon))):

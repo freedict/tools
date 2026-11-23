@@ -25,6 +25,25 @@ def import_entries(*lines):
 
 
 class EntryTests(unittest.TestCase):
+    def test_medial_parentheses_stay_inside_the_quote(self):
+        optional, alternative, prefix = import_entries(
+            'alformiĝi en : to transform (oneself) into',
+            'apenaŭ videbla : hardly (barely) visible',
+            'ĉe la reto : on the (inter)net')
+        self.assertEqual(optional.findtext('sense/cit/quote', namespaces=NS),
+                         'transform (oneself) into')
+        self.assertEqual(alternative.findtext('sense/cit/quote', namespaces=NS),
+                         'hardly (barely) visible')
+        self.assertEqual(prefix.findtext('sense/cit/quote', namespaces=NS), 'on the (inter)net')
+
+    def test_medial_groups_stop_before_qualifier_or_delimiter(self):
+        entry, = import_entries('provi : a (b) (c) d (e) f (hint), g; h')
+        first, second = entry.findall('sense', NS)
+        self.assertEqual([q.text for q in first.findall('cit/quote', NS)],
+                         ['a (b) (c) d (e) f', 'g'])
+        self.assertEqual(first.findtext('cit/usg', namespaces=NS), 'hint')
+        self.assertEqual(second.findtext('cit/quote', namespaces=NS), 'h')
+
     def test_prepositional_to_is_part_of_the_translation(self):
         phrases = [('ĝisfine', 'to the end'), ('certagrade', 'to a certain degree'),
                    ('al si reciproke', 'to one another')]
