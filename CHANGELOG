@@ -1,4 +1,12 @@
-# 0.8.0
+# 0.8 UNRELEASED
+
+-   epo-eng importer:
+    -   include copyright year, holder and licence link
+    -   preserve commas in Esperanto headwords, bracket translations and English
+        collocations such as “aspire (to)”.
+    -   preserve prepositional “to” and parentheses within English equivalents.
+
+# 0.8.0-beta.1
 
 -   install teiaddphonetics script
 -   fix install paths
