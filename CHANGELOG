@@ -2,9 +2,11 @@
 
 -   epo-eng importer:
     -   include copyright year, holder and licence link
-    -   preserve commas in Esperanto headwords, bracket translations and English
-        collocations such as “aspire (to)”.
-    -   preserve prepositional “to” and parentheses within English equivalents.
+    -   keep complete Esperanto headwords such as “fino bona, ĉio bona” and
+        retain literal brackets such as “[]” as separate translations.
+    -   preserve parentheses within English equivalents such as “on the
+        (inter)net”, prepositional “to” in “to the end”, and collocations
+        such as “aspire (to)”.
     -   update the header in place with the upstream release date, publication
         date and headword count, and record each new release once.
 

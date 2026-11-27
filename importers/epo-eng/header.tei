@@ -55,6 +55,15 @@
       </projectDesc>
     </encodingDesc>
     <revisionDesc>
+      <change n="2024.10.06" when="2026-11-27">
+        <name>Sebastian Humenda</name>
+        <list>
+          <item>Keep Esperanto headwords whole across commas, e.g. “fino bona, ĉio bona”.</item>
+          <item>Keep literal brackets such as “[]” as separate translations.</item>
+          <item>Keep parentheses within English equivalents, e.g. “on the (inter)net”.</item>
+          <item>Preserve prepositional “to” in “to the end” and the collocation in “aspire (to)”.</item>
+        </list>
+      </change>
       <change n="2026-07-01" when="2026-07-01">
         Import new version dated 2024-10-06. Thanks to Teemu Hukkanen for
         updating the patch and for adjusting importer to new file.
