@@ -9,6 +9,8 @@
         such as “aspire (to)”.
     -   update the header in place with the upstream release date, publication
         date and headword count, and record each new release once.
+    -   copy the DTD, RNG and CSS into the output dictionary from the shared
+        directory supplied as the final argument.
 
 # 0.8.0-beta.1
 

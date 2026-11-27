@@ -20,6 +20,8 @@ from xml.sax import saxutils
 import fd_import
 from fd_import.tokenizer import ChunkType, tokenize
 
+SHARED_FILES = ('freedict-P5.dtd', 'freedict-P5.rng', 'freedict-dictionary.css')
+
 
 class WordType(enum.Enum):
     Full = '' # normal words
@@ -275,7 +277,7 @@ def updated_header(tei_skeleton, release, author, count):
         return '\n'.join([declaration + ' ?>', *(node.toxml() for node in skeleton.childNodes), ''])
 
 
-def write_output(header, base_dir, body_xml):
+def write_output(header, base_dir, body_xml, shared_files):
     """Write the complete dictionary and its accompanying files."""
     print("Writing TEI dictionary…")
     before_body_end, body_end, trailer = header.rpartition('</body>')
@@ -303,9 +305,15 @@ def write_output(header, base_dir, body_xml):
 
     # write Makefile
     fd_import.output.mk_makefile(base_dir, ['epo-eng.tei', 'epo-eng.patch'])
+    for source in shared_files:
+        shutil.copy(source, base_dir)
 
 
-def main(input_file, tei_skeleton, output_directory):
+def main(input_file, tei_skeleton, output_directory, shared_dir):
+    shared_files = [Path(shared_dir) / name for name in SHARED_FILES]
+    for source in shared_files:
+        if not source.is_file():
+            raise FileNotFoundError(f'Missing shared file: {source}')
     print("Parsing dictionary…")
     with open(input_file, 'r', encoding='utf-8-sig') as f:
         release, author = parse_attribution(f.readline())
@@ -344,21 +352,20 @@ def main(input_file, tei_skeleton, output_directory):
     if skeleton_path == (Path(output_directory) / 'epo-eng.tei').resolve():
         raise ValueError("The skeleton and output dictionary must have distinct paths")
     header = updated_header(skeleton_path, release, author, len(word_list))
-    write_output(header, output_directory, '\n'.join(xml))
+    write_output(header, output_directory, '\n'.join(xml), shared_files)
     if skeleton_path.read_text(encoding='utf-8') != header:
         with tempfile.TemporaryDirectory(dir=skeleton_path.parent) as tmp:
             temporary = Path(tmp) / skeleton_path.name
             temporary.write_text(header, encoding='utf-8')
             shutil.copymode(skeleton_path, temporary)
             temporary.replace(skeleton_path)
-    print("Done. Now it's time to copy DTD, CSS and RNG and validate the dictionary.")
 
 def check_args():
     """command line parameter validation"""
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("Error: invalid command line parameters.")
         import textwrap
-        print(f"Usage: {sys.argv[0]} <INPUT_FILE> <TEI SKELETON> <OUTPUT_DIRECTORY>\n    ", end="")
+        print(f"Usage: {sys.argv[0]} <INPUT_FILE> <TEI SKELETON> <OUTPUT_DIRECTORY> <SHARED_DIR>\n    ", end="")
         print('\n    '.join(textwrap.wrap(("TEI SKELETON has to be a FreeDict TEI file, with an empty "
                 "body tag. The opening and closing body tags have to be on "
                 "separate lines.\n"
@@ -383,5 +390,8 @@ def check_args():
 
 if __name__ == '__main__':
     check_args()
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    try:
+        main(*sys.argv[1:])
+    except FileNotFoundError as error:
+        sys.exit(str(error))
 

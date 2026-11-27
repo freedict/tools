@@ -16,6 +16,14 @@ spec.loader.exec_module(epo_eng)
 NS = {'': 'http://www.tei-c.org/ns/1.0'}
 
 
+def make_shared_dir(root):
+    shared = root / 'shared'
+    shared.mkdir()
+    for name in ('freedict-P5.dtd', 'freedict-P5.rng', 'freedict-dictionary.css'):
+        (shared / name).write_bytes(name.encode())
+    return shared
+
+
 def import_entries(*lines):
     with tempfile.TemporaryDirectory() as tmp:
         source = Path(tmp) / 'espdic.txt'
@@ -24,7 +32,7 @@ def import_entries(*lines):
                           encoding='utf-8-sig')
         (Path(tmp) / 'COPYING').touch()
         skeleton = shutil.copy(IMPORTER / 'header.tei', tmp)
-        epo_eng.main(source, skeleton, tmp)
+        epo_eng.main(source, skeleton, tmp, make_shared_dir(Path(tmp)))
         return ElementTree.parse(Path(tmp) / 'epo-eng.tei').findall('.//body/entry', NS)
 
 
@@ -95,11 +103,12 @@ class EntryTests(unittest.TestCase):
         self.assertEqual(suffix.find('form/orth', NS).get('extent'), 'suff')
 
 
-class AttributionTests(unittest.TestCase):
+class ImportTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+        self.shared = make_shared_dir(self.root)
         self.header = Path(shutil.copy(IMPORTER / 'header.tei', self.root))
         self.source = self.root / 'espdic.txt'
         (self.root / 'COPYING').touch()
@@ -109,8 +118,25 @@ class AttributionTests(unittest.TestCase):
             f'# ESPDIC (Esperanto – English Dictionary) – {release} - '
             f'{holder} (www.denisowski.org)\nabelo : bee\n# comment\n',
             encoding='utf-8-sig')
-        epo_eng.main(self.source, self.header, self.root)
+        epo_eng.main(self.source, self.header, self.root, self.shared)
         return ElementTree.parse(self.root / 'epo-eng.tei')
+
+    def test_shared_files_are_copied_and_refreshed(self):
+        self.run_import('6 October 2024')
+        for source in self.shared.iterdir():
+            self.assertEqual((self.root / source.name).read_bytes(), source.read_bytes())
+            source.write_bytes(b'updated ' + source.read_bytes())
+        self.run_import('6 October 2024')
+        for source in self.shared.iterdir():
+            self.assertEqual((self.root / source.name).read_bytes(), source.read_bytes())
+
+    def test_missing_shared_file_fails_before_writing_output(self):
+        missing = self.shared / 'freedict-P5.rng'
+        missing.unlink()
+        with self.assertRaises(FileNotFoundError) as error:
+            self.run_import('6 October 2024')
+        self.assertIn(str(missing), str(error.exception))
+        self.assertFalse((self.root / 'epo-eng.tei').exists())
 
     def test_existing_release_updates_both_headers_without_adding_history(self):
         # Exercise the skeleton format used before date-only editions.

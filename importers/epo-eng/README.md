@@ -14,7 +14,7 @@ Save a fresh copy of the 6 October 2024 ESPDIC release as `espdic.txt` in
 
 For this and subsequent imports, use the patched file directly:
 
-    python3 epo-eng-import.py espdic.txt <TEI_SKELETON> <OUT_DIR>
+    python3 epo-eng-import.py espdic.txt <TEI_SKELETON> <OUT_DIR> <SHARED_DIR>
 
 -   `TEI_SKELETON`: the writable TEI skeleton from the last release, with an
     empty body. After a successful import the script updates it in place.
@@ -22,7 +22,10 @@ For this and subsequent imports, use the patched file directly:
     date is the local import day, and the extent counts imported entries.
     Each previously unrecorded release gets one revision credited to the
     local user.
--   `OUT_DIR`: output directory, must not exist.
+-   `OUT_DIR`: output dictionary directory, created if needed.
+-   `SHARED_DIR`: the FreeDict dictionary collection’s `shared` directory.
+    Each import copies `freedict-P5.dtd`, `freedict-P5.rng` and
+    `freedict-dictionary.css` from this directory into `OUT_DIR`.
 
 Python3 is the name of the Python interpreter. It might be that your systems
 calls a Python version > 3.x just `python`, then you need to alter the command.
