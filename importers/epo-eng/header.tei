@@ -19,7 +19,7 @@
         </respStmt>
       </titleStmt>
       <editionStmt>
-        <edition>2024.10.06</edition>
+        <edition>2024.10.06+fd1</edition>
       </editionStmt>
       <extent>63895 headwords</extent>
       <publicationStmt>
@@ -55,7 +55,7 @@
       </projectDesc>
     </encodingDesc>
     <revisionDesc>
-      <change n="2024.10.06" when="2026-11-27">
+      <change n="2024.10.06+fd1" when="2026-11-27">
         <name>Sebastian Humenda</name>
         <list>
           <item>Keep Esperanto headwords whole across commas, e.g. “fino bona, ĉio bona”.</item>
