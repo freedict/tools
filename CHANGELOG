@@ -5,6 +5,8 @@
     -   preserve commas in Esperanto headwords, bracket translations and English
         collocations such as “aspire (to)”.
     -   preserve prepositional “to” and parentheses within English equivalents.
+    -   update the header in place with the upstream release date, publication
+        date and headword count, and record each new release once.
 
 # 0.8.0-beta.1
 

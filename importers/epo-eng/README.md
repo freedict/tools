@@ -13,8 +13,12 @@ The usage of this script is extremely simple:
 
 -   `UPSTREAM_DICT`: path to the text dictionary, as distributed by the upstream
     project
--   `TEI_SKELETON`: header information; should be taken from the last release
-    and extended with the changes with the newer version.
+-   `TEI_SKELETON`: the writable TEI skeleton from the last release, with an
+    empty body. After a successful import the script updates it in place.
+    The edition is the author’s release date (YYYY.MM.DD), the publication
+    date is the local import day, and the extent counts imported entries.
+    Each previously unrecorded release gets one revision credited to the
+    local user.
 -   `OUT_DIR`: output directory, must not exist.
 
 Python3 is the name of the Python interpreter. It might be that your systems

@@ -1,9 +1,12 @@
 """Regression tests for the generated ESPDIC TEI."""
 
 import importlib.util
+import shutil
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 from xml.etree import ElementTree
 
 IMPORTER = Path(__file__).resolve().parents[2] / 'importers/epo-eng'
@@ -20,7 +23,8 @@ def import_entries(*lines):
                           ' - Paul Denisowski (www.denisowski.org)\n' + '\n'.join(lines),
                           encoding='utf-8-sig')
         (Path(tmp) / 'COPYING').touch()
-        epo_eng.main(source, IMPORTER / 'header.tei', tmp)
+        skeleton = shutil.copy(IMPORTER / 'header.tei', tmp)
+        epo_eng.main(source, skeleton, tmp)
         return ElementTree.parse(Path(tmp) / 'epo-eng.tei').findall('.//body/entry', NS)
 
 
@@ -92,21 +96,77 @@ class EntryTests(unittest.TestCase):
 
 
 class AttributionTests(unittest.TestCase):
-    def test_import_writes_source_attribution(self):
-        for date, author in [('6 October 2024', 'Paul Denisowski'),
-                             ('1 March 2027', 'Jones & Smith')]:
-            with self.subTest(author=author), tempfile.TemporaryDirectory() as tmp:
-                source = Path(tmp) / 'espdic.txt'
-                source.write_text(
-                    f'# ESPDIC (Esperanto – English Dictionary) – {date} - '
-                    f'{author} (www.denisowski.org)\nabelo : bee\n',
-                    encoding='utf-8-sig')
-                (Path(tmp) / 'COPYING').touch()
-                epo_eng.main(source, IMPORTER / 'header.tei', tmp)
-                tei = ElementTree.parse(Path(tmp) / 'epo-eng.tei')
-                self.assertEqual(tei.findtext('.//availability/p', namespaces=NS),
-                                 f'Copyright (C) {date[-4:]} {author}.')
-                self.assertEqual(tei.findtext('.//body/entry/form/orth', namespaces=NS), 'abelo')
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.header = Path(shutil.copy(IMPORTER / 'header.tei', self.root))
+        self.source = self.root / 'espdic.txt'
+        (self.root / 'COPYING').touch()
+
+    def run_import(self, release, holder='Paul Denisowski'):
+        self.source.write_text(
+            f'# ESPDIC (Esperanto – English Dictionary) – {release} - '
+            f'{holder} (www.denisowski.org)\nabelo : bee\n# comment\n',
+            encoding='utf-8-sig')
+        epo_eng.main(self.source, self.header, self.root)
+        return ElementTree.parse(self.root / 'epo-eng.tei')
+
+    def test_existing_release_updates_both_headers_without_adding_history(self):
+        # Exercise the skeleton format used before date-only editions.
+        tree = ElementTree.parse(self.header)
+        edition = tree.findtext('.//edition', namespaces=NS)
+        self.header.write_text(self.header.read_text().replace(
+            f'<edition>{edition}</edition>', '<edition>2024.10.06+fd1</edition>'))
+        changes = tree.findall('.//change', NS)
+        output = self.run_import('6 October 2024')
+        updated = ElementTree.parse(self.header)
+        for doc in [updated, output]:
+            self.assertEqual(doc.findtext('.//edition', namespaces=NS), '2024.10.06')
+            self.assertEqual(doc.findtext('.//fileDesc/extent', namespaces=NS), '1 headword')
+            published = doc.find('.//publicationStmt/date', NS)
+            self.assertEqual((published.text, published.get('when')), (date.today().isoformat(),) * 2)
+            self.assertEqual(doc.findtext('.//availability/p', namespaces=NS),
+                             'Copyright (C) 2024 Paul Denisowski.')
+            self.assertEqual([e.attrib for e in doc.findall('.//change', NS)],
+                             [e.attrib for e in changes])
+        self.assertEqual(len(updated.findall('.//body/entry', NS)), 0)
+        self.assertEqual(len(output.findall('.//body/entry', NS)), 1)
+
+    def test_new_release_recorded_once(self):
+        before = ElementTree.parse(self.header).findall('.//change', NS)
+        with patch.object(epo_eng.getpass, 'getuser', return_value='tester'):
+            self.run_import('1 March 2027', 'Jones & Smith')
+            saved = self.header.read_bytes()
+            output = self.run_import('1 March 2027', 'Jones & Smith')
+        self.assertEqual(self.header.read_bytes(), saved)
+        for doc in [ElementTree.parse(self.header), output]:
+            changes = doc.findall('.//revisionDesc/change', NS)
+            self.assertEqual(len(changes), len(before) + 1)
+            self.assertEqual(doc.findtext('.//edition', namespaces=NS), '2027.03.01')
+            self.assertEqual(doc.findtext('.//availability/p', namespaces=NS),
+                             'Copyright (C) 2027 Jones & Smith.')
+            self.assertEqual(changes[0].attrib, {'n': '2027.03.01', 'when': date.today().isoformat()})
+            self.assertEqual(changes[0].findtext('name', namespaces=NS), 'tester')
+            self.assertIn('Import new ESPDIC version dated 2027-03-01.', ''.join(changes[0].itertext()))
+
+    def test_recognised_contributor_uses_who(self):
+        with patch.object(epo_eng.getpass, 'getuser', return_value='humenda'):
+            output = self.run_import('2 March 2027')
+        self.assertEqual(output.find('.//revisionDesc/change', NS).get('who'), '#humenda')
+
+    def test_legacy_version_in_change_identifier(self):
+        self.header.write_text(self.header.read_text().replace(
+            '<revisionDesc>', '<revisionDesc><change n="2027.03.02+fd1">First import.</change>'))
+        with patch.object(epo_eng.getpass, 'getuser', side_effect=AssertionError):
+            output = self.run_import('2 March 2027')
+        self.assertEqual(output.find('.//revisionDesc/change', NS).get('n'), '2027.03.02+fd1')
+
+    def test_output_failure_preserves_skeleton(self):
+        saved = self.header.read_bytes()
+        with patch.object(epo_eng.fd_import.output, 'mk_makefile', side_effect=OSError), self.assertRaises(OSError):
+            self.run_import('1 March 2027')
+        self.assertEqual(self.header.read_bytes(), saved)
 
     def test_malformed_attribution_reports_first_line(self):
         with self.assertRaisesRegex(ValueError, 'line 1'):

@@ -5,10 +5,15 @@
 README for more information."""
 
 import enum
+import getpass
 import os
 import re
+import shutil
 import sys
+import tempfile
 import urllib.request
+from datetime import date
+from pathlib import Path
 from xml.dom import minidom
 from xml.sax import saxutils
 
@@ -177,21 +182,85 @@ def translations_to_xml(translations):
 
 def parse_attribution(line):
     match = re.fullmatch(
-        r"# ESPDIC \([^)]+\)\s+[-–]\s+\d{1,2} [A-Za-z]+ (\d{4})"
+        r"# ESPDIC \([^)]+\)\s+[-–]\s+(\d{1,2}) ([A-Za-z]+) (\d{4})"
         r"\s+[-–]\s+([^()]+?)\s+\([^)]+\)", line.strip())
     if not match:
         raise ValueError("line 1: expected the ESPDIC edition date and author")
-    year, author = match.groups()
-    return f"Copyright (C) {year} {author}."
+    day, month, year, author = match.groups()
+    months = ('January', 'February', 'March', 'April', 'May', 'June', 'July',
+              'August', 'September', 'October', 'November', 'December')
+    try:
+        release = date(int(year), months.index(month) + 1, int(day))
+    except ValueError as error:
+        raise ValueError("line 1: invalid ESPDIC edition date") from error
+    return release, author
 
 
-def write_output(attribution, base_dir, tei_skeleton, body_xml):
-    """This writes the imported dictionary into the specified directory."""
-    print("Writing TEI dictionary…")
+def replace_text(element, value):
+    while element.firstChild:
+        element.removeChild(element.firstChild)
+    element.appendChild(element.ownerDocument.createTextNode(value))
+
+
+def element_text(node):
+    return ''.join(child.data if child.nodeType in (child.TEXT_NODE, child.CDATA_SECTION_NODE)
+                   else element_text(child) for child in node.childNodes)
+
+
+def prepend_element(parent, element):
+    """Use the existing first child's indentation for the new sibling."""
+    first = parent.firstChild
+    parent.insertBefore(element, first)
+    if first and first.nodeType == first.TEXT_NODE and not first.data.strip():
+        parent.insertBefore(first.cloneNode(False), element)
+
+
+def record_release(skeleton, release, edition, today):
+    history, = skeleton.getElementsByTagName('revisionDesc')
+    dates = re.compile(rf'\b(?:{re.escape(edition)}|{release.isoformat()})\b')
+    for change in history.getElementsByTagName('change'):
+        if (change.getAttribute('n').partition('+')[0] in (edition, release.isoformat())
+                or dates.search(element_text(change))):
+            return
+    change = skeleton.createElement('change')
+    change.setAttribute('n', edition)
+    change.setAttribute('when', today)
+    username = getpass.getuser()
+    title, = skeleton.getElementsByTagName('titleStmt')
+    if any(name.getAttribute('xml:id') == username for name in title.getElementsByTagName('name')):
+        change.setAttribute('who', '#' + username)
+    else:
+        name = skeleton.createElement('name')
+        replace_text(name, username)
+        change.appendChild(name)
+        change.appendChild(skeleton.createTextNode(' '))
+    change.appendChild(skeleton.createTextNode(f'Import new ESPDIC version dated {release}.'))
+    prepend_element(history, change)
+
+
+def updated_header(tei_skeleton, release, author, count):
+    today = date.today().isoformat()
+    edition = release.isoformat().replace('-', '.')
     with minidom.parse(os.fspath(tei_skeleton)) as skeleton:
-        availability, = skeleton.getElementsByTagName('availability')
+        body, = skeleton.getElementsByTagName('body')
+        if any(node.nodeType == node.ELEMENT_NODE for node in body.childNodes) or element_text(body).strip():
+            raise ValueError("Expected a TEI skeleton with an empty body")
+        if not body.hasChildNodes():
+            body.appendChild(skeleton.createTextNode('\n'))
+        description, = skeleton.getElementsByTagName('fileDesc')
+        edition_stmt, = description.getElementsByTagName('editionStmt')
+        edition_element, = edition_stmt.getElementsByTagName('edition')
+        extent, = (node for node in description.childNodes if node.nodeName == 'extent')
+        publication, = description.getElementsByTagName('publicationStmt')
+        published, = (node for node in publication.childNodes if node.nodeName == 'date')
+        replace_text(edition_element, edition)
+        replace_text(extent, f"{count} {'headword' if count == 1 else 'headwords'}")
+        replace_text(published, today)
+        published.setAttribute('when', today)
+        record_release(skeleton, release, edition, today)
+        availability, = publication.getElementsByTagName('availability')
         notice = skeleton.createElement('p')
-        notice.appendChild(skeleton.createTextNode(attribution))
+        notice.appendChild(skeleton.createTextNode(f'Copyright (C) {release.year} {author}.'))
         for paragraph in availability.childNodes:
             if (paragraph.nodeName == 'p' and paragraph.firstChild
                     and paragraph.firstChild.nodeType == paragraph.TEXT_NODE
@@ -199,16 +268,24 @@ def write_output(attribution, base_dir, tei_skeleton, body_xml):
                 availability.replaceChild(notice, paragraph)
                 break
         else:
-            availability.insertBefore(notice, availability.firstChild)
-        header = skeleton.toxml()
-    body_start = header.find('<body>') + 6
+            prepend_element(availability, notice)
+        declaration = f'<?xml version="{skeleton.version or "1.0"}"'
+        if skeleton.standalone is not None:
+            declaration += ' standalone="yes"' if skeleton.standalone else ' standalone="no"'
+        return '\n'.join([declaration + ' ?>', *(node.toxml() for node in skeleton.childNodes), ''])
+
+
+def write_output(header, base_dir, body_xml):
+    """Write the complete dictionary and its accompanying files."""
+    print("Writing TEI dictionary…")
+    before_body_end, body_end, trailer = header.rpartition('</body>')
     tei_file = os.path.join(base_dir, 'epo-eng.tei')
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
     with open(tei_file, 'w', encoding='utf-8') as f:
-        f.write(header[:body_start] + '\n')
+        f.write(before_body_end.rstrip() + '\n')
         f.write(body_xml)
-        f.write(header[body_start+1:].lstrip().rstrip() + '\n')
+        f.write(body_end + trailer)
 
     fd_import.output.reindent_xml(tei_file)
     if not os.path.exists(os.path.join(base_dir, 'COPYING')):
@@ -231,7 +308,7 @@ def write_output(attribution, base_dir, tei_skeleton, body_xml):
 def main(input_file, tei_skeleton, output_directory):
     print("Parsing dictionary…")
     with open(input_file, 'r', encoding='utf-8-sig') as f:
-        attribution = parse_attribution(f.readline())
+        release, author = parse_attribution(f.readline())
         words = [(n, line.rstrip('\n')) for n, line in enumerate(f, start=2)
                  if line.strip() and not line.startswith(' ')]
 
@@ -263,7 +340,17 @@ def main(input_file, tei_skeleton, output_directory):
             xml.append(f'<gramGrp>\n{gram}\n</gramGrp>')
         xml += translations_to_xml(trans) + ['</entry>']
 
-    write_output(attribution, output_directory, tei_skeleton, '\n'.join(xml))
+    skeleton_path = Path(tei_skeleton).resolve()
+    if skeleton_path == (Path(output_directory) / 'epo-eng.tei').resolve():
+        raise ValueError("The skeleton and output dictionary must have distinct paths")
+    header = updated_header(skeleton_path, release, author, len(word_list))
+    write_output(header, output_directory, '\n'.join(xml))
+    if skeleton_path.read_text(encoding='utf-8') != header:
+        with tempfile.TemporaryDirectory(dir=skeleton_path.parent) as tmp:
+            temporary = Path(tmp) / skeleton_path.name
+            temporary.write_text(header, encoding='utf-8')
+            shutil.copymode(skeleton_path, temporary)
+            temporary.replace(skeleton_path)
     print("Done. Now it's time to copy DTD, CSS and RNG and validate the dictionary.")
 
 def check_args():
