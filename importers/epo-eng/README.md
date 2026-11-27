@@ -7,12 +7,15 @@ It is (c) 2015 Paul Denisowski, under the terms of the Creative Commons Attribut
 Usage
 -----
 
-The usage of this script is extremely simple:
+Save a fresh copy of the 6 October 2024 ESPDIC release as `espdic.txt` in
+`importers/epo-eng/`. From that directory, apply the FreeDict patch once:
 
-    $ python3 epo-eng-import.py <UPSTREAM_DICT> <TEI_SKELETON> <OUT_DIR>
+    patch --binary --forward --fuzz=0 espdic.txt -i epo-eng.patch
 
--   `UPSTREAM_DICT`: path to the text dictionary, as distributed by the upstream
-    project
+For this and subsequent imports, use the patched file directly:
+
+    python3 epo-eng-import.py espdic.txt <TEI_SKELETON> <OUT_DIR>
+
 -   `TEI_SKELETON`: the writable TEI skeleton from the last release, with an
     empty body. After a successful import the script updates it in place.
     The edition is the author’s release date (YYYY.MM.DD), the publication
@@ -30,7 +33,7 @@ Sources
 The markup of the original Esperanto-English dictionary is hard to parse. The
 current parser is far from perfect, but it does a fairly good job. I've
 contacted upstream regarding a patch (Jul 2017), but haven't got a response.
-Therefore, the changes are recorded in [epo-eng.patch](epo-eng.patch) and can be
-applied to the epo-eng dictionary released in 2015.
+The corrections for the 6 October 2024 release are recorded in
+[epo-eng.patch](epo-eng.patch).
 
 The file README.dict is copied as README to the output directory.
