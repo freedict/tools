@@ -19,7 +19,7 @@ NS = {'': 'http://www.tei-c.org/ns/1.0'}
 def make_shared_dir(root):
     shared = root / 'shared'
     shared.mkdir()
-    for name in ('freedict-P5.dtd', 'freedict-P5.rng', 'freedict-dictionary.css'):
+    for name in ('freedict-P5.dtd', 'freedict-P5.rng', 'freedict-P5.xml', 'freedict-dictionary.css'):
         (shared / name).write_bytes(name.encode())
     return shared
 
@@ -27,6 +27,7 @@ def make_shared_dir(root):
 def import_entries(*lines):
     with tempfile.TemporaryDirectory() as tmp:
         source = Path(tmp) / 'espdic.txt'
+        shutil.copy(IMPORTER / 'epo-eng.patch', tmp)
         source.write_text('# ESPDIC (Esperanto – English Dictionary) – 6 October 2024'
                           ' - Paul Denisowski (www.denisowski.org)\n' + '\n'.join(lines),
                           encoding='utf-8-sig')
@@ -110,7 +111,10 @@ class ImportTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.shared = make_shared_dir(self.root)
         self.header = Path(shutil.copy(IMPORTER / 'header.tei', self.root))
-        self.source = self.root / 'espdic.txt'
+        input_dir = self.root / 'input'
+        input_dir.mkdir()
+        self.source = input_dir / 'espdic.txt'
+        shutil.copy(IMPORTER / 'epo-eng.patch', input_dir)
         (self.root / 'COPYING').touch()
 
     def run_import(self, release, holder='Paul Denisowski'):
@@ -129,6 +133,13 @@ class ImportTests(unittest.TestCase):
         self.run_import('6 October 2024')
         for source in self.shared.iterdir():
             self.assertEqual((self.root / source.name).read_bytes(), source.read_bytes())
+
+    def test_patch_is_copied_from_beside_the_input(self):
+        source_patch = self.source.with_name('epo-eng.patch')
+        for contents in (b'first patch\r\n', b'revised patch\r\n'):
+            source_patch.write_bytes(contents)
+            self.run_import('6 October 2024')
+            self.assertEqual((self.root / 'epo-eng.patch').read_bytes(), contents)
 
     def test_missing_shared_file_fails_before_writing_output(self):
         missing = self.shared / 'freedict-P5.rng'

@@ -12,7 +12,8 @@ Save a fresh copy of the 6 October 2024 ESPDIC release as `espdic.txt` in
 
     patch --binary --forward --fuzz=0 espdic.txt -i epo-eng.patch
 
-For this and subsequent imports, use the patched file directly:
+Keep `epo-eng.patch` beside the patched input file. The importer copies the
+patch into the output directory on each run.
 
     python3 epo-eng-import.py espdic.txt <TEI_SKELETON> <OUT_DIR> <SHARED_DIR>
 
@@ -24,7 +25,7 @@ For this and subsequent imports, use the patched file directly:
     local user.
 -   `OUT_DIR`: output dictionary directory, created if needed.
 -   `SHARED_DIR`: the FreeDict dictionary collection’s `shared` directory.
-    Each import copies `freedict-P5.dtd`, `freedict-P5.rng` and
+    Each import copies `freedict-P5.dtd`, `freedict-P5.rng`, `freedict-P5.xml` and
     `freedict-dictionary.css` from this directory into `OUT_DIR`.
 
 Python3 is the name of the Python interpreter. It might be that your systems

@@ -20,7 +20,7 @@ from xml.sax import saxutils
 import fd_import
 from fd_import.tokenizer import ChunkType, tokenize
 
-SHARED_FILES = ('freedict-P5.dtd', 'freedict-P5.rng', 'freedict-dictionary.css')
+SHARED_FILES = ('freedict-P5.dtd', 'freedict-P5.rng', 'freedict-P5.xml', 'freedict-dictionary.css')
 
 
 class WordType(enum.Enum):
@@ -277,7 +277,7 @@ def updated_header(tei_skeleton, release, author, count):
         return '\n'.join([declaration + ' ?>', *(node.toxml() for node in skeleton.childNodes), ''])
 
 
-def write_output(header, base_dir, body_xml, shared_files):
+def write_output(header, base_dir, body_xml, accompanying_files):
     """Write the complete dictionary and its accompanying files."""
     print("Writing TEI dictionary…")
     before_body_end, body_end, trailer = header.rpartition('</body>')
@@ -305,15 +305,19 @@ def write_output(header, base_dir, body_xml, shared_files):
 
     # write Makefile
     fd_import.output.mk_makefile(base_dir, ['epo-eng.tei', 'epo-eng.patch'])
-    for source in shared_files:
-        shutil.copy(source, base_dir)
+    for source in accompanying_files:
+        destination = Path(base_dir) / source.name
+        if destination.exists() and destination.samefile(source):
+            continue
+        shutil.copy(source, destination)
 
 
 def main(input_file, tei_skeleton, output_directory, shared_dir):
-    shared_files = [Path(shared_dir) / name for name in SHARED_FILES]
-    for source in shared_files:
+    accompanying_files = [Path(shared_dir) / name for name in SHARED_FILES]
+    accompanying_files.append(Path(input_file).with_name('epo-eng.patch'))
+    for source in accompanying_files:
         if not source.is_file():
-            raise FileNotFoundError(f'Missing shared file: {source}')
+            raise FileNotFoundError(f'Missing required file: {source}')
     print("Parsing dictionary…")
     with open(input_file, 'r', encoding='utf-8-sig') as f:
         release, author = parse_attribution(f.readline())
@@ -352,7 +356,7 @@ def main(input_file, tei_skeleton, output_directory, shared_dir):
     if skeleton_path == (Path(output_directory) / 'epo-eng.tei').resolve():
         raise ValueError("The skeleton and output dictionary must have distinct paths")
     header = updated_header(skeleton_path, release, author, len(word_list))
-    write_output(header, output_directory, '\n'.join(xml), shared_files)
+    write_output(header, output_directory, '\n'.join(xml), accompanying_files)
     if skeleton_path.read_text(encoding='utf-8') != header:
         with tempfile.TemporaryDirectory(dir=skeleton_path.parent) as tmp:
             temporary = Path(tmp) / skeleton_path.name
