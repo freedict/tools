@@ -2,9 +2,8 @@
 <!-- vim: set expandtab shiftwidth=2 tw=160 sts=2 ft=xml: -->
 <?xml-stylesheet type="text/css" href="freedict-dictionary.css"?>
 <?oxygen RNGSchema="freedict-P5.rng" type="xml"?>
-<!DOCTYPE TEI
-  SYSTEM 'freedict-P5.dtd'>
-<TEI version="5.0" xmlns="http://www.tei-c.org/ns/1.0">
+<!DOCTYPE TEI  SYSTEM 'freedict-P5.dtd'>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" version="5.0">
   <teiHeader>
     <fileDesc>
       <titleStmt>
@@ -20,15 +19,16 @@
         </respStmt>
       </titleStmt>
       <editionStmt>
-        <edition>2024.10.06+fd1</edition>
+        <edition>2024.10.06</edition>
       </editionStmt>
       <extent>63895 headwords</extent>
       <publicationStmt>
         <publisher>FreeDict</publisher>
         <availability>
+          <p>Copyright (C) 2024 Paul Denisowski.</p>
           <p>Available under the terms of the <ref target="https://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</ref>.</p>
         </availability>
-        <date when="2026-05-24">24th of May 2026</date>
+        <date when="2026-11-25">2026-11-25</date>
         <pubPlace>
           <ref>http://freedict.org/</ref>
         </pubPlace>
@@ -61,7 +61,7 @@
       </change>
       <change n="1.0.1" when="2017-09-10" who="#humenda">
         The importer script omitted characters at the beginning of words, if a
-        headword started with &quot;to&quot;. The newly imported versions has fixed this
+        headword started with "to". The newly imported versions has fixed this
         bug.
       </change>
       <change n="1.0" when="2017-07-09" who="#humenda">
